@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Student Vault</title>
+  <style>
+    body { font-family: sans-serif; background: #0f172a; color: #fff; text-align: center; padding: 20px; }
+    .card { background: #1e293b; padding: 20px; border-radius: 12px; max-width: 400px; margin: auto; }
+    .hidden { display: none; }
+    input { padding: 10px; width: 80%; border-radius: 6px; border: none; margin-bottom: 10px; }
+    button { padding: 10px 20px; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+    .doc-link { display: block; margin: 10px 0; padding: 10px; background: #334155; color: #38bdf8; text-decoration: none; border-radius: 6px; }
+    img.signature { max-width: 200px; background: white; padding: 5px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+  <!-- Lock Screen -->
+  <div id="lockScreen" class="card">
+    <h2>Secure Vault Access</h2>
+    <input type="password" id="pinInput" placeholder="Enter Master PIN">
+    <br>
+    <button onclick="unlockVault()">Access Data</button>
+  </div>
+
+  <!-- Vault Content -->
+  <div id="vaultContent" class="card hidden">
+    <h2>Student Profile</h2>
+    <p><strong>Roll No:</strong> FYBA-104</p>
+    <p><strong>College ID:</strong> user@college.edu</p>
+
+    <hr>
+    <h3>Documents</h3>
+    <a href="DRIVE_LINK_10TH" target="_blank" class="doc-link">📄 10th Marksheet</a>
+    <a href="DRIVE_LINK_12TH" target="_blank" class="doc-link">📄 12th Marksheet</a>
+    <a href="DRIVE_LINK_AADHAR" target="_blank" class="doc-link">📄 Aadhar Card</a>
+
+    <hr>
+    <h3>Scanned Signature</h3>
+    <img src="SIGNATURE_IMAGE_URL" alt="Signature" class="signature">
+  </div>
+
+  <script>
+    const SECRET_PIN = "1234"; // Apna custom PIN rakho
+
+    function unlockVault() {
+      const pin = document.getElementById('pinInput').value;
+      if (pin === SECRET_PIN) {
+        document.getElementById('lockScreen').classList.add('hidden');
+        document.getElementById('vaultContent').classList.remove('hidden');
+      } else {
+        alert("Galat PIN!");
+      }
+    }
+  </script>
+</body>
+</html>
