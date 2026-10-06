@@ -39,7 +39,7 @@
 
     .hidden { display: none !important; }
 
-    /* Auth Screens (New User / Access Data) */
+    /* Auth Screen */
     .auth-card {
       background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
       border: 1px solid #334155;
@@ -49,7 +49,7 @@
       flex-direction: column;
       gap: 16px;
       text-align: center;
-      margin-top: 40px;
+      margin-top: 30px;
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
     }
     .auth-toggle-row {
@@ -342,6 +342,10 @@
       gap: 5px;
       text-decoration: none;
     }
+    .card-action-btn:hover {
+      background: #334155;
+      color: #fff;
+    }
     .card-action-btn.primary {
       background: rgba(37, 99, 235, 0.2);
       border-color: #2563eb;
@@ -486,7 +490,7 @@
 
   <div class="app-container">
 
-    <!-- ================= AUTH SCREEN (LOCKED GATE) ================= -->
+    <!-- ================= AUTH SCREEN ================= -->
     <div id="authScreen" class="auth-card">
       <div style="display:flex; justify-content:center; margin-bottom:4px;">
         <div class="brand-icon" style="width:48px; height:48px;"><i data-lucide="shield-check" style="width:26px; height:26px;"></i></div>
@@ -511,6 +515,10 @@
           <input type="password" id="loginPin" class="input-field" placeholder="Enter Master PIN" maxlength="8">
         </div>
         <button class="btn-primary" style="margin-top:8px; padding:12px;" onclick="handleLogin()">Access Vault</button>
+        
+        <div style="text-align:center; font-size:0.75rem; color:#94a3b8; margin-top:4px;">
+          Opening on another device? <a href="#" onclick="handleCloudAccountRestore()" style="color:#60a5fa; text-decoration:none;">Sync with Google Drive</a>
+        </div>
       </div>
 
       <!-- New User Form -->
@@ -535,7 +543,7 @@
       </div>
     </div>
 
-    <!-- ================= VAULT DASHBOARD (UNLOCKED) ================= -->
+    <!-- ================= VAULT DASHBOARD ================= -->
     <div id="vaultDashboard" class="hidden" style="display:flex; flex-direction:column; gap:16px;">
       <!-- Top Bar -->
       <div class="header">
@@ -684,8 +692,44 @@
     ];
 
     let currentSessionUser = null;
+    const CLIENT_ID = '236093224731-adpkdc0i5r83g6q306vg9c0f4ium763u.apps.googleusercontent.com';
+    const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+    let tokenClient;
+    let mainVaultFolderId = null;
+    let categoryFolderMap = {};
 
-    // ================= AUTHENTICATION LOGIC =================
+    // ================= LIFECYCLE & PERSISTENT SESSION =================
+    window.addEventListener('load', () => {
+      lucide.createIcons();
+
+      // Check if user was already unlocked in this browser session (Fix for refresh bug)
+      const savedSession = sessionStorage.getItem('docvault_active_user') || localStorage.getItem('docvault_active_user');
+      if (savedSession) {
+        try {
+          const user = JSON.parse(savedSession);
+          activateUserSession(user);
+        } catch(e) {}
+      }
+
+      if (window.google) {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+          scope: SCOPES,
+          callback: async (resp) => {
+            if (resp.error) {
+              console.error(resp);
+              alert("Google Drive authorization failed.");
+              return;
+            }
+            localStorage.setItem('drive_access_token', resp.access_token);
+            updateDriveUI(true);
+            await setupDriveFolderHierarchy(resp.access_token);
+            await syncCloudConfigToLocal(resp.access_token);
+          },
+        });
+      }
+    });
+
     function switchAuthMode(mode) {
       const tabNewUser = document.getElementById('tabNewUser');
       const tabAccessData = document.getElementById('tabAccessData');
@@ -705,14 +749,14 @@
       }
     }
 
-    function handleRegister() {
+    async function handleRegister() {
       const name = document.getElementById('regName').value.trim();
       const course = document.getElementById('regCourse').value.trim() || 'Student';
       const pin = document.getElementById('regPin').value.trim();
       const pinConfirm = document.getElementById('regPinConfirm').value.trim();
 
       if (!name || !pin) {
-        alert("Please enter both Name and PIN.");
+        alert("Please enter Name and PIN.");
         return;
       }
       if (pin.length < 4) {
@@ -727,21 +771,21 @@
       const users = JSON.parse(localStorage.getItem('docvault_users') || '{}');
       const userKey = name.toLowerCase();
 
-      users[userKey] = {
+      const newUserObj = {
         name: name,
         course: course,
         pin: pin,
         createdAt: new Date().toISOString()
       };
 
+      users[userKey] = newUserObj;
       localStorage.setItem('docvault_users', JSON.stringify(users));
-      alert("Account created successfully! Now access your vault.");
-      
-      // Auto fill login and switch
-      document.getElementById('loginName').value = name;
-      document.getElementById('loginPin').value = pin;
-      switchAuthMode('login');
-      handleLogin();
+
+      // Backup config to Drive if token is available
+      saveUserConfigToDrive(newUserObj);
+
+      alert("Account created successfully!");
+      activateUserSession(newUserObj);
     }
 
     function handleLogin() {
@@ -757,13 +801,25 @@
       const userKey = name.toLowerCase();
       const user = users[userKey];
 
-      if (!user || user.pin !== pin) {
-        alert("Invalid Name or PIN. If you are new, click 'New User' on the left to create an account.");
+      if (!user) {
+        // If not found locally, try checking if they created it with a default name or need cloud restore
+        alert("This browser has no record of '" + name + "'.\n\nIf you created this account on another phone/browser, click 'Sync with Google Drive' below.");
         return;
       }
 
-      // Login Successful
+      if (user.pin !== pin) {
+        alert("Incorrect PIN. Please re-enter your secret PIN.");
+        return;
+      }
+
+      activateUserSession(user);
+    }
+
+    function activateUserSession(user) {
       currentSessionUser = user;
+      localStorage.setItem('docvault_active_user', JSON.stringify(user));
+      sessionStorage.setItem('docvault_active_user', JSON.stringify(user));
+
       document.getElementById('authScreen').classList.add('hidden');
       document.getElementById('vaultDashboard').classList.remove('hidden');
 
@@ -779,39 +835,72 @@
 
     function lockVault() {
       currentSessionUser = null;
+      localStorage.removeItem('docvault_active_user');
+      sessionStorage.removeItem('docvault_active_user');
       document.getElementById('authScreen').classList.remove('hidden');
       document.getElementById('vaultDashboard').classList.add('hidden');
       document.getElementById('loginPin').value = '';
     }
 
-    // ================= DYNAMIC SUBFOLDERS GOOGLE DRIVE SETUP =================
-    const CLIENT_ID = '236093224731-adpkdc0i5r83g6q306vg9c0f4ium763u.apps.googleusercontent.com';
-    const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-    let tokenClient;
-    let mainVaultFolderId = null;
-    let categoryFolderMap = {}; // Maps '1_Identity_Personal_Docs' -> Drive Folder ID
-
-    window.addEventListener('load', () => {
-      lucide.createIcons();
-
-      if (window.google) {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: CLIENT_ID,
-          scope: SCOPES,
-          callback: async (resp) => {
-            if (resp.error) {
-              console.error(resp);
-              alert("Google Drive authorization failed.");
-              return;
-            }
-            localStorage.setItem('drive_access_token', resp.access_token);
-            updateDriveUI(true);
-            await setupDriveFolderHierarchy(resp.access_token);
-          },
-        });
+    // ================= MULTI-DEVICE GOOGLE DRIVE SYNC =================
+    function handleCloudAccountRestore() {
+      if (!tokenClient) {
+        alert("Loading Google authentication, please wait...");
+        return;
       }
-    });
+      tokenClient.requestAccessToken({ prompt: 'consent' });
+    }
 
+    async function syncCloudConfigToLocal(token) {
+      try {
+        const q = encodeURIComponent("name='vault_config.json' and trashed=false");
+        const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        if (data.files && data.files.length > 0) {
+          const fileId = data.files[0].id;
+          const contentRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const cloudConfig = await contentRes.json();
+
+          if (cloudConfig && cloudConfig.name) {
+            const users = JSON.parse(localStorage.getItem('docvault_users') || '{}');
+            users[cloudConfig.name.toLowerCase()] = cloudConfig;
+            localStorage.setItem('docvault_users', JSON.stringify(users));
+
+            document.getElementById('loginName').value = cloudConfig.name;
+            alert(`Account synced from Google Drive for ${cloudConfig.name}! Now enter your PIN.`);
+          }
+        }
+      } catch (err) {
+        console.log("Cloud config sync note:", err);
+      }
+    }
+
+    async function saveUserConfigToDrive(userObj) {
+      const token = localStorage.getItem('drive_access_token');
+      if (!token || !mainVaultFolderId) return;
+
+      const metadata = {
+        name: 'vault_config.json',
+        parents: [mainVaultFolderId]
+      };
+
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+      form.append('file', new Blob([JSON.stringify(userObj)], { type: 'application/json' }));
+
+      fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: form
+      }).catch(e => console.error("Cloud config save error:", e));
+    }
+
+    // ================= DRIVE FOLDER HIERARCHY =================
     function checkSavedDriveSession() {
       const token = localStorage.getItem('drive_access_token');
       if (token) {
@@ -854,10 +943,8 @@
       updateDriveUI(false);
     }
 
-    // Creates Main Vault Folder and 5 Categorized Subfolders inside it
     async function setupDriveFolderHierarchy(token) {
       try {
-        // 1. Get or Create Main Root Folder
         const mainQuery = encodeURIComponent("mimeType='application/vnd.google-apps.folder' and name='DocVault_College_Records' and trashed=false");
         const mainRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${mainQuery}&fields=files(id,name)`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -876,8 +963,7 @@
           mainVaultFolderId = newMain.id;
         }
 
-        // 2. Subfolders to guarantee per category
-        const subfolderNames = [
+        const subfolders = [
           '1_Identity_Personal_Docs',
           '2_Academic_Records',
           '3_Campus_Administration',
@@ -885,7 +971,7 @@
           '5_Banking_Financial'
         ];
 
-        for (const subName of subfolderNames) {
+        for (const subName of subfolders) {
           const subQuery = encodeURIComponent(`mimeType='application/vnd.google-apps.folder' and name='${subName}' and '${mainVaultFolderId}' in parents and trashed=false`);
           const subRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${subQuery}&fields=files(id,name)`, {
             headers: { Authorization: `Bearer ${token}` }
@@ -913,7 +999,6 @@
       }
     }
 
-    // Direct Upload to Subfolder
     async function uploadToDriveSubfolder(file, folderKey, customTitle) {
       const token = localStorage.getItem('drive_access_token');
       if (!token) return null;
@@ -1002,7 +1087,7 @@
       renderDocuments(cat);
     }
 
-    // ================= FILE UPLOAD & PREVIEW =================
+    // ================= FILE HANDLERS =================
     let currentUploadTargetId = null;
 
     function triggerDocUpload(docId) {
@@ -1025,7 +1110,6 @@
 
         const uKey = currentSessionUser ? currentSessionUser.name.toLowerCase() : 'guest';
 
-        // Specific Photo or Signature updates
         if (currentUploadTargetId === 'doc_signature') {
           document.getElementById('signatureBox').innerHTML = `<img src="${fileData.dataUrl}">`;
           document.getElementById('downloadSignBtn').href = fileData.dataUrl;
@@ -1037,10 +1121,7 @@
           localStorage.setItem(`docvault_photo_${uKey}`, fileData.dataUrl);
           await uploadToDriveSubfolder(file, '1_Identity_Personal_Docs', 'Passport_Photo');
         } else {
-          // Normal Documents
           localStorage.setItem(getUserDocStorageKey(currentUploadTargetId), JSON.stringify(fileData));
-          
-          // Find doc category folder
           const docDef = masterCollegeDocuments.find(d => d.id === currentUploadTargetId);
           const fKey = docDef ? docDef.folderKey : '1_Identity_Personal_Docs';
           await uploadToDriveSubfolder(file, fKey, docDef ? docDef.title : 'Doc');
