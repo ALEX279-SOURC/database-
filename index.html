@@ -3,56 +3,1155 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Student Vault</title>
-  <style>
-    body { font-family: sans-serif; background: #0f172a; color: #fff; text-align: center; padding: 20px; }
-    .card { background: #1e293b; padding: 20px; border-radius: 12px; max-width: 400px; margin: auto; }
-    .hidden { display: none; }
-    input { padding: 10px; width: 80%; border-radius: 6px; border: none; margin-bottom: 10px; }
-    button { padding: 10px 20px; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
-    .doc-link { display: block; margin: 10px 0; padding: 10px; background: #334155; color: #38bdf8; text-decoration: none; border-radius: 6px; }
-    img.signature { max-width: 200px; background: white; padding: 5px; border-radius: 4px; }
-  </style>
-</head>
-<body>
-
-  <!-- Lock Screen -->
-  <div id="lockScreen" class="card">
-    <h2>Secure Vault Access</h2>
-    <input type="password" id="pinInput" placeholder="Enter Master PIN">
-    <br>
-    <button onclick="unlockVault()">Access Data</button>
-  </div>
-
-  <!-- Vault Content -->
-  <div id="vaultContent" class="card hidden">
-    <h2>Student Profile</h2>
-    <p><strong>Roll No:</strong> FYBA-104</p>
-    <p><strong>College ID:</strong> user@college.edu</p>
-
-    <hr>
-    <h3>Documents</h3>
-    <a href="DRIVE_LINK_10TH" target="_blank" class="doc-link">📄 10th Marksheet</a>
-    <a href="DRIVE_LINK_12TH" target="_blank" class="doc-link">📄 12th Marksheet</a>
-    <a href="DRIVE_LINK_AADHAR" target="_blank" class="doc-link">📄 Aadhar Card</a>
-
-    <hr>
-    <h3>Scanned Signature</h3>
-    <img src="SIGNATURE_IMAGE_URL" alt="Signature" class="signature">
-  </div>
+  <title>Student Vault - Secure Document Portal</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Phosphor Icons for modern sleek icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- QRCode.js library for generating QR codes on the fly -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <script>
-    const SECRET_PIN = "1234"; // Apna custom PIN rakho
-
-    function unlockVault() {
-      const pin = document.getElementById('pinInput').value;
-      if (pin === SECRET_PIN) {
-        document.getElementById('lockScreen').classList.add('hidden');
-        document.getElementById('vaultContent').classList.remove('hidden');
-      } else {
-        alert("Galat PIN!");
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            vaultBg: '#090d16',
+            cardBg: '#131b2e',
+            cardBorder: '#1f2d4a',
+            accentBlue: '#2563eb',
+            accentHover: '#1d4ed8',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
       }
     }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #090d16;
+      color: #f1f5f9;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Custom smooth scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+
+    .pulse-glow {
+      box-shadow: 0 0 25px -5px rgba(37, 99, 235, 0.35);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+
+  <div id="toastContainer" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-sm pointer-events-none transition-all duration-300"></div>
+
+  <!-- Header Navigation -->
+  <header class="w-full border-b border-cardBorder/60 bg-vaultBg/80 backdrop-blur-md sticky top-0 z-40 px-4 py-3.5">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-9 h-9 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 text-xl font-bold shadow-inner">
+          <i class="ph-bold ph-shield-check"></i>
+        </div>
+        <div>
+          <h1 class="text-base font-bold tracking-tight text-white flex items-center gap-1.5">
+            DocVault <span class="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-semibold border border-blue-500/20">Secure</span>
+          </h1>
+          <p class="text-[11px] text-slate-400">College Credentials & Records</p>
+        </div>
+      </div>
+      <div id="headerActions" class="flex items-center space-x-2">
+        <button onclick="showQuickScanModal()" title="Instant QR" class="p-2 text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 rounded-xl border border-slate-700/60 transition text-sm flex items-center gap-1.5">
+          <i class="ph-bold ph-qr-code text-base text-blue-400"></i>
+          <span class="hidden sm:inline text-xs font-medium">Scan Card</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow flex items-center justify-center px-4 py-8 max-w-4xl w-full mx-auto">
+    
+    <!-- 1. HOME SCREEN VIEW -->
+    <section id="viewHome" class="w-full max-w-md mx-auto space-y-6 text-center animate-fade">
+      <!-- Shield Graphic Card -->
+      <div class="bg-cardBg border border-cardBorder rounded-2xl p-7 shadow-2xl relative overflow-hidden pulse-glow">
+        <div class="absolute -top-12 -right-12 w-36 h-36 bg-blue-600/15 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-tr from-blue-700 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
+          <i class="ph-duotone ph-lock-key text-3xl text-white"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-white tracking-tight">Secure Vault Access</h2>
+        <p class="text-xs sm:text-sm text-slate-400 mt-2 leading-relaxed">
+          Store college marksheets, roll numbers, APAAR/ABC ID, signature, and passcodes in one encrypted scan.
+        </p>
+
+        <!-- Dynamic Registered Accounts Pill -->
+        <div id="accountPill" class="mt-4 hidden items-center justify-center gap-2 py-1 px-3 bg-slate-800/60 rounded-full border border-slate-700/60 text-xs text-slate-300 mx-auto w-fit">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="registeredAccountCount">0 user(s) in local storage</span>
+        </div>
+
+        <!-- 2 Side-by-Side Action Buttons as Requested -->
+        <div class="grid grid-cols-2 gap-3.5 mt-7">
+          <!-- Left: New User -->
+          <button 
+            type="button"
+            onclick="switchView('register')"
+            class="w-full py-3 px-3 rounded-xl bg-slate-800 hover:bg-slate-700/90 text-slate-200 border border-slate-600/70 font-semibold text-xs sm:text-sm transition flex flex-col items-center justify-center gap-1 active:scale-[0.98] group">
+            <i class="ph-bold ph-user-plus text-lg text-emerald-400 group-hover:scale-110 transition"></i>
+            <span>New User</span>
+            <span class="text-[10px] text-slate-400 font-normal">Create Account</span>
+          </button>
+
+          <!-- Right: Access Data (Blue Accent) -->
+          <button 
+            type="button"
+            onclick="switchView('login')"
+            class="w-full py-3 px-3 rounded-xl bg-accentBlue hover:bg-accentHover text-white font-semibold text-xs sm:text-sm transition shadow-lg shadow-blue-600/30 flex flex-col items-center justify-center gap-1 active:scale-[0.98] group">
+            <i class="ph-bold ph-key text-lg text-blue-200 group-hover:scale-110 transition"></i>
+            <span>Access Data</span>
+            <span class="text-[10px] text-blue-200/80 font-normal">Enter Master PIN</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Scan Hint Footer -->
+      <div class="text-xs text-slate-400 flex items-center justify-center gap-2">
+        <i class="ph-bold ph-info text-blue-400"></i>
+        <span>Scan your QR card anywhere to open this screen</span>
+      </div>
+    </section>
+
+    <!-- 2. NEW USER REGISTRATION VIEW -->
+    <section id="viewRegister" class="w-full max-w-md mx-auto hidden space-y-4">
+      <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 sm:p-7 shadow-2xl relative">
+        <div class="flex items-center justify-between mb-5 pb-3 border-b border-slate-800">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+              <i class="ph-bold ph-user-plus text-lg"></i>
+            </div>
+            <h2 class="text-lg font-bold text-white">Create New Vault</h2>
+          </div>
+          <button onclick="switchView('home')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+            <i class="ph-bold ph-x text-lg"></i>
+          </button>
+        </div>
+
+        <form id="registerForm" onsubmit="handleRegistration(event)" class="space-y-4">
+          <!-- Full Name / Username -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Student / User Name *</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i class="ph-bold ph-user"></i>
+              </span>
+              <input 
+                type="text" 
+                id="regName" 
+                required 
+                placeholder="e.g. Rahul Sharma" 
+                class="w-full pl-10 pr-3 py-2.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+            </div>
+          </div>
+
+          <!-- College Roll No / Program -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">College Roll No / Course (Optional)</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i class="ph-bold ph-identification-card"></i>
+              </span>
+              <input 
+                type="text" 
+                id="regRoll" 
+                placeholder="e.g. 24BCS-104 / B.Tech" 
+                class="w-full pl-10 pr-3 py-2.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+            </div>
+          </div>
+
+          <!-- Master PIN -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Set Master PIN (4 to 8 digits) *</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i class="ph-bold ph-lock-key"></i>
+              </span>
+              <input 
+                type="password" 
+                id="regPin" 
+                inputmode="numeric" 
+                pattern="[0-9a-zA-Z]{4,8}"
+                maxlength="8" 
+                required 
+                placeholder="Enter 4-8 digit secure PIN" 
+                class="w-full pl-10 pr-10 py-2.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-sm tracking-widest focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+              <button type="button" onclick="togglePinVisibility('regPin', this)" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white">
+                <i class="ph-bold ph-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Confirm Master PIN -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Confirm Master PIN *</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i class="ph-bold ph-check-circle"></i>
+              </span>
+              <input 
+                type="password" 
+                id="regPinConfirm" 
+                inputmode="numeric" 
+                maxlength="8" 
+                required 
+                placeholder="Re-enter your PIN" 
+                class="w-full pl-10 pr-10 py-2.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-sm tracking-widest focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+              <button type="button" onclick="togglePinVisibility('regPinConfirm', this)" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white">
+                <i class="ph-bold ph-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="pt-2">
+            <button 
+              type="submit" 
+              class="w-full py-3 px-4 rounded-xl bg-accentBlue hover:bg-accentHover text-white font-semibold text-sm transition shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 active:scale-[0.99]">
+              <i class="ph-bold ph-check"></i>
+              <span>Create Account</span>
+            </button>
+          </div>
+        </form>
+
+        <div class="mt-5 text-center">
+          <button onclick="switchView('login')" class="text-xs text-blue-400 hover:text-blue-300 underline underline-offset-4">
+            Already registered? Access your data directly
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. ACCESS DATA VIEW -->
+    <section id="viewLogin" class="w-full max-w-md mx-auto hidden space-y-4">
+      <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 sm:p-7 shadow-2xl relative">
+        <div class="flex items-center justify-between mb-5 pb-3 border-b border-slate-800">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
+              <i class="ph-bold ph-fingerprint text-lg"></i>
+            </div>
+            <h2 class="text-lg font-bold text-white">Access Vault</h2>
+          </div>
+          <button onclick="switchView('home')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+            <i class="ph-bold ph-x text-lg"></i>
+          </button>
+        </div>
+
+        <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+          <!-- Registered User / Name Selection or Input -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Student / User Name *</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i class="ph-bold ph-user"></i>
+              </span>
+              <input 
+                type="text" 
+                id="loginName" 
+                required 
+                placeholder="Enter your registered name" 
+                class="w-full pl-10 pr-3 py-2.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+            </div>
+          </div>
+
+          <!-- Enter Master PIN -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <label class="block text-xs font-semibold text-slate-300">Enter Master PIN *</label>
+              <span class="text-[11px] text-slate-400">4-8 digits</span>
+            </div>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <i class="ph-bold ph-key"></i>
+              </span>
+              <input 
+                type="password" 
+                id="loginPin" 
+                inputmode="numeric" 
+                maxlength="8" 
+                required 
+                placeholder="Enter Master PIN" 
+                class="w-full pl-10 pr-10 py-3 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-sm tracking-widest focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+              <button type="button" onclick="togglePinVisibility('loginPin', this)" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white">
+                <i class="ph-bold ph-eye text-base"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="pt-2">
+            <button 
+              type="submit" 
+              class="w-full py-3 px-4 rounded-xl bg-accentBlue hover:bg-accentHover text-white font-semibold text-sm transition shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 active:scale-[0.99]">
+              <i class="ph-bold ph-unlock"></i>
+              <span>Access Data</span>
+            </button>
+          </div>
+        </form>
+
+        <div class="mt-5 flex items-center justify-between text-xs pt-3 border-t border-slate-800">
+          <button onclick="switchView('register')" class="text-emerald-400 hover:text-emerald-300 flex items-center gap-1">
+            <i class="ph-bold ph-plus"></i> New user? Register
+          </button>
+          <button onclick="switchView('home')" class="text-slate-400 hover:text-slate-200">
+            Back to Home
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. UNLOCKED VAULT DASHBOARD -->
+    <section id="viewDashboard" class="w-full hidden space-y-6">
+      
+      <!-- Top Profile & Header Bar -->
+      <div class="bg-cardBg border border-cardBorder rounded-2xl p-5 sm:p-6 shadow-xl relative overflow-hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-center space-x-3.5">
+            <div id="userAvatar" class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white text-2xl font-bold uppercase shadow-md shadow-blue-500/20">
+              U
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 id="profileName" class="text-xl font-bold text-white">Student Name</h2>
+                <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-semibold flex items-center gap-1">
+                  <i class="ph-bold ph-lock-key-open"></i> Unlocked
+                </span>
+              </div>
+              <p id="profileRoll" class="text-xs text-slate-400 mt-0.5">Roll No: 2026-N/A</p>
+              <div class="flex items-center gap-3 mt-1.5 text-[11px] text-slate-300">
+                <span class="flex items-center gap-1"><i class="ph-bold ph-shield-check text-blue-400"></i> Encrypted Vault</span>
+                <span id="docCountBadge" class="flex items-center gap-1"><i class="ph-bold ph-files text-slate-400"></i> 0 Documents</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="flex items-center gap-2">
+            <button onclick="openAddDocModal()" class="flex-1 sm:flex-initial py-2.5 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow transition">
+              <i class="ph-bold ph-plus-circle text-sm"></i>
+              <span>Add Document</span>
+            </button>
+            <button onclick="showQrForCurrentVault()" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium flex items-center justify-center transition" title="Show Share QR">
+              <i class="ph-bold ph-qr-code text-base text-blue-400"></i>
+            </button>
+            <button onclick="lockVault()" class="py-2.5 px-3.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+              <i class="ph-bold ph-sign-out text-sm"></i>
+              <span>Lock</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Nav Tabs for Document Categories -->
+      <div class="flex gap-2 overflow-x-auto pb-1 text-xs">
+        <button onclick="filterCategory('all', this)" class="category-pill active-pill px-3.5 py-1.5 rounded-xl bg-blue-600 text-white font-medium whitespace-nowrap transition">
+          All Records
+        </button>
+        <button onclick="filterCategory('academic', this)" class="category-pill px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium whitespace-nowrap transition">
+          Academic Marksheets
+        </button>
+        <button onclick="filterCategory('identity', this)" class="category-pill px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium whitespace-nowrap transition">
+          ID Proofs & APAAR
+        </button>
+        <button onclick="filterCategory('assets', this)" class="category-pill px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium whitespace-nowrap transition">
+          Digital Signature & Photo
+        </button>
+        <button onclick="filterCategory('receipts', this)" class="category-pill px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium whitespace-nowrap transition">
+          Receipts & Misc
+        </button>
+      </div>
+
+      <!-- Signature & Photo Highlight Banner -->
+      <div id="signatureSection" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <!-- Scanned Signature Card -->
+        <div class="bg-cardBg border border-cardBorder rounded-2xl p-4 shadow-lg flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <i class="ph-bold ph-pencil-simple-line text-blue-400 text-base"></i>
+              <h3 class="text-sm font-semibold text-white">Digital Signature</h3>
+            </div>
+            <button onclick="promptUploadSignature()" class="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium">
+              <i class="ph-bold ph-arrows-clockwise"></i> Update
+            </button>
+          </div>
+          <div class="bg-white rounded-xl p-3 flex items-center justify-center min-h-[90px] border border-slate-700">
+            <img id="signatureImg" src="https://placehold.co/400x120/ffffff/0f172a?text=Rahul+Sharma+(Sign)" alt="Student Signature" class="max-h-20 object-contain">
+          </div>
+          <div class="mt-3 flex items-center justify-between text-[11px] text-slate-400">
+            <span>Official scanned signature</span>
+            <button onclick="downloadSignature()" class="text-blue-400 hover:underline flex items-center gap-1">
+              <i class="ph-bold ph-download-simple"></i> Download
+            </button>
+          </div>
+        </div>
+
+        <!-- Student Photo Card -->
+        <div class="bg-cardBg border border-cardBorder rounded-2xl p-4 shadow-lg flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <i class="ph-bold ph-camera text-indigo-400 text-base"></i>
+              <h3 class="text-sm font-semibold text-white">Passport Photo & Identity</h3>
+            </div>
+            <button onclick="promptUploadPhoto()" class="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium">
+              <i class="ph-bold ph-arrows-clockwise"></i> Update
+            </button>
+          </div>
+          <div class="flex items-center gap-4 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+            <img id="userPhoto" src="https://placehold.co/120x150/1e293b/38bdf8?text=Photo" alt="Passport Photo" class="w-16 h-20 object-cover rounded-lg border border-slate-700">
+            <div class="space-y-1 text-xs">
+              <p class="font-semibold text-slate-200">White Background Photo</p>
+              <p class="text-slate-400 text-[11px]">Required for admit cards & exam portal uploads.</p>
+              <button onclick="downloadPhoto()" class="text-blue-400 hover:underline text-[11px] flex items-center gap-1 mt-1">
+                <i class="ph-bold ph-download-simple"></i> Save Photo
+              </button>
+            </div>
+          </div>
+          <div class="mt-2 text-[11px] text-slate-400">
+            Format: High Resolution 300 DPI
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Document Cards Grid -->
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+            <i class="ph-bold ph-folders text-blue-400"></i>
+            <span>Vault Documents</span>
+          </h3>
+          <span class="text-xs text-slate-400" id="filterStatusText">Showing all records</span>
+        </div>
+
+        <div id="documentsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          <!-- Dynamically Rendered Documents -->
+        </div>
+
+        <!-- Empty State (if zero docs) -->
+        <div id="emptyDocsState" class="hidden text-center py-12 px-4 bg-cardBg rounded-2xl border border-cardBorder">
+          <i class="ph-duotone ph-folder-dashed text-4xl text-slate-500 mb-2"></i>
+          <h4 class="text-sm font-semibold text-slate-300">No documents in this category</h4>
+          <p class="text-xs text-slate-500 mt-1 mb-4">Click below to add a document link or file.</p>
+          <button onclick="openAddDocModal()" class="py-2 px-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold transition">
+            + Add First Document
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Access Passwords / Credentials Hint Box -->
+      <div class="bg-cardBg border border-cardBorder rounded-2xl p-4 shadow-lg">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <i class="ph-bold ph-shield-warning text-amber-400"></i>
+            <h3 class="text-sm font-semibold text-white">College Portal & APAAR Details</h3>
+          </div>
+          <button onclick="openCredentialsModal()" class="text-xs text-blue-400 hover:text-blue-300 font-medium">
+            Manage Credentials
+          </button>
+        </div>
+        <div id="credentialsList" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <!-- Dynamically injected items -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- MODAL: ADD DOCUMENT -->
+  <div id="modalAddDoc" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-cardBg border border-cardBorder rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="ph-bold ph-file-plus text-blue-400"></i> Add New Record
+        </h3>
+        <button onclick="closeModal('modalAddDoc')" class="text-slate-400 hover:text-white">
+          <i class="ph-bold ph-x text-lg"></i>
+        </button>
+      </div>
+
+      <form id="addDocForm" onsubmit="handleSaveDocument(event)" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">Document Name *</label>
+          <input type="text" id="docTitle" required placeholder="e.g. 10th Board Marksheet" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-blue-500">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">Category *</label>
+          <select id="docCategory" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-blue-500">
+            <option value="academic">Academic (10th/12th/Semesters)</option>
+            <option value="identity">Identity (Aadhaar, Voter, APAAR)</option>
+            <option value="assets">Signatures & Photos</option>
+            <option value="receipts">Fee Receipts & Others</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">Document URL / Google Drive / Cloud Link *</label>
+          <input type="url" id="docUrl" required placeholder="https://drive.google.com/..." class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-blue-500">
+          <p class="text-[10px] text-slate-400 mt-1">Paste your Google Drive, DigiLocker, or Cloudinary link.</p>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">File Format / Notes</label>
+          <input type="text" id="docNotes" placeholder="e.g. Original PDF / Roll No Verified" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-blue-500">
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeModal('modalAddDoc')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl hover:bg-slate-700 transition">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition shadow">Save Record</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: QR CODE CARD VIEWER -->
+  <div id="modalQr" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-cardBg border border-cardBorder rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl relative">
+      <button onclick="closeModal('modalQr')" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <i class="ph-bold ph-x text-lg"></i>
+      </button>
+
+      <div class="w-12 h-12 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center mx-auto text-2xl">
+        <i class="ph-bold ph-qr-code"></i>
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-white">Your Vault QR Code</h3>
+        <p class="text-xs text-slate-400 mt-1">Scan this QR on any phone to open the Access PIN portal.</p>
+      </div>
+
+      <!-- QR Canvas Container -->
+      <div class="bg-white p-4 rounded-xl inline-block shadow-inner mx-auto my-2">
+        <div id="qrcodeWrapper" class="flex items-center justify-center"></div>
+      </div>
+
+      <div class="text-[11px] text-slate-400 bg-slate-900 p-2 rounded-lg border border-slate-800">
+        <span class="text-slate-300 font-medium" id="qrTargetUser">Ready to print for ID card back</span>
+      </div>
+
+      <div class="flex gap-2 justify-center pt-1">
+        <button onclick="copyCurrentVaultLink()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
+          <i class="ph-bold ph-copy"></i> Copy Link
+        </button>
+        <button onclick="closeModal('modalQr')" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold transition">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: MANAGE CREDENTIALS -->
+  <div id="modalCredentials" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-cardBg border border-cardBorder rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="ph-bold ph-key text-blue-400"></i> Quick Credentials & IDs
+        </h3>
+        <button onclick="closeModal('modalCredentials')" class="text-slate-400 hover:text-white">
+          <i class="ph-bold ph-x text-lg"></i>
+        </button>
+      </div>
+
+      <form id="credsForm" onsubmit="handleSaveCredential(event)" class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">Service / ID Name</label>
+          <input type="text" id="credTitle" required placeholder="e.g. DigiLocker PIN / APAAR ID" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">Username / ID Number</label>
+          <input type="text" id="credUser" required placeholder="e.g. 1234-5678-9012" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-300 mb-1">Password / Secret PIN Hint</label>
+          <input type="text" id="credPass" placeholder="e.g. Last 4 digits of phone" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-blue-500">
+        </div>
+
+        <div class="pt-2 flex justify-end gap-2">
+          <button type="button" onclick="closeModal('modalCredentials')" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg">Cancel</button>
+          <button type="submit" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-500">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="w-full border-t border-cardBorder/40 py-4 px-4 text-center text-xs text-slate-400">
+    <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p>Secure Student Vault &bull; 100% Client-Side Encryption Ready</p>
+      <p class="text-[11px] text-slate-400">Scan &bull; Unlock &bull; Access Anytime</p>
+    </div>
+  </footer>
+
+  <script>
+    /*
+     * Application State & Data Management
+     * Stored in localStorage for instant offline access and persistent QR scanning.
+     */
+    const STORAGE_KEY = 'STUDENT_VAULT_USERS_V1';
+    let currentUser = null;
+    let qrCodeInstance = null;
+
+    // Default Seed Data for New Users to give an immediate college-ready layout
+    const DEFAULT_DOCUMENTS = [
+      {
+        id: 'doc_1',
+        title: '10th SSC Marksheet',
+        category: 'academic',
+        url: 'https://placehold.co/800x1100/1e293b/38bdf8?text=10th+Standard+Marksheet',
+        notes: 'Original Verified Copy'
+      },
+      {
+        id: 'doc_2',
+        title: '12th HSC Passing Certificate',
+        category: 'academic',
+        url: 'https://placehold.co/800x1100/1e293b/38bdf8?text=12th+Standard+Certificate',
+        notes: 'Board Migration & Marksheet'
+      },
+      {
+        id: 'doc_3',
+        title: 'Aadhaar Card (Front & Back)',
+        category: 'identity',
+        url: 'https://placehold.co/800x500/1e293b/38bdf8?text=UIDAI+Aadhaar+Card',
+        notes: 'Masked Aadhaar PDF'
+      },
+      {
+        id: 'doc_4',
+        title: 'College ID Card',
+        category: 'identity',
+        url: 'https://placehold.co/800x500/1e293b/38bdf8?text=College+Student+ID',
+        notes: 'Valid Till 2026'
+      },
+      {
+        id: 'doc_5',
+        title: 'Semester 1 & 2 Fee Receipts',
+        category: 'receipts',
+        url: 'https://placehold.co/800x1000/1e293b/38bdf8?text=College+Tuition+Receipt',
+        notes: 'Paid via NetBanking'
+      }
+    ];
+
+    const DEFAULT_CREDENTIALS = [
+      { id: 'cr_1', title: 'College ERP Portal', user: '2026CS104', pass: 'Roll@Year' },
+      { id: 'cr_2', title: 'APAAR / ABC ID', user: '984-213-908-112', pass: 'DigiLocker Linked' }
+    ];
+
+    // Helper: Read stored users
+    function getUsersDatabase() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        console.error("Storage read failed", e);
+        return [];
+      }
+    }
+
+    // Helper: Save stored users
+    function saveUsersDatabase(users) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+      } catch (e) {
+        console.error("Storage write failed", e);
+        showToast("Storage full or disabled", "error");
+      }
+    }
+
+    // Switch Application Views
+    function switchView(viewName) {
+      const views = {
+        'home': document.getElementById('viewHome'),
+        'register': document.getElementById('viewRegister'),
+        'login': document.getElementById('viewLogin'),
+        'dashboard': document.getElementById('viewDashboard')
+      };
+
+      Object.keys(views).forEach(k => {
+        if (views[k]) views[k].classList.add('hidden');
+      });
+
+      if (views[viewName]) {
+        views[viewName].classList.remove('hidden');
+      }
+
+      // Check URL parameters for direct auto-fill (useful for QR codes)
+      if (viewName === 'home') {
+        refreshHomeStats();
+      }
+    }
+
+    function refreshHomeStats() {
+      const users = getUsersDatabase();
+      const accountPill = document.getElementById('accountPill');
+      const countLabel = document.getElementById('registeredAccountCount');
+      if (users.length > 0) {
+        accountPill.classList.remove('hidden');
+        accountPill.classList.add('flex');
+        countLabel.textContent = `${users.length} account(s) stored locally`;
+      } else {
+        accountPill.classList.add('hidden');
+        accountPill.classList.remove('flex');
+      }
+    }
+
+    // Handle New User Registration
+    function handleRegistration(event) {
+      event.preventDefault();
+      const name = document.getElementById('regName').value.trim();
+      const roll = document.getElementById('regRoll').value.trim() || 'N/A';
+      const pin = document.getElementById('regPin').value.trim();
+      const confirmPin = document.getElementById('regPinConfirm').value.trim();
+
+      if (!name || !pin) {
+        showToast("Please enter both Name and PIN.", "error");
+        return;
+      }
+
+      if (pin !== confirmPin) {
+        showToast("PIN and Confirm PIN do not match!", "error");
+        return;
+      }
+
+      if (pin.length < 4) {
+        showToast("PIN must be at least 4 digits.", "error");
+        return;
+      }
+
+      const users = getUsersDatabase();
+
+      // Check if user already exists
+      const existing = users.find(u => u.name.toLowerCase() === name.toLowerCase());
+      if (existing) {
+        showToast("An account with this name already exists. Please choose a different name or login.", "error");
+        return;
+      }
+
+      const newUser = {
+        id: 'usr_' + Date.now(),
+        name: name,
+        roll: roll,
+        pin: pin,
+        signatureUrl: 'https://placehold.co/400x120/ffffff/0f172a?text=' + encodeURIComponent(name + ' (Sign)'),
+        photoUrl: 'https://placehold.co/120x150/1e293b/38bdf8?text=' + encodeURIComponent(name.split(' ')[0]),
+        documents: [...DEFAULT_DOCUMENTS],
+        credentials: [...DEFAULT_CREDENTIALS],
+        createdAt: new Date().toISOString()
+      };
+
+      users.push(newUser);
+      saveUsersDatabase(users);
+
+      showToast(`Account created for ${name}! Please login with your PIN.`, "success");
+      
+      // Reset form and route to login with prefilled name
+      document.getElementById('registerForm').reset();
+      document.getElementById('loginName').value = name;
+      switchView('login');
+    }
+
+    // Handle Login / Access Data
+    function handleLogin(event) {
+      event.preventDefault();
+      const name = document.getElementById('loginName').value.trim();
+      const pin = document.getElementById('loginPin').value.trim();
+
+      const users = getUsersDatabase();
+      const user = users.find(u => u.name.toLowerCase() === name.toLowerCase());
+
+      if (!user) {
+        showToast("User not found! Click 'New User' to register.", "error");
+        return;
+      }
+
+      if (user.pin !== pin) {
+        showToast("Incorrect Master PIN! Please try again.", "error");
+        return;
+      }
+
+      // Successful login
+      currentUser = user;
+      document.getElementById('loginForm').reset();
+      showToast(`Welcome back, ${user.name}!`, "success");
+      renderDashboard();
+      switchView('dashboard');
+    }
+
+    // Render Dashboard UI with current user state
+    function renderDashboard() {
+      if (!currentUser) return;
+
+      document.getElementById('profileName').textContent = currentUser.name;
+      document.getElementById('profileRoll').textContent = `Roll / Course: ${currentUser.roll || 'N/A'}`;
+      document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+
+      const totalDocs = (currentUser.documents || []).length;
+      document.getElementById('docCountBadge').innerHTML = `<i class="ph-bold ph-files text-slate-400"></i> ${totalDocs} Documents`;
+
+      // Update signature & photo
+      if (currentUser.signatureUrl) {
+        document.getElementById('signatureImg').src = currentUser.signatureUrl;
+      }
+      if (currentUser.photoUrl) {
+        document.getElementById('userPhoto').src = currentUser.photoUrl;
+      }
+
+      renderDocumentsList('all');
+      renderCredentialsList();
+    }
+
+    // Render Document Cards based on selected category filter
+    function renderDocumentsList(category = 'all') {
+      const grid = document.getElementById('documentsGrid');
+      const emptyState = document.getElementById('emptyDocsState');
+      grid.innerHTML = '';
+
+      if (!currentUser || !currentUser.documents) return;
+
+      const docs = category === 'all' 
+        ? currentUser.documents 
+        : currentUser.documents.filter(d => d.category === category);
+
+      if (docs.length === 0) {
+        emptyState.classList.remove('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+        docs.forEach(doc => {
+          const card = document.createElement('div');
+          card.className = "bg-cardBg border border-cardBorder rounded-2xl p-4 shadow-md flex flex-col justify-between hover:border-slate-600 transition group";
+          
+          let iconClass = "ph-file-text text-blue-400";
+          if (doc.category === 'academic') iconClass = "ph-graduation-cap text-sky-400";
+          if (doc.category === 'identity') iconClass = "ph-identification-badge text-indigo-400";
+          if (doc.category === 'receipts') iconClass = "ph-receipt text-amber-400";
+
+          card.innerHTML = `
+            <div>
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center">
+                  <i class="ph-bold ${iconClass} text-base"></i>
+                </div>
+                <button onclick="deleteDocument('${doc.id}')" title="Delete record" class="text-slate-500 hover:text-rose-400 p-1 rounded transition opacity-60 group-hover:opacity-100">
+                  <i class="ph-bold ph-trash text-sm"></i>
+                </button>
+              </div>
+              <h4 class="text-sm font-semibold text-white truncate" title="${escapeHtml(doc.title)}">${escapeHtml(doc.title)}</h4>
+              <p class="text-[11px] text-slate-400 mt-1 line-clamp-1">${escapeHtml(doc.notes || 'Verified Document')}</p>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+              <a href="${escapeHtml(doc.url)}" target="_blank" rel="noopener noreferrer" class="flex-1 py-1.5 px-3 rounded-lg bg-blue-600/15 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 text-xs font-semibold text-center transition flex items-center justify-center gap-1">
+                <i class="ph-bold ph-eye"></i> View
+              </a>
+              <a href="${escapeHtml(doc.url)}" download="${escapeHtml(doc.title)}" class="py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium text-center transition flex items-center justify-center gap-1" title="Download">
+                <i class="ph-bold ph-download-simple"></i>
+              </a>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+      }
+    }
+
+    // Filter document categories
+    function filterCategory(category, buttonEl) {
+      document.querySelectorAll('.category-pill').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white');
+        btn.classList.add('bg-slate-800', 'text-slate-300');
+      });
+      buttonEl.classList.remove('bg-slate-800', 'text-slate-300');
+      buttonEl.classList.add('bg-blue-600', 'text-white');
+
+      const filterStatus = document.getElementById('filterStatusText');
+      if (category === 'all') filterStatus.textContent = 'Showing all records';
+      else filterStatus.textContent = `Showing ${category} records`;
+
+      renderDocumentsList(category);
+    }
+
+    // Render quick credentials
+    function renderCredentialsList() {
+      const container = document.getElementById('credentialsList');
+      container.innerHTML = '';
+      if (!currentUser || !currentUser.credentials) return;
+
+      currentUser.credentials.forEach(cred => {
+        const item = document.createElement('div');
+        item.className = "bg-slate-900/80 border border-slate-800 p-3 rounded-xl flex items-center justify-between";
+        item.innerHTML = `
+          <div>
+            <p class="font-semibold text-slate-200 text-xs">${escapeHtml(cred.title)}</p>
+            <p class="text-slate-400 text-[11px] font-mono mt-0.5">${escapeHtml(cred.user)}</p>
+            <p class="text-[10px] text-slate-500">Key: ${escapeHtml(cred.pass || '••••••')}</p>
+          </div>
+          <button onclick="copyToClipboard('${escapeHtml(cred.user)}')" class="p-2 text-slate-400 hover:text-white bg-slate-800 rounded-lg text-xs" title="Copy ID">
+            <i class="ph-bold ph-copy"></i>
+          </button>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function openAddDocModal() {
+      document.getElementById('addDocForm').reset();
+      document.getElementById('modalAddDoc').classList.remove('hidden');
+    }
+
+    function handleSaveDocument(event) {
+      event.preventDefault();
+      if (!currentUser) return;
+
+      const title = document.getElementById('docTitle').value.trim();
+      const category = document.getElementById('docCategory').value;
+      const url = document.getElementById('docUrl').value.trim();
+      const notes = document.getElementById('docNotes').value.trim();
+
+      const newDoc = {
+        id: 'doc_' + Date.now(),
+        title,
+        category,
+        url,
+        notes: notes || 'Student Upload'
+      };
+
+      currentUser.documents.unshift(newDoc);
+      updateUserInStorage(currentUser);
+      closeModal('modalAddDoc');
+      renderDashboard();
+      showToast("Document added successfully!", "success");
+    }
+
+    function deleteDocument(docId) {
+      if (!currentUser) return;
+      currentUser.documents = currentUser.documents.filter(d => d.id !== docId);
+      updateUserInStorage(currentUser);
+      renderDashboard();
+      showToast("Record removed from vault.", "info");
+    }
+
+    function openCredentialsModal() {
+      document.getElementById('credsForm').reset();
+      document.getElementById('modalCredentials').classList.remove('hidden');
+    }
+
+    function handleSaveCredential(event) {
+      event.preventDefault();
+      if (!currentUser) return;
+
+      const title = document.getElementById('credTitle').value.trim();
+      const user = document.getElementById('credUser').value.trim();
+      const pass = document.getElementById('credPass').value.trim();
+
+      currentUser.credentials.push({
+        id: 'cr_' + Date.now(),
+        title,
+        user,
+        pass
+      });
+
+      updateUserInStorage(currentUser);
+      closeModal('modalCredentials');
+      renderCredentialsList();
+      showToast("Credential saved securely.", "success");
+    }
+
+    function promptUploadSignature() {
+      const url = prompt("Enter Image URL for new Signature:", currentUser.signatureUrl || "");
+      if (url && url.trim()) {
+        currentUser.signatureUrl = url.trim();
+        updateUserInStorage(currentUser);
+        document.getElementById('signatureImg').src = currentUser.signatureUrl;
+        showToast("Signature updated!", "success");
+      }
+    }
+
+    function promptUploadPhoto() {
+      const url = prompt("Enter Image URL for Passport Photo:", currentUser.photoUrl || "");
+      if (url && url.trim()) {
+        currentUser.photoUrl = url.trim();
+        updateUserInStorage(currentUser);
+        document.getElementById('userPhoto').src = currentUser.photoUrl;
+        showToast("Photo updated!", "success");
+      }
+    }
+
+    function downloadSignature() {
+      if (currentUser?.signatureUrl) {
+        window.open(currentUser.signatureUrl, '_blank');
+      }
+    }
+
+    function downloadPhoto() {
+      if (currentUser?.photoUrl) {
+        window.open(currentUser.photoUrl, '_blank');
+      }
+    }
+
+    function updateUserInStorage(userObj) {
+      const users = getUsersDatabase();
+      const idx = users.findIndex(u => u.id === userObj.id);
+      if (idx !== -1) {
+        users[idx] = userObj;
+        saveUsersDatabase(users);
+      }
+    }
+
+    function lockVault() {
+      currentUser = null;
+      switchView('home');
+      showToast("Vault locked. Enter Master PIN to reopen.", "info");
+    }
+
+    function showQuickScanModal() {
+      const url = window.location.href.split('#')[0];
+      generateQrDisplay(url, "Universal Vault Entry Point");
+    }
+
+    function showQrForCurrentVault() {
+      if (!currentUser) return;
+      // Pre-fill target with user parameter so scanner knows whose vault it is
+      const baseUrl = window.location.href.split('?')[0].split('#')[0];
+      const directUrl = `${baseUrl}?user=${encodeURIComponent(currentUser.name)}`;
+      generateQrDisplay(directUrl, `Vault of ${currentUser.name}`);
+    }
+
+    function generateQrDisplay(targetUrl, userLabel) {
+      const wrapper = document.getElementById('qrcodeWrapper');
+      wrapper.innerHTML = '';
+      document.getElementById('qrTargetUser').textContent = userLabel;
+
+      try {
+        qrCodeInstance = new QRCode(wrapper, {
+          text: targetUrl,
+          width: 170,
+          height: 170,
+          colorDark: "#0f172a",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (err) {
+        console.error("QR Code Error", err);
+        wrapper.innerHTML = `<p class="text-xs text-slate-800">QR Generation unavailable</p>`;
+      }
+
+      document.getElementById('modalQr').classList.remove('hidden');
+    }
+
+    function copyCurrentVaultLink() {
+      const url = window.location.href;
+      copyToClipboard(url);
+    }
+
+    function togglePinVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      const icon = btn.querySelector('i');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('ph-eye');
+        icon.classList.add('ph-eye-slash');
+      } else {
+        input.type = 'password';
+        icon.classList.remove('ph-eye-slash');
+        icon.classList.add('ph-eye');
+      }
+    }
+
+    function closeModal(modalId) {
+      const el = document.getElementById(modalId);
+      if (el) el.classList.add('hidden');
+    }
+
+    function copyToClipboard(text) {
+      try {
+        const temp = document.createElement('textarea');
+        temp.value = text;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand('copy');
+        document.body.removeChild(temp);
+        showToast("Copied to clipboard!", "success");
+      } catch (err) {
+        showToast("Unable to copy text.", "error");
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      let borderCol = "border-blue-500/50";
+      let icon = "ph-info text-blue-400";
+      if (type === 'success') {
+        borderCol = "border-emerald-500/50";
+        icon = "ph-check-circle text-emerald-400";
+      } else if (type === 'error') {
+        borderCol = "border-rose-500/50";
+        icon = "ph-warning text-rose-400";
+      }
+
+      toast.className = `flex items-center gap-2.5 p-3.5 mb-2 bg-slate-900 text-white text-xs rounded-xl border ${borderCol} shadow-2xl transition transform ease-out duration-300 pointer-events-auto`;
+      toast.innerHTML = `
+        <i class="ph-bold ${icon} text-lg flex-shrink-0"></i>
+        <span class="flex-grow">${message}</span>
+      `;
+
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-10px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    function escapeHtml(string) {
+      if (!string) return '';
+      return String(string)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // Check if URL has ?user= query (e.g. when someone scans user's QR)
+      const urlParams = new URLSearchParams(window.location.search);
+      const prefillUser = urlParams.get('user');
+
+      if (prefillUser) {
+        document.getElementById('loginName').value = prefillUser;
+        switchView('login');
+        showToast(`Welcome! Enter PIN to access ${prefillUser}'s vault.`, 'info');
+      } else {
+        switchView('home');
+      }
+      refreshHomeStats();
+    });
   </script>
 </body>
 </html>
