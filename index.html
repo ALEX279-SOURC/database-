@@ -4,9 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DocVault - Secure College Vault</title>
-  <!-- Google Identity Services & API -->
+  <!-- Google Identity Services -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="https://apis.google.com/js/api.js" async defer></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- QR Code Library -->
@@ -35,6 +34,7 @@
       display: flex;
       flex-direction: column;
       gap: 16px;
+      padding-bottom: 30px;
     }
 
     .hidden { display: none !important; }
@@ -44,7 +44,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 4px;
+      padding: 4px 2px;
     }
     .brand-group {
       display: flex;
@@ -75,6 +75,7 @@
       font-size: 0.7rem;
       padding: 2px 6px;
       border-radius: 6px;
+      font-weight: 600;
     }
     .brand-sub {
       font-size: 0.75rem;
@@ -93,21 +94,34 @@
       cursor: pointer;
     }
 
-    /* Cards */
-    .card {
-      background: #111827;
-      border: 1px solid #1f2937;
-      border-radius: 20px;
-      padding: 20px;
+    /* Drive Connection Banner */
+    .drive-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      background: rgba(30, 58, 138, 0.25);
+      border: 1px solid #1e3a8a;
+    }
+    .drive-btn {
+      background: none;
+      border: none;
+      color: #60a5fa;
+      font-weight: 600;
+      cursor: pointer;
     }
 
     /* Profile Header Card */
     .profile-card {
+      background: radial-gradient(circle at top left, #1e293b 0%, #0f172a 100%);
+      border: 1px solid #334155;
+      border-radius: 20px;
+      padding: 20px;
       display: flex;
       flex-direction: column;
       gap: 16px;
-      background: radial-gradient(circle at top left, #1e293b 0%, #0f172a 100%);
-      border: 1px solid #334155;
     }
     .user-info {
       display: flex;
@@ -150,7 +164,7 @@
       margin-top: 2px;
     }
 
-    /* Action Buttons */
+    /* Actions Grid */
     .actions-grid {
       display: flex;
       gap: 8px;
@@ -177,10 +191,13 @@
       padding: 10px 14px;
       border-radius: 12px;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .btn-danger {
-      background: rgba(239, 68, 68, 0.15);
-      border: 1px solid rgba(239, 68, 68, 0.3);
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.25);
       color: #f87171;
       padding: 10px 14px;
       border-radius: 12px;
@@ -190,12 +207,12 @@
       gap: 6px;
     }
 
-    /* Tabs */
+    /* Category Pill Slider */
     .tabs-slider {
       display: flex;
       gap: 8px;
       overflow-x: auto;
-      padding-bottom: 4px;
+      padding-bottom: 2px;
     }
     .tabs-slider::-webkit-scrollbar { display: none; }
     .tab-pill {
@@ -214,7 +231,7 @@
       border-color: #2563eb;
     }
 
-    /* Vault Item Cards */
+    /* Cards */
     .item-card {
       background: #111827;
       border: 1px solid #1f2937;
@@ -260,7 +277,7 @@
       font-family: cursive, sans-serif;
     }
     .preview-box img {
-      max-height: 100px;
+      max-height: 90px;
       max-width: 100%;
       object-fit: contain;
     }
@@ -271,8 +288,15 @@
       font-size: 0.78rem;
       color: #94a3b8;
     }
+    .doc-status-badge {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: #1e293b;
+      color: #38bdf8;
+    }
 
-    /* Modal */
+    /* Modals */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -305,18 +329,6 @@
       outline: none;
     }
     .input-field:focus { border-color: #3b82f6; }
-    
-    .drive-status {
-      font-size: 0.8rem;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
-      border-radius: 8px;
-      background: rgba(59, 130, 246, 0.1);
-      border: 1px solid rgba(59, 130, 246, 0.2);
-      color: #93c5fd;
-    }
   </style>
 </head>
 <body>
@@ -335,20 +347,20 @@
       <button class="icon-btn" onclick="openQrModal()"><i data-lucide="qr-code"></i></button>
     </div>
 
-    <!-- Google Drive Sync Badge -->
-    <div id="driveIndicator" class="drive-status" style="justify-content: space-between;">
+    <!-- Google Drive Sync Status Banner -->
+    <div id="driveBanner" class="drive-banner">
       <span id="driveText">Google Drive: Not Linked</span>
-      <button id="authBtn" onclick="handleAuthClick()" style="background:none; border:none; color:#60a5fa; cursor:pointer; font-weight:600;">Link Drive</button>
+      <button id="authBtn" class="drive-btn" onclick="handleAuthClick()">Link Drive</button>
     </div>
 
     <!-- Profile Header Card -->
-    <div class="card profile-card">
+    <div class="profile-card">
       <div class="user-info">
         <div class="avatar" id="avatarInitial">A</div>
         <div>
           <div class="name-title"><span id="userNameDisplay">Amish</span> <span class="unlocked-tag"><i data-lucide="lock-open" style="width:12px; height:12px;"></i> Unlocked</span></div>
           <div class="meta-details">Roll / Course: <span id="userCourseDisplay">FYBA</span></div>
-          <div class="meta-details">🛡 Encrypted Vault · <span id="docCount">5 Documents</span></div>
+          <div class="meta-details">🛡 Encrypted Vault · <span id="docCount">6 Documents</span></div>
         </div>
       </div>
 
@@ -361,10 +373,10 @@
 
     <!-- Category Tabs -->
     <div class="tabs-slider">
-      <div class="tab-pill active" onclick="filterCategory('All')">All Records</div>
-      <div class="tab-pill" onclick="filterCategory('Academic')">Academic Marksheets</div>
-      <div class="tab-pill" onclick="filterCategory('Identity')">ID Proofs</div>
-      <div class="tab-pill" onclick="filterCategory('Receipts')">Fee Receipts</div>
+      <div class="tab-pill active" onclick="filterCategory('All', this)">All Records</div>
+      <div class="tab-pill" onclick="filterCategory('Academic', this)">Academic Marksheets</div>
+      <div class="tab-pill" onclick="filterCategory('Identity', this)">ID Proofs</div>
+      <div class="tab-pill" onclick="filterCategory('Receipts', this)">Fee Receipts</div>
     </div>
 
     <!-- Digital Signature Section -->
@@ -378,11 +390,11 @@
       </div>
       <div class="card-footer-meta">
         <span>Official scanned signature</span>
-        <a href="#" id="downloadSignBtn" download="Signature.png" style="color:#60a5fa; text-decoration:none;"><i data-lucide="download" style="width:14px;"></i> Download</a>
+        <a href="#" id="downloadSignBtn" download="Amish_Signature.png" style="color:#60a5fa; text-decoration:none;"><i data-lucide="download" style="width:14px;"></i> Download</a>
       </div>
     </div>
 
-    <!-- Passport Photo & ID -->
+    <!-- Passport Photo & ID Section -->
     <div class="item-card">
       <div class="item-card-header">
         <div class="item-card-title"><i data-lucide="camera" style="width:18px; color:#38bdf8;"></i> Passport Photo & Identity</div>
@@ -399,17 +411,15 @@
       </div>
     </div>
 
-    <!-- Documents List Container -->
-    <div id="documentsList" style="display:flex; flex-direction:column; gap:12px;">
-      <!-- Dynamic Document Cards will be rendered here -->
-    </div>
+    <!-- Documents List (Restored Original List) -->
+    <div id="documentsList" style="display:flex; flex-direction:column; gap:12px;"></div>
 
   </div>
 
-  <!-- Hidden File Input for Direct Drive Upload -->
+  <!-- Hidden File Input -->
   <input type="file" id="globalFileInput" class="hidden" onchange="handleDirectUpload(event)">
 
-  <!-- Upload Modal -->
+  <!-- Add Document Modal -->
   <div id="uploadModal" class="modal-overlay hidden">
     <div class="modal">
       <h3 style="font-size:1.1rem;">Add Document</h3>
@@ -421,35 +431,47 @@
       </select>
       <input type="file" id="modalFileInput" class="input-field">
       <div style="display:flex; gap:8px;">
-        <button class="btn-primary" onclick="submitModalDocument()">Upload to Drive</button>
+        <button class="btn-primary" onclick="submitModalDocument()">Save to Vault</button>
         <button class="btn-secondary" onclick="closeUploadModal()">Cancel</button>
       </div>
     </div>
   </div>
 
-  <!-- QR Code Modal -->
+  <!-- Full QR Modal -->
   <div id="qrModal" class="modal-overlay hidden">
     <div class="modal" style="text-align:center; align-items:center;">
       <h3 style="font-size:1.1rem;">Instant Vault Scan</h3>
       <p style="font-size:0.8rem; color:#94a3b8;">Scan with any phone camera to access your records</p>
-      <div id="qrcodeBox" style="background:#fff; padding:12px; border-radius:12px; margin:8px 0;"></div>
+      <div id="qrcodeBox" style="background:#fff; padding:12px; border-radius:12px; margin:12px 0;"></div>
       <button class="btn-secondary" style="width:100%;" onclick="closeQrModal()">Close</button>
     </div>
   </div>
 
   <script>
-    lucide.createIcons();
+    // ================= DEFAULT FULL DOCUMENTS LIST =================
+    const defaultDocuments = [
+      { id: '1', title: '10th (SSC) Marksheet & Certificate', category: 'Academic', link: '#', status: 'Ready' },
+      { id: '2', title: '12th (HSC) Marksheet & Passing', category: 'Academic', link: '#', status: 'Ready' },
+      { id: '3', title: 'Semester 1 Marksheet (FYBA)', category: 'Academic', link: '#', status: 'Ready' },
+      { id: '4', title: 'Aadhaar Card (Front & Back)', category: 'Identity', link: '#', status: 'Verified' },
+      { id: '5', title: 'APAAR / ABC ID Card', category: 'Identity', link: '#', status: 'Active' },
+      { id: '6', title: 'College Admission & Fee Receipt', category: 'Receipts', link: '#', status: 'Paid' }
+    ];
 
-    // ================= GOOGLE DRIVE API INTEGRATION =================
+    let vaultDocs = JSON.parse(localStorage.getItem('docvault_records')) || defaultDocuments;
+
+    // ================= PERSISTENT GOOGLE DRIVE TOKEN & SYNC =================
     const CLIENT_ID = '236093224731-adpkdc0i5r83g6q306vg9c0f4ium763u.apps.googleusercontent.com';
     const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-
     let tokenClient;
-    let driveFolderId = null;
-    let currentUploadTarget = null;
+    let driveFolderId = localStorage.getItem('docvault_folder_id') || null;
 
-    // Load GIS
     window.addEventListener('load', () => {
+      lucide.createIcons();
+      renderDocuments('All');
+      restoreSignatureAndPhoto();
+      checkSavedDriveSession();
+
       if (window.google) {
         tokenClient = google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
@@ -460,63 +482,103 @@
               alert("Google Drive authorization failed.");
               return;
             }
-            document.getElementById('driveText').innerText = "Google Drive: Linked ✓";
-            document.getElementById('authBtn').style.display = 'none';
-            await findOrCreateVaultFolder();
+            // Save token to localStorage so refresh doesn't unlink
+            localStorage.setItem('drive_access_token', resp.access_token);
+            updateDriveUI(true);
+            await createOrGetDriveFolder(resp.access_token);
           },
         });
       }
-      renderDocuments();
     });
 
-    function handleAuthClick() {
-      if (!tokenClient) {
-        alert("Google library loading, please wait 3 seconds...");
-        return;
+    function checkSavedDriveSession() {
+      const token = localStorage.getItem('drive_access_token');
+      if (token) {
+        // Validate if token is alive by a quick call
+        fetch('https://www.googleapis.com/drive/v3/files?pageSize=1', {
+          headers: { Authorization: `Bearer ${token}` }
+        }).then(res => {
+          if (res.ok) {
+            updateDriveUI(true);
+          } else {
+            localStorage.removeItem('drive_access_token');
+            updateDriveUI(false);
+          }
+        }).catch(() => updateDriveUI(false));
       }
-      tokenClient.requestAccessToken({ prompt: 'consent' });
     }
 
-    // Vault Folder in User's Drive
-    async function findOrCreateVaultFolder() {
-      const token = gapi?.client?.getToken()?.access_token;
-      if (!token) return;
-
-      const q = "mimeType='application/vnd.google-apps.folder' and name='DocVault_College_Records' and trashed=false";
-      const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-
-      if (data.files && data.files.length > 0) {
-        driveFolderId = data.files[0].id;
+    function updateDriveUI(isLinked) {
+      const driveText = document.getElementById('driveText');
+      const authBtn = document.getElementById('authBtn');
+      if (isLinked) {
+        driveText.innerHTML = "Google Drive: Linked ✓";
+        authBtn.innerText = "Unlink";
+        authBtn.onclick = unlinkDrive;
       } else {
-        const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            name: 'DocVault_College_Records',
-            mimeType: 'application/vnd.google-apps.folder'
-          })
-        });
-        const folder = await createRes.json();
-        driveFolderId = folder.id;
+        driveText.innerHTML = "Google Drive: Not Linked";
+        authBtn.innerText = "Link Drive";
+        authBtn.onclick = handleAuthClick;
       }
     }
 
-    // Direct Upload to User Drive
-    async function uploadBlobToDrive(file, customName) {
-      const token = gapi?.client?.getToken()?.access_token;
-      if (!token) {
-        alert("Pehle 'Link Drive' par click karke sign in karein.");
-        return null;
+    function handleAuthClick() {
+      if (tokenClient) {
+        tokenClient.requestAccessToken({ prompt: '' });
       }
+    }
+
+    function unlinkDrive() {
+      localStorage.removeItem('drive_access_token');
+      localStorage.removeItem('docvault_folder_id');
+      driveFolderId = null;
+      updateDriveUI(false);
+    }
+
+    // Direct Google Drive Folder Creation
+    async function createOrGetDriveFolder(token) {
+      try {
+        const query = encodeURIComponent("mimeType='application/vnd.google-apps.folder' and name='DocVault_College_Records' and trashed=false");
+        const checkRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name)`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const checkData = await checkRes.json();
+
+        if (checkData.files && checkData.files.length > 0) {
+          driveFolderId = checkData.files[0].id;
+          localStorage.setItem('docvault_folder_id', driveFolderId);
+          console.log("Folder exists:", driveFolderId);
+        } else {
+          const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              name: 'DocVault_College_Records',
+              mimeType: 'application/vnd.google-apps.folder'
+            })
+          });
+          const newFolder = await createRes.json();
+          if (newFolder.id) {
+            driveFolderId = newFolder.id;
+            localStorage.setItem('docvault_folder_id', driveFolderId);
+            alert("Google Drive me 'DocVault_College_Records' folder create ho gaya!");
+          }
+        }
+      } catch (err) {
+        console.error("Folder creation error:", err);
+      }
+    }
+
+    // Direct Upload to Drive
+    async function uploadToDrive(file, customTitle) {
+      const token = localStorage.getItem('drive_access_token');
+      if (!token) return null;
 
       const metadata = {
-        name: customName || file.name,
+        name: customTitle ? `${customTitle}_${file.name}` : file.name,
         parents: driveFolderId ? [driveFolderId] : []
       };
 
@@ -524,18 +586,20 @@
       form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
       form.append('file', file);
 
-      const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: form
-      });
-
-      return await res.json();
+      try {
+        const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: form
+        });
+        return await res.json();
+      } catch (e) {
+        console.error("Upload error:", e);
+        return null;
+      }
     }
 
-    // ================= VAULT UI & LOCAL DATA =================
-    let vaultDocs = JSON.parse(localStorage.getItem('vault_docs') || '[]');
-
+    // ================= RENDER DOCUMENTS =================
     function renderDocuments(filter = 'All') {
       const list = document.getElementById('documentsList');
       list.innerHTML = '';
@@ -543,17 +607,19 @@
       const filtered = filter === 'All' ? vaultDocs : vaultDocs.filter(d => d.category === filter);
       document.getElementById('docCount').innerText = `${vaultDocs.length} Documents`;
 
-      filtered.forEach((doc, index) => {
+      filtered.forEach((doc) => {
         const item = document.createElement('div');
         item.className = 'item-card';
         item.innerHTML = `
           <div class="item-card-header">
             <div class="item-card-title"><i data-lucide="file-text" style="width:18px; color:#60a5fa;"></i> ${doc.title}</div>
-            <span style="font-size:0.75rem; color:#94a3b8; background:#1e293b; padding:2px 8px; border-radius:6px;">${doc.category}</span>
+            <span class="doc-status-badge">${doc.category}</span>
           </div>
           <div class="card-footer-meta">
-            <span>Saved in Drive Folder</span>
-            <a href="${doc.link}" target="_blank" style="color:#38bdf8; text-decoration:none;"><i data-lucide="external-link" style="width:14px;"></i> View File</a>
+            <span>Status: ${doc.status || 'Saved'}</span>
+            <a href="${doc.link || '#'}" target="_blank" style="color:#38bdf8; text-decoration:none; display:flex; align-items:center; gap:4px;">
+              <i data-lucide="external-link" style="width:14px;"></i> View File
+            </a>
           </div>
         `;
         list.appendChild(item);
@@ -561,13 +627,13 @@
       lucide.createIcons();
     }
 
-    function filterCategory(cat) {
+    function filterCategory(cat, btn) {
       document.querySelectorAll('.tab-pill').forEach(el => el.classList.remove('active'));
-      event.target.classList.add('active');
+      btn.classList.add('active');
       renderDocuments(cat);
     }
 
-    // Modals & UI actions
+    // ================= MODALS & FILE HANDLERS =================
     function openUploadModal() { document.getElementById('uploadModal').classList.remove('hidden'); }
     function closeUploadModal() { document.getElementById('uploadModal').classList.add('hidden'); }
 
@@ -576,26 +642,35 @@
       const category = document.getElementById('newDocCategory').value;
       const fileInput = document.getElementById('modalFileInput');
 
-      if (!title || !fileInput.files[0]) {
-        alert("Kripya title aur file dono select karein.");
+      if (!title) {
+        alert("Kripya title daalein.");
         return;
       }
 
-      const file = fileInput.files[0];
-      const driveRes = await uploadBlobToDrive(file, `${title}_${file.name}`);
+      let driveLink = '#';
+      if (fileInput.files[0]) {
+        const driveRes = await uploadToDrive(fileInput.files[0], title);
+        if (driveRes && driveRes.webViewLink) {
+          driveLink = driveRes.webViewLink;
+        }
+      }
 
-      vaultDocs.push({
+      vaultDocs.unshift({
+        id: Date.now().toString(),
         title: title,
         category: category,
-        link: driveRes?.webViewLink || '#'
+        link: driveLink,
+        status: 'Uploaded'
       });
-      localStorage.setItem('vault_docs', JSON.stringify(vaultDocs));
+
+      localStorage.setItem('docvault_records', JSON.stringify(vaultDocs));
       closeUploadModal();
       renderDocuments();
     }
 
+    let activePickerTarget = null;
     function triggerFilePicker(target) {
-      currentUploadTarget = target;
+      activePickerTarget = target;
       document.getElementById('globalFileInput').click();
     }
 
@@ -605,25 +680,39 @@
 
       const reader = new FileReader();
       reader.onload = function(evt) {
-        if (currentUploadTarget === 'signature') {
+        if (activePickerTarget === 'signature') {
           document.getElementById('signatureBox').innerHTML = `<img src="${evt.target.result}" style="max-height:80px;">`;
           document.getElementById('downloadSignBtn').href = evt.target.result;
-        } else if (currentUploadTarget === 'photo') {
+          localStorage.setItem('docvault_sign', evt.target.result);
+        } else if (activePickerTarget === 'photo') {
           document.getElementById('photoBox').innerHTML = `<img src="${evt.target.result}" style="width:100%; height:100%; object-fit:cover; border-radius:10px;">`;
+          localStorage.setItem('docvault_photo', evt.target.result);
         }
       };
       reader.readAsDataURL(file);
 
-      // Also upload to Drive silently
-      await uploadBlobToDrive(file, `${currentUploadTarget}_${file.name}`);
+      // Upload to Drive folder in background
+      await uploadToDrive(file, activePickerTarget);
+    }
+
+    function restoreSignatureAndPhoto() {
+      const sign = localStorage.getItem('docvault_sign');
+      if (sign) {
+        document.getElementById('signatureBox').innerHTML = `<img src="${sign}" style="max-height:80px;">`;
+        document.getElementById('downloadSignBtn').href = sign;
+      }
+      const photo = localStorage.getItem('docvault_photo');
+      if (photo) {
+        document.getElementById('photoBox').innerHTML = `<img src="${photo}" style="width:100%; height:100%; object-fit:cover; border-radius:10px;">`;
+      }
     }
 
     function openQrModal() {
       document.getElementById('qrcodeBox').innerHTML = '';
       new QRCode(document.getElementById('qrcodeBox'), {
         text: window.location.href,
-        width: 160,
-        height: 160
+        width: 170,
+        height: 170
       });
       document.getElementById('qrModal').classList.remove('hidden');
     }
