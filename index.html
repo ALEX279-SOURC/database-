@@ -39,6 +39,53 @@
 
     .hidden { display: none !important; }
 
+    /* Auth Screens (New User / Access Data) */
+    .auth-card {
+      background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
+      border: 1px solid #334155;
+      border-radius: 24px;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      text-align: center;
+      margin-top: 40px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    .auth-toggle-row {
+      display: flex;
+      background: #0b1120;
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+      padding: 4px;
+      gap: 4px;
+    }
+    .auth-tab-btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .auth-tab-btn.active {
+      background: #2563eb;
+      color: #ffffff;
+    }
+    .auth-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      text-align: left;
+    }
+    .auth-input-group label {
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+
     /* Top Nav */
     .header {
       display: flex;
@@ -295,17 +342,13 @@
       gap: 5px;
       text-decoration: none;
     }
-    .card-action-btn:hover {
-      background: #334155;
-      color: #fff;
-    }
     .card-action-btn.primary {
       background: rgba(37, 99, 235, 0.2);
       border-color: #2563eb;
       color: #60a5fa;
     }
 
-    /* Preview Component in Card */
+    /* Preview Box for Signature/Photo */
     .preview-box {
       background: #ffffff;
       border-radius: 12px;
@@ -324,6 +367,17 @@
       max-width: 100%;
       object-fit: contain;
     }
+
+    .input-field {
+      width: 100%;
+      background: #1f2937;
+      border: 1px solid #374151;
+      padding: 12px;
+      border-radius: 10px;
+      color: #fff;
+      outline: none;
+    }
+    .input-field:focus { border-color: #3b82f6; }
 
     /* Modals */
     .modal-overlay {
@@ -385,7 +439,7 @@
       cursor: pointer;
     }
 
-    /* Preview Modal (Full View) */
+    /* Preview Full View */
     .modal-viewer-card {
       background: #111827;
       border: 1px solid #334155;
@@ -432,94 +486,146 @@
 
   <div class="app-container">
 
-    <!-- Top Bar -->
-    <div class="header">
-      <div class="brand-group">
-        <div class="brand-icon"><i data-lucide="shield-check"></i></div>
+    <!-- ================= AUTH SCREEN (LOCKED GATE) ================= -->
+    <div id="authScreen" class="auth-card">
+      <div style="display:flex; justify-content:center; margin-bottom:4px;">
+        <div class="brand-icon" style="width:48px; height:48px;"><i data-lucide="shield-check" style="width:26px; height:26px;"></i></div>
+      </div>
+      <h2 style="font-size:1.35rem; font-weight:700;">DocVault</h2>
+      <p style="font-size:0.8rem; color:#94a3b8; margin-top:-8px;">Encrypted College Credentials & Records</p>
+
+      <!-- Side-by-Side: New User (Left) & Access Data (Right) -->
+      <div class="auth-toggle-row">
+        <button id="tabNewUser" class="auth-tab-btn" onclick="switchAuthMode('register')">New User</button>
+        <button id="tabAccessData" class="auth-tab-btn active" onclick="switchAuthMode('login')">Access Data</button>
+      </div>
+
+      <!-- Access Data Form -->
+      <div id="loginForm" class="auth-input-group">
         <div>
-          <div class="brand-title">DocVault <span class="secure-badge">Secure</span></div>
-          <div class="brand-sub">College Credentials & Records</div>
-        </div>
-      </div>
-      <button class="icon-btn" onclick="openQrModal()"><i data-lucide="qr-code"></i></button>
-    </div>
-
-    <!-- Google Drive Sync Status Banner -->
-    <div id="driveBanner" class="drive-banner">
-      <span id="driveText">Google Drive: Not Linked</span>
-      <button id="authBtn" class="drive-btn" onclick="handleAuthClick()">Link Drive</button>
-    </div>
-
-    <!-- Profile Header Card -->
-    <div class="profile-card">
-      <div class="user-info">
-        <div class="avatar" id="avatarInitial">A</div>
-        <div>
-          <div class="name-title"><span id="userNameDisplay">Amish</span> <span class="unlocked-tag"><i data-lucide="lock-open" style="width:12px; height:12px;"></i> Unlocked</span></div>
-          <div class="meta-details">Roll / Course: <span id="userCourseDisplay">FYBA</span></div>
-          <div class="meta-details">🛡 Encrypted Vault · <span id="docCount">18 Documents</span></div>
-        </div>
-      </div>
-
-      <div class="actions-grid">
-        <button class="btn-primary" onclick="openQrModal()"><i data-lucide="qr-code" style="width:18px;"></i> Instant Scan</button>
-        <button class="btn-secondary" onclick="renderDocuments('All', this)"><i data-lucide="refresh-cw" style="width:18px;"></i></button>
-        <button class="btn-danger" onclick="lockVault()"><i data-lucide="log-out" style="width:18px;"></i> Lock</button>
-      </div>
-    </div>
-
-    <!-- Category Tabs -->
-    <div class="tabs-slider">
-      <div class="tab-pill active" onclick="filterCategory('All', this)">All Records</div>
-      <div class="tab-pill" onclick="filterCategory('Identity', this)">Identity & Personal</div>
-      <div class="tab-pill" onclick="filterCategory('Academic', this)">Academic Records</div>
-      <div class="tab-pill" onclick="filterCategory('Administration', this)">Campus & Admin</div>
-      <div class="tab-pill" onclick="filterCategory('Scholarship', this)">Scholarship & Quota</div>
-      <div class="tab-pill" onclick="filterCategory('Banking', this)">Financial & Banking</div>
-    </div>
-
-    <!-- Digital Signature Section -->
-    <div class="item-card">
-      <div class="item-card-header">
-        <div class="item-card-title"><i data-lucide="pen-tool" style="width:18px; color:#38bdf8;"></i> Digital Signature</div>
-        <button class="card-action-btn primary" style="flex:none; padding:4px 10px;" onclick="triggerDocUpload('doc_signature')"><i data-lucide="refresh-cw" style="width:12px;"></i> Update</button>
-      </div>
-      <div class="preview-box" id="signatureBox">
-        <span id="signatureFallback">Amish (Sign)</span>
-      </div>
-      <div class="doc-actions-row">
-        <button class="card-action-btn" onclick="previewDirectDoc('doc_signature')"><i data-lucide="eye" style="width:14px;"></i> Preview</button>
-        <a href="#" id="downloadSignBtn" class="card-action-btn" download="Digital_Signature.png"><i data-lucide="download" style="width:14px;"></i> Download</a>
-      </div>
-    </div>
-
-    <!-- Passport Photo Section -->
-    <div class="item-card">
-      <div class="item-card-header">
-        <div class="item-card-title"><i data-lucide="camera" style="width:18px; color:#38bdf8;"></i> Passport Size Photographs</div>
-        <button class="card-action-btn primary" style="flex:none; padding:4px 10px;" onclick="triggerDocUpload('doc_photo')"><i data-lucide="refresh-cw" style="width:12px;"></i> Update</button>
-      </div>
-      <div style="display:flex; align-items:center; gap:16px;">
-        <div id="photoBox" style="width:72px; height:80px; background:#1e293b; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#38bdf8; font-weight:bold; overflow:hidden;">
-          Photo
+          <label>Your Name</label>
+          <input type="text" id="loginName" class="input-field" placeholder="Enter your registered name">
         </div>
         <div>
-          <div style="font-weight:600; font-size:0.95rem;">White Background Photo</div>
-          <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Admit card aur verification ke liye (8–10 digital copies).</div>
+          <label>Master PIN</label>
+          <input type="password" id="loginPin" class="input-field" placeholder="Enter Master PIN" maxlength="8">
         </div>
+        <button class="btn-primary" style="margin-top:8px; padding:12px;" onclick="handleLogin()">Access Vault</button>
       </div>
-      <div class="doc-actions-row">
-        <button class="card-action-btn" onclick="previewDirectDoc('doc_photo')"><i data-lucide="eye" style="width:14px;"></i> Preview</button>
-        <a href="#" id="downloadPhotoBtn" class="card-action-btn" download="Passport_Photo.png"><i data-lucide="download" style="width:14px;"></i> Download</a>
+
+      <!-- New User Form -->
+      <div id="registerForm" class="auth-input-group hidden">
+        <div>
+          <label>Full Name</label>
+          <input type="text" id="regName" class="input-field" placeholder="e.g. Amish Pawar">
+        </div>
+        <div>
+          <label>Course / Year</label>
+          <input type="text" id="regCourse" class="input-field" placeholder="e.g. FYBA">
+        </div>
+        <div>
+          <label>Create Master PIN (4 to 8 digits)</label>
+          <input type="password" id="regPin" class="input-field" placeholder="Set your secret PIN" maxlength="8">
+        </div>
+        <div>
+          <label>Confirm PIN</label>
+          <input type="password" id="regPinConfirm" class="input-field" placeholder="Re-enter secret PIN" maxlength="8">
+        </div>
+        <button class="btn-primary" style="margin-top:8px; padding:12px;" onclick="handleRegister()">Create Account & Open</button>
       </div>
     </div>
 
-    <!-- Structured Documents List Container -->
-    <div id="documentsList" style="display:flex; flex-direction:column; gap:12px;"></div>
+    <!-- ================= VAULT DASHBOARD (UNLOCKED) ================= -->
+    <div id="vaultDashboard" class="hidden" style="display:flex; flex-direction:column; gap:16px;">
+      <!-- Top Bar -->
+      <div class="header">
+        <div class="brand-group">
+          <div class="brand-icon"><i data-lucide="shield-check"></i></div>
+          <div>
+            <div class="brand-title">DocVault <span class="secure-badge">Secure</span></div>
+            <div class="brand-sub">College Credentials & Records</div>
+          </div>
+        </div>
+        <button class="icon-btn" onclick="openQrModal()"><i data-lucide="qr-code"></i></button>
+      </div>
+
+      <!-- Google Drive Sync Status Banner -->
+      <div id="driveBanner" class="drive-banner">
+        <span id="driveText">Google Drive: Not Linked</span>
+        <button id="authBtn" class="drive-btn" onclick="handleAuthClick()">Link Drive</button>
+      </div>
+
+      <!-- Profile Header Card -->
+      <div class="profile-card">
+        <div class="user-info">
+          <div class="avatar" id="avatarInitial">U</div>
+          <div>
+            <div class="name-title"><span id="userNameDisplay">User</span> <span class="unlocked-tag"><i data-lucide="lock-open" style="width:12px; height:12px;"></i> Unlocked</span></div>
+            <div class="meta-details">Roll / Course: <span id="userCourseDisplay">FYBA</span></div>
+            <div class="meta-details">🛡 Encrypted Vault · <span id="docCount">18 Documents</span></div>
+          </div>
+        </div>
+
+        <div class="actions-grid">
+          <button class="btn-primary" onclick="openQrModal()"><i data-lucide="qr-code" style="width:18px;"></i> Instant Scan</button>
+          <button class="btn-secondary" onclick="renderDocuments('All', null)"><i data-lucide="refresh-cw" style="width:18px;"></i></button>
+          <button class="btn-danger" onclick="lockVault()"><i data-lucide="log-out" style="width:18px;"></i> Lock</button>
+        </div>
+      </div>
+
+      <!-- Category Tabs -->
+      <div class="tabs-slider">
+        <div class="tab-pill active" onclick="filterCategory('All', this)">All Records</div>
+        <div class="tab-pill" onclick="filterCategory('Identity', this)">Identity & Personal</div>
+        <div class="tab-pill" onclick="filterCategory('Academic', this)">Academic Records</div>
+        <div class="tab-pill" onclick="filterCategory('Administration', this)">Campus & Admin</div>
+        <div class="tab-pill" onclick="filterCategory('Scholarship', this)">Scholarship & Quota</div>
+        <div class="tab-pill" onclick="filterCategory('Banking', this)">Financial & Banking</div>
+      </div>
+
+      <!-- Digital Signature Section -->
+      <div class="item-card">
+        <div class="item-card-header">
+          <div class="item-card-title"><i data-lucide="pen-tool" style="width:18px; color:#38bdf8;"></i> Digital Signature</div>
+          <button class="card-action-btn primary" style="flex:none; padding:4px 10px;" onclick="triggerDocUpload('doc_signature')"><i data-lucide="refresh-cw" style="width:12px;"></i> Update</button>
+        </div>
+        <div class="preview-box" id="signatureBox">
+          <span id="signatureFallback" style="font-size:1.1rem; color:#64748b;">No signature uploaded</span>
+        </div>
+        <div class="doc-actions-row">
+          <button class="card-action-btn" onclick="previewDirectDoc('doc_signature')"><i data-lucide="eye" style="width:14px;"></i> Preview</button>
+          <a href="#" id="downloadSignBtn" class="card-action-btn" download="Digital_Signature.png"><i data-lucide="download" style="width:14px;"></i> Download</a>
+        </div>
+      </div>
+
+      <!-- Passport Photo Section -->
+      <div class="item-card">
+        <div class="item-card-header">
+          <div class="item-card-title"><i data-lucide="camera" style="width:18px; color:#38bdf8;"></i> Passport Size Photographs</div>
+          <button class="card-action-btn primary" style="flex:none; padding:4px 10px;" onclick="triggerDocUpload('doc_photo')"><i data-lucide="refresh-cw" style="width:12px;"></i> Update</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div id="photoBox" style="width:72px; height:80px; background:#1e293b; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#38bdf8; font-weight:bold; overflow:hidden;">
+            Photo
+          </div>
+          <div>
+            <div style="font-weight:600; font-size:0.95rem;">White Background Photo</div>
+            <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Admit card aur verification ke liye (8–10 digital copies).</div>
+          </div>
+        </div>
+        <div class="doc-actions-row">
+          <button class="card-action-btn" onclick="previewDirectDoc('doc_photo')"><i data-lucide="eye" style="width:14px;"></i> Preview</button>
+          <a href="#" id="downloadPhotoBtn" class="card-action-btn" download="Passport_Photo.png"><i data-lucide="download" style="width:14px;"></i> Download</a>
+        </div>
+      </div>
+
+      <!-- Structured Documents List Container -->
+      <div id="documentsList" style="display:flex; flex-direction:column; gap:12px;"></div>
+    </div>
 
   </div>
 
-  <!-- Hidden File Input for Document Uploads -->
+  <!-- Hidden File Input -->
   <input type="file" id="universalFileInput" class="hidden" accept="image/*,application/pdf" onchange="handleUniversalFileUpload(event)">
 
   <!-- Exact QR Modal -->
@@ -541,9 +647,7 @@
         <div id="viewerTitle" style="font-weight:600; font-size:0.95rem; color:#f1f5f9; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:260px;">Document Preview</div>
         <button class="icon-btn" style="width:32px; height:32px;" onclick="closeViewerModal()"><i data-lucide="x" style="width:16px;"></i></button>
       </div>
-      <div class="modal-viewer-body" id="viewerContent">
-        <!-- Image or PDF rendered here -->
-      </div>
+      <div class="modal-viewer-body" id="viewerContent"></div>
       <div style="padding:10px 14px; background:#111827; border-top:1px solid #1f2937; display:flex; gap:8px;">
         <a id="viewerDownloadBtn" href="#" download class="btn-primary" style="text-decoration:none;"><i data-lucide="download" style="width:16px;"></i> Download File</a>
         <button class="btn-secondary" style="flex:1;" onclick="closeViewerModal()">Close</button>
@@ -554,189 +658,141 @@
   <script>
     // ================= FULL STRUCTURED COLLEGE DOCUMENTS LIST =================
     const masterCollegeDocuments = [
-      // 1. Identity & Personal Documents
-      {
-        id: 'doc_aadhaar',
-        title: 'Aadhaar Card',
-        desc: 'Sabhi forms, verification aur biometric ke liye.',
-        category: 'Identity',
-        icon: 'id-card'
-      },
-      {
-        id: 'doc_voter_pan',
-        title: 'Voter ID / PAN Card / Driving License',
-        desc: 'Secondary identity proof aur bank verification.',
-        category: 'Identity',
-        icon: 'credit-card'
-      },
-      {
-        id: 'doc_birth_cert',
-        title: 'Birth Certificate',
-        desc: 'Date of birth verify karne ke liye.',
-        category: 'Identity',
-        icon: 'calendar'
-      },
-
-      // 2. Academic Records
-      {
-        id: 'doc_10th',
-        title: '10th (SSC) Marksheet & Passing Certificate',
-        desc: 'Date of birth aur primary schooling proof.',
-        category: 'Academic',
-        icon: 'file-badge'
-      },
-      {
-        id: 'doc_12th',
-        title: '12th (HSC) Marksheet & Passing Certificate',
-        desc: 'College admission eligibility proof.',
-        category: 'Academic',
-        icon: 'file-text'
-      },
-      {
-        id: 'doc_sem_marksheets',
-        title: 'Semester-wise Marksheets (FY / SY / TY)',
-        desc: 'Sabhi regular aur ATKT semester records.',
-        category: 'Academic',
-        icon: 'layers'
-      },
-      {
-        id: 'doc_tc_lc',
-        title: 'School / College Leaving Certificate (LC / TC)',
-        desc: 'Admission ke waqt submit karne ke liye.',
-        category: 'Academic',
-        icon: 'arrow-right-left'
-      },
-      {
-        id: 'doc_migration',
-        title: 'Migration Certificate',
-        desc: 'Board ya university change karne par pramaan.',
-        category: 'Academic',
-        icon: 'compass'
-      },
-      {
-        id: 'doc_provisional_degree',
-        title: 'Provisional / Degree Certificate',
-        desc: 'Course pura hone ke baad final documentation.',
-        category: 'Academic',
-        icon: 'award'
-      },
-
-      // 3. College Administration & Campus Records
-      {
-        id: 'doc_college_id',
-        title: 'College Identity Card (Digital / Physical)',
-        desc: 'Campus entry aur library access ke liye.',
-        category: 'Administration',
-        icon: 'contact'
-      },
-      {
-        id: 'doc_fee_receipt',
-        title: 'Admission Confirmation Slip & Fee Receipts',
-        desc: 'Har semester ki tuition aur exam fee receipts.',
-        category: 'Administration',
-        icon: 'receipt'
-      },
-      {
-        id: 'doc_admit_card',
-        title: 'Exam Hall Ticket / Admit Card',
-        desc: 'Semester examination me appear hone ke liye.',
-        category: 'Administration',
-        icon: 'ticket'
-      },
-      {
-        id: 'doc_library_card',
-        title: 'Library Card / Book Issue Passbook',
-        desc: 'Library issue transactions ke liye.',
-        category: 'Administration',
-        icon: 'book-open'
-      },
-      {
-        id: 'doc_anti_ragging',
-        title: 'Anti-Ragging Undertaking / Affidavit',
-        desc: 'UGC norms ke hisab se mandatory declaration.',
-        category: 'Administration',
-        icon: 'file-check'
-      },
-      {
-        id: 'doc_abc_apaar',
-        title: 'ABC ID (Academic Bank of Credits) / APAAR ID',
-        desc: 'University credit repository digital ID.',
-        category: 'Administration',
-        icon: 'binary'
-      },
-
-      // 4. Reservation & Scholarship Documents
-      {
-        id: 'doc_caste_cert',
-        title: 'Caste Certificate',
-        desc: 'Reserved category quota aur verification.',
-        category: 'Scholarship',
-        icon: 'shield-alert'
-      },
-      {
-        id: 'doc_ncl_cert',
-        title: 'Non-Creamy Layer (NCL) Certificate',
-        desc: 'OBC category students ke liye valid proof.',
-        category: 'Scholarship',
-        icon: 'file-check-2'
-      },
-      {
-        id: 'doc_caste_validity',
-        title: 'Caste Validity Certificate',
-        desc: 'Course verification confirmation ke liye.',
-        category: 'Scholarship',
-        icon: 'check-circle'
-      },
-      {
-        id: 'doc_income_cert',
-        title: 'Income Certificate (Tahsil / Collectorate)',
-        desc: 'Scholarship form DBT approval ke liye.',
-        category: 'Scholarship',
-        icon: 'wallet'
-      },
-      {
-        id: 'doc_domicile_cert',
-        title: 'Domicile Certificate',
-        desc: 'State quota seats aur state scholarships.',
-        category: 'Scholarship',
-        icon: 'map-pin'
-      },
-      {
-        id: 'doc_ews_cert',
-        title: 'EWS Certificate',
-        desc: 'Economically Weaker Section eligibility.',
-        category: 'Scholarship',
-        icon: 'landmark'
-      },
-      {
-        id: 'doc_gap_affidavit',
-        title: 'Gap Certificate / Affidavit',
-        desc: 'Academic gap justification ke liye.',
-        category: 'Scholarship',
-        icon: 'calendar-off'
-      },
-
-      // 5. Financial & Banking
-      {
-        id: 'doc_bank_passbook',
-        title: 'Bank Passbook / Cancelled Cheque',
-        desc: 'Aadhaar linked account, IFSC & DBT verification.',
-        category: 'Banking',
-        icon: 'banknote'
-      }
+      { id: 'doc_aadhaar', title: 'Aadhaar Card', desc: 'Sabhi forms, verification aur biometric ke liye.', category: 'Identity', folderKey: '1_Identity_Personal_Docs', icon: 'id-card' },
+      { id: 'doc_voter_pan', title: 'Voter ID / PAN Card / Driving License', desc: 'Secondary identity proof aur bank verification.', category: 'Identity', folderKey: '1_Identity_Personal_Docs', icon: 'credit-card' },
+      { id: 'doc_birth_cert', title: 'Birth Certificate', desc: 'Date of birth verify karne ke liye.', category: 'Identity', folderKey: '1_Identity_Personal_Docs', icon: 'calendar' },
+      { id: 'doc_10th', title: '10th (SSC) Marksheet & Passing Certificate', desc: 'Date of birth aur primary schooling proof.', category: 'Academic', folderKey: '2_Academic_Records', icon: 'file-badge' },
+      { id: 'doc_12th', title: '12th (HSC) Marksheet & Passing Certificate', desc: 'College admission eligibility proof.', category: 'Academic', folderKey: '2_Academic_Records', icon: 'file-text' },
+      { id: 'doc_sem_marksheets', title: 'Semester-wise Marksheets (FY / SY / TY)', desc: 'Sabhi regular aur ATKT semester records.', category: 'Academic', folderKey: '2_Academic_Records', icon: 'layers' },
+      { id: 'doc_tc_lc', title: 'School / College Leaving Certificate (LC / TC)', desc: 'Admission ke waqt submit karne ke liye.', category: 'Academic', folderKey: '2_Academic_Records', icon: 'arrow-right-left' },
+      { id: 'doc_migration', title: 'Migration Certificate', desc: 'Board ya university change karne par pramaan.', category: 'Academic', folderKey: '2_Academic_Records', icon: 'compass' },
+      { id: 'doc_provisional_degree', title: 'Provisional / Degree Certificate', desc: 'Course pura hone ke baad final documentation.', category: 'Academic', folderKey: '2_Academic_Records', icon: 'award' },
+      { id: 'doc_college_id', title: 'College Identity Card (Digital / Physical)', desc: 'Campus entry aur library access ke liye.', category: 'Administration', folderKey: '3_Campus_Administration', icon: 'contact' },
+      { id: 'doc_fee_receipt', title: 'Admission Confirmation Slip & Fee Receipts', desc: 'Har semester ki tuition aur exam fee receipts.', category: 'Administration', folderKey: '3_Campus_Administration', icon: 'receipt' },
+      { id: 'doc_admit_card', title: 'Exam Hall Ticket / Admit Card', desc: 'Semester examination me appear hone ke liye.', category: 'Administration', folderKey: '3_Campus_Administration', icon: 'ticket' },
+      { id: 'doc_library_card', title: 'Library Card / Book Issue Passbook', desc: 'Library issue transactions ke liye.', category: 'Administration', folderKey: '3_Campus_Administration', icon: 'book-open' },
+      { id: 'doc_anti_ragging', title: 'Anti-Ragging Undertaking / Affidavit', desc: 'UGC norms ke hisab se mandatory declaration.', category: 'Administration', folderKey: '3_Campus_Administration', icon: 'file-check' },
+      { id: 'doc_abc_apaar', title: 'ABC ID (Academic Bank of Credits) / APAAR ID', desc: 'University credit repository digital ID.', category: 'Administration', folderKey: '3_Campus_Administration', icon: 'binary' },
+      { id: 'doc_caste_cert', title: 'Caste Certificate', desc: 'Reserved category quota aur verification.', category: 'Scholarship', folderKey: '4_Scholarships_Quotas', icon: 'shield-alert' },
+      { id: 'doc_ncl_cert', title: 'Non-Creamy Layer (NCL) Certificate', desc: 'OBC category students ke liye valid proof.', category: 'Scholarship', folderKey: '4_Scholarships_Quotas', icon: 'file-check-2' },
+      { id: 'doc_caste_validity', title: 'Caste Validity Certificate', desc: 'Course verification confirmation ke liye.', category: 'Scholarship', folderKey: '4_Scholarships_Quotas', icon: 'check-circle' },
+      { id: 'doc_income_cert', title: 'Income Certificate (Tahsil / Collectorate)', desc: 'Scholarship form DBT approval ke liye.', category: 'Scholarship', folderKey: '4_Scholarships_Quotas', icon: 'wallet' },
+      { id: 'doc_domicile_cert', title: 'Domicile Certificate', desc: 'State quota seats aur state scholarships.', category: 'Scholarship', folderKey: '4_Scholarships_Quotas', icon: 'map-pin' },
+      { id: 'doc_ews_cert', title: 'EWS Certificate', desc: 'Economically Weaker Section eligibility.', category: 'Scholarship', folderKey: '4_Scholarships_Quotas', icon: 'landmark' },
+      { id: 'doc_gap_affidavit', title: 'Gap Certificate / Affidavit', desc: 'Academic gap justification ke liye.', category: 'Scholarship', folderKey: '4_Scholarships_Quotas', icon: 'calendar-off' },
+      { id: 'doc_bank_passbook', title: 'Bank Passbook / Cancelled Cheque', desc: 'Aadhaar linked account, IFSC & DBT verification.', category: 'Banking', folderKey: '5_Banking_Financial', icon: 'banknote' }
     ];
 
-    // ================= GOOGLE DRIVE API SETUP =================
-    const CLIENT_ID = '236093224731-adpkdc0i5r83g6q306vg9c0f4ium763u.apps.googleusercontent.com';
-    const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-    let tokenClient;
-    let driveFolderId = localStorage.getItem('docvault_folder_id') || null;
+    let currentSessionUser = null;
 
-    window.addEventListener('load', () => {
-      lucide.createIcons();
+    // ================= AUTHENTICATION LOGIC =================
+    function switchAuthMode(mode) {
+      const tabNewUser = document.getElementById('tabNewUser');
+      const tabAccessData = document.getElementById('tabAccessData');
+      const loginForm = document.getElementById('loginForm');
+      const registerForm = document.getElementById('registerForm');
+
+      if (mode === 'register') {
+        tabNewUser.classList.add('active');
+        tabAccessData.classList.remove('active');
+        registerForm.classList.remove('hidden');
+        loginForm.classList.add('hidden');
+      } else {
+        tabAccessData.classList.add('active');
+        tabNewUser.classList.remove('active');
+        loginForm.classList.remove('hidden');
+        registerForm.classList.add('hidden');
+      }
+    }
+
+    function handleRegister() {
+      const name = document.getElementById('regName').value.trim();
+      const course = document.getElementById('regCourse').value.trim() || 'Student';
+      const pin = document.getElementById('regPin').value.trim();
+      const pinConfirm = document.getElementById('regPinConfirm').value.trim();
+
+      if (!name || !pin) {
+        alert("Please enter both Name and PIN.");
+        return;
+      }
+      if (pin.length < 4) {
+        alert("PIN must be at least 4 digits.");
+        return;
+      }
+      if (pin !== pinConfirm) {
+        alert("PIN and Confirm PIN do not match!");
+        return;
+      }
+
+      const users = JSON.parse(localStorage.getItem('docvault_users') || '{}');
+      const userKey = name.toLowerCase();
+
+      users[userKey] = {
+        name: name,
+        course: course,
+        pin: pin,
+        createdAt: new Date().toISOString()
+      };
+
+      localStorage.setItem('docvault_users', JSON.stringify(users));
+      alert("Account created successfully! Now access your vault.");
+      
+      // Auto fill login and switch
+      document.getElementById('loginName').value = name;
+      document.getElementById('loginPin').value = pin;
+      switchAuthMode('login');
+      handleLogin();
+    }
+
+    function handleLogin() {
+      const name = document.getElementById('loginName').value.trim();
+      const pin = document.getElementById('loginPin').value.trim();
+
+      if (!name || !pin) {
+        alert("Please enter Name and PIN.");
+        return;
+      }
+
+      const users = JSON.parse(localStorage.getItem('docvault_users') || '{}');
+      const userKey = name.toLowerCase();
+      const user = users[userKey];
+
+      if (!user || user.pin !== pin) {
+        alert("Invalid Name or PIN. If you are new, click 'New User' on the left to create an account.");
+        return;
+      }
+
+      // Login Successful
+      currentSessionUser = user;
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('vaultDashboard').classList.remove('hidden');
+
+      document.getElementById('userNameDisplay').innerText = user.name;
+      document.getElementById('userCourseDisplay').innerText = user.course;
+      document.getElementById('avatarInitial').innerText = user.name.charAt(0).toUpperCase();
+
       renderDocuments('All');
       restoreSignatureAndPhoto();
       checkSavedDriveSession();
+      lucide.createIcons();
+    }
+
+    function lockVault() {
+      currentSessionUser = null;
+      document.getElementById('authScreen').classList.remove('hidden');
+      document.getElementById('vaultDashboard').classList.add('hidden');
+      document.getElementById('loginPin').value = '';
+    }
+
+    // ================= DYNAMIC SUBFOLDERS GOOGLE DRIVE SETUP =================
+    const CLIENT_ID = '236093224731-adpkdc0i5r83g6q306vg9c0f4ium763u.apps.googleusercontent.com';
+    const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+    let tokenClient;
+    let mainVaultFolderId = null;
+    let categoryFolderMap = {}; // Maps '1_Identity_Personal_Docs' -> Drive Folder ID
+
+    window.addEventListener('load', () => {
+      lucide.createIcons();
 
       if (window.google) {
         tokenClient = google.accounts.oauth2.initTokenClient({
@@ -745,12 +801,12 @@
           callback: async (resp) => {
             if (resp.error) {
               console.error(resp);
-              alert("Google Drive connection failed.");
+              alert("Google Drive authorization failed.");
               return;
             }
             localStorage.setItem('drive_access_token', resp.access_token);
             updateDriveUI(true);
-            await createOrGetDriveFolder(resp.access_token);
+            await setupDriveFolderHierarchy(resp.access_token);
           },
         });
       }
@@ -762,8 +818,10 @@
         fetch('https://www.googleapis.com/drive/v3/files?pageSize=1', {
           headers: { Authorization: `Bearer ${token}` }
         }).then(res => {
-          if (res.ok) updateDriveUI(true);
-          else {
+          if (res.ok) {
+            updateDriveUI(true);
+            setupDriveFolderHierarchy(token);
+          } else {
             localStorage.removeItem('drive_access_token');
             updateDriveUI(false);
           }
@@ -791,52 +849,80 @@
 
     function unlinkDrive() {
       localStorage.removeItem('drive_access_token');
-      localStorage.removeItem('docvault_folder_id');
-      driveFolderId = null;
+      categoryFolderMap = {};
+      mainVaultFolderId = null;
       updateDriveUI(false);
     }
 
-    async function createOrGetDriveFolder(token) {
+    // Creates Main Vault Folder and 5 Categorized Subfolders inside it
+    async function setupDriveFolderHierarchy(token) {
       try {
-        const query = encodeURIComponent("mimeType='application/vnd.google-apps.folder' and name='DocVault_College_Records' and trashed=false");
-        const checkRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name)`, {
+        // 1. Get or Create Main Root Folder
+        const mainQuery = encodeURIComponent("mimeType='application/vnd.google-apps.folder' and name='DocVault_College_Records' and trashed=false");
+        const mainRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${mainQuery}&fields=files(id,name)`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const checkData = await checkRes.json();
+        const mainData = await mainRes.json();
 
-        if (checkData.files && checkData.files.length > 0) {
-          driveFolderId = checkData.files[0].id;
-          localStorage.setItem('docvault_folder_id', driveFolderId);
+        if (mainData.files && mainData.files.length > 0) {
+          mainVaultFolderId = mainData.files[0].id;
         } else {
-          const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+          const createMain = await fetch('https://www.googleapis.com/drive/v3/files', {
             method: 'POST',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              name: 'DocVault_College_Records',
-              mimeType: 'application/vnd.google-apps.folder'
-            })
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: 'DocVault_College_Records', mimeType: 'application/vnd.google-apps.folder' })
           });
-          const newFolder = await createRes.json();
-          if (newFolder.id) {
-            driveFolderId = newFolder.id;
-            localStorage.setItem('docvault_folder_id', driveFolderId);
+          const newMain = await createMain.json();
+          mainVaultFolderId = newMain.id;
+        }
+
+        // 2. Subfolders to guarantee per category
+        const subfolderNames = [
+          '1_Identity_Personal_Docs',
+          '2_Academic_Records',
+          '3_Campus_Administration',
+          '4_Scholarships_Quotas',
+          '5_Banking_Financial'
+        ];
+
+        for (const subName of subfolderNames) {
+          const subQuery = encodeURIComponent(`mimeType='application/vnd.google-apps.folder' and name='${subName}' and '${mainVaultFolderId}' in parents and trashed=false`);
+          const subRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${subQuery}&fields=files(id,name)`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const subData = await subRes.json();
+
+          if (subData.files && subData.files.length > 0) {
+            categoryFolderMap[subName] = subData.files[0].id;
+          } else {
+            const createSub = await fetch('https://www.googleapis.com/drive/v3/files', {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: subName,
+                mimeType: 'application/vnd.google-apps.folder',
+                parents: [mainVaultFolderId]
+              })
+            });
+            const newSub = await createSub.json();
+            categoryFolderMap[subName] = newSub.id;
           }
         }
       } catch (err) {
-        console.error("Folder error:", err);
+        console.error("Folder Hierarchy Error:", err);
       }
     }
 
-    async function uploadToDrive(file, customTitle) {
+    // Direct Upload to Subfolder
+    async function uploadToDriveSubfolder(file, folderKey, customTitle) {
       const token = localStorage.getItem('drive_access_token');
       if (!token) return null;
 
+      const targetFolderId = categoryFolderMap[folderKey] || mainVaultFolderId;
+
       const metadata = {
         name: `${customTitle}_${file.name}`,
-        parents: driveFolderId ? [driveFolderId] : []
+        parents: targetFolderId ? [targetFolderId] : []
       };
 
       const form = new FormData();
@@ -856,7 +942,12 @@
       }
     }
 
-    // ================= RENDER STRUCTURED DOCUMENTS =================
+    // ================= RENDER DOCUMENTS =================
+    function getUserDocStorageKey(docId) {
+      const u = currentSessionUser ? currentSessionUser.name.toLowerCase() : 'guest';
+      return `vault_file_${u}_${docId}`;
+    }
+
     function renderDocuments(category = 'All', activeBtn = null) {
       const list = document.getElementById('documentsList');
       list.innerHTML = '';
@@ -868,9 +959,8 @@
       document.getElementById('docCount').innerText = `${masterCollegeDocuments.length} Documents`;
 
       filtered.forEach(doc => {
-        const savedData = localStorage.getItem(`vault_file_${doc.id}`);
+        const savedData = localStorage.getItem(getUserDocStorageKey(doc.id));
         const hasFile = !!savedData;
-        const fileMeta = hasFile ? JSON.parse(savedData) : null;
 
         const item = document.createElement('div');
         item.className = 'item-card';
@@ -908,11 +998,11 @@
 
     function filterCategory(cat, btn) {
       document.querySelectorAll('.tab-pill').forEach(el => el.classList.remove('active'));
-      btn.classList.add('active');
+      if(btn) btn.classList.add('active');
       renderDocuments(cat);
     }
 
-    // ================= UPLOAD, PREVIEW, DOWNLOAD HANDLERS =================
+    // ================= FILE UPLOAD & PREVIEW =================
     let currentUploadTargetId = null;
 
     function triggerDocUpload(docId) {
@@ -933,35 +1023,38 @@
           updatedAt: new Date().toLocaleDateString()
         };
 
+        const uKey = currentSessionUser ? currentSessionUser.name.toLowerCase() : 'guest';
+
         // Specific Photo or Signature updates
         if (currentUploadTargetId === 'doc_signature') {
           document.getElementById('signatureBox').innerHTML = `<img src="${fileData.dataUrl}">`;
           document.getElementById('downloadSignBtn').href = fileData.dataUrl;
-          localStorage.setItem('docvault_sign', fileData.dataUrl);
+          localStorage.setItem(`docvault_sign_${uKey}`, fileData.dataUrl);
+          await uploadToDriveSubfolder(file, '1_Identity_Personal_Docs', 'Signature');
         } else if (currentUploadTargetId === 'doc_photo') {
           document.getElementById('photoBox').innerHTML = `<img src="${fileData.dataUrl}" style="width:100%; height:100%; object-fit:cover;">`;
           document.getElementById('downloadPhotoBtn').href = fileData.dataUrl;
-          localStorage.setItem('docvault_photo', fileData.dataUrl);
+          localStorage.setItem(`docvault_photo_${uKey}`, fileData.dataUrl);
+          await uploadToDriveSubfolder(file, '1_Identity_Personal_Docs', 'Passport_Photo');
+        } else {
+          // Normal Documents
+          localStorage.setItem(getUserDocStorageKey(currentUploadTargetId), JSON.stringify(fileData));
+          
+          // Find doc category folder
+          const docDef = masterCollegeDocuments.find(d => d.id === currentUploadTargetId);
+          const fKey = docDef ? docDef.folderKey : '1_Identity_Personal_Docs';
+          await uploadToDriveSubfolder(file, fKey, docDef ? docDef.title : 'Doc');
         }
 
-        // Store Document locally
-        localStorage.setItem(`vault_file_${currentUploadTargetId}`, JSON.stringify(fileData));
-
-        // Background Google Drive Upload
-        uploadToDrive(file, currentUploadTargetId);
-
-        renderDocuments(document.querySelector('.tab-pill.active').innerText === 'All Records' ? 'All' : document.querySelector('.tab-pill.active').innerText);
-        event.target.value = ''; // Reset input
+        renderDocuments(document.querySelector('.tab-pill.active')?.innerText === 'All Records' ? 'All' : document.querySelector('.tab-pill.active')?.innerText || 'All');
+        event.target.value = '';
       };
       reader.readAsDataURL(file);
     }
 
     function previewDocument(docId, title) {
-      const saved = localStorage.getItem(`vault_file_${docId}`);
-      if (!saved) {
-        alert("Pehle document upload karein.");
-        return;
-      }
+      const saved = localStorage.getItem(getUserDocStorageKey(docId));
+      if (!saved) return;
 
       const fileData = JSON.parse(saved);
       document.getElementById('viewerTitle').innerText = title || fileData.name;
@@ -973,7 +1066,7 @@
       } else if (fileData.type === 'application/pdf') {
         container.innerHTML = `<iframe src="${fileData.dataUrl}"></iframe>`;
       } else {
-        container.innerHTML = `<div style="color:#94a3b8; text-align:center;">Preview is not supported for this file format.<br>Please download to view.</div>`;
+        container.innerHTML = `<div style="color:#94a3b8; text-align:center;">Format preview not supported.<br>Please click download.</div>`;
       }
 
       const dlBtn = document.getElementById('viewerDownloadBtn');
@@ -985,9 +1078,10 @@
     }
 
     function previewDirectDoc(docId) {
-      const sign = docId === 'doc_signature' ? localStorage.getItem('docvault_sign') : localStorage.getItem('docvault_photo');
+      const uKey = currentSessionUser ? currentSessionUser.name.toLowerCase() : 'guest';
+      const sign = docId === 'doc_signature' ? localStorage.getItem(`docvault_sign_${uKey}`) : localStorage.getItem(`docvault_photo_${uKey}`);
       if (!sign) {
-        alert("Koi scanned image nahi mili. Kripya pehle update karein.");
+        alert("No scanned photo or signature uploaded yet.");
         return;
       }
       document.getElementById('viewerTitle').innerText = docId === 'doc_signature' ? "Digital Signature" : "Passport Photo";
@@ -1003,7 +1097,7 @@
     }
 
     function downloadDocument(docId, title) {
-      const saved = localStorage.getItem(`vault_file_${docId}`);
+      const saved = localStorage.getItem(getUserDocStorageKey(docId));
       if (!saved) return;
 
       const fileData = JSON.parse(saved);
@@ -1016,15 +1110,21 @@
     }
 
     function restoreSignatureAndPhoto() {
-      const sign = localStorage.getItem('docvault_sign');
+      const uKey = currentSessionUser ? currentSessionUser.name.toLowerCase() : 'guest';
+      const sign = localStorage.getItem(`docvault_sign_${uKey}`);
       if (sign) {
         document.getElementById('signatureBox').innerHTML = `<img src="${sign}">`;
         document.getElementById('downloadSignBtn').href = sign;
+      } else {
+        document.getElementById('signatureBox').innerHTML = `<span style="font-size:1.1rem; color:#64748b;">No signature uploaded</span>`;
       }
-      const photo = localStorage.getItem('docvault_photo');
+
+      const photo = localStorage.getItem(`docvault_photo_${uKey}`);
       if (photo) {
         document.getElementById('photoBox').innerHTML = `<img src="${photo}" style="width:100%; height:100%; object-fit:cover;">`;
         document.getElementById('downloadPhotoBtn').href = photo;
+      } else {
+        document.getElementById('photoBox').innerHTML = `Photo`;
       }
     }
 
@@ -1047,8 +1147,6 @@
     }
     function closeQrModal() { document.getElementById('qrModal').classList.add('hidden'); }
     function closeQrOnBackdrop(e) { if(e.target.id === 'qrModal') closeQrModal(); }
-
-    function lockVault() { window.location.reload(); }
   </script>
 </body>
 </html>
