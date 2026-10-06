@@ -30,11 +30,11 @@
 
     .app-container {
       width: 100%;
-      max-width: 440px;
+      max-width: 460px;
       display: flex;
       flex-direction: column;
       gap: 16px;
-      padding-bottom: 30px;
+      padding-bottom: 40px;
     }
 
     .hidden { display: none !important; }
@@ -207,12 +207,12 @@
       gap: 6px;
     }
 
-    /* Category Pill Slider */
+    /* Category Slider */
     .tabs-slider {
       display: flex;
       gap: 8px;
       overflow-x: auto;
-      padding-bottom: 2px;
+      padding-bottom: 4px;
     }
     .tabs-slider::-webkit-scrollbar { display: none; }
     .tab-pill {
@@ -244,91 +244,188 @@
     .item-card-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
+      gap: 10px;
     }
     .item-card-title {
       display: flex;
-      align-items: center;
-      gap: 8px;
+      align-items: flex-start;
+      gap: 10px;
       font-size: 0.95rem;
       font-weight: 600;
+      color: #f1f5f9;
+      line-height: 1.35;
     }
-    .update-link {
-      font-size: 0.8rem;
-      color: #60a5fa;
-      background: none;
-      border: none;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      cursor: pointer;
-    }
-    .preview-box {
-      background: #ffffff;
-      border-radius: 12px;
-      padding: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 80px;
-      color: #0f172a;
-      font-weight: 700;
-      font-size: 1.3rem;
-      font-family: cursive, sans-serif;
-    }
-    .preview-box img {
-      max-height: 90px;
-      max-width: 100%;
-      object-fit: contain;
-    }
-    .card-footer-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.78rem;
+    .item-card-desc {
+      font-size: 0.75rem;
       color: #94a3b8;
+      margin-top: 3px;
     }
     .doc-status-badge {
       font-size: 0.7rem;
-      padding: 2px 8px;
+      padding: 3px 8px;
       border-radius: 6px;
       background: #1e293b;
       color: #38bdf8;
+      white-space: nowrap;
+      border: 1px solid #334155;
+    }
+
+    /* Action Buttons Inside Document Card */
+    .doc-actions-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+      border-top: 1px solid #1f2937;
+      padding-top: 10px;
+    }
+    .card-action-btn {
+      flex: 1;
+      padding: 7px 10px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      text-decoration: none;
+    }
+    .card-action-btn:hover {
+      background: #334155;
+      color: #fff;
+    }
+    .card-action-btn.primary {
+      background: rgba(37, 99, 235, 0.2);
+      border-color: #2563eb;
+      color: #60a5fa;
+    }
+
+    /* Preview Component in Card */
+    .preview-box {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 75px;
+      color: #0f172a;
+      font-weight: 700;
+      font-size: 1.2rem;
+      font-family: cursive, sans-serif;
+    }
+    .preview-box img {
+      max-height: 85px;
+      max-width: 100%;
+      object-fit: contain;
     }
 
     /* Modals */
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(4px);
+      background: rgba(0, 0, 0, 0.78);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 16px;
-      z-index: 100;
+      z-index: 999;
     }
-    .modal {
+    .modal-qr-card {
       background: #111827;
-      border: 1px solid #374151;
+      border: 1px solid #1f2937;
       width: 100%;
-      max-width: 380px;
-      border-radius: 16px;
-      padding: 20px;
+      max-width: 340px;
+      border-radius: 24px;
+      padding: 24px 20px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      align-items: center;
+      text-align: center;
+      gap: 14px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
     }
-    .input-field {
+    .modal-qr-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .modal-qr-sub {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      line-height: 1.4;
+      margin-top: -6px;
+      max-width: 260px;
+    }
+    .qr-code-wrapper {
+      background: #ffffff;
+      padding: 14px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 6px 0;
+    }
+    .modal-close-btn {
       width: 100%;
-      background: #1f2937;
-      border: 1px solid #374151;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #f1f5f9;
       padding: 12px;
-      border-radius: 10px;
-      color: #fff;
-      outline: none;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
     }
-    .input-field:focus { border-color: #3b82f6; }
+
+    /* Preview Modal (Full View) */
+    .modal-viewer-card {
+      background: #111827;
+      border: 1px solid #334155;
+      width: 100%;
+      max-width: 440px;
+      height: 82vh;
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .modal-viewer-header {
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #1f2937;
+    }
+    .modal-viewer-body {
+      flex: 1;
+      background: #030712;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+      padding: 10px;
+    }
+    .modal-viewer-body img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+    .modal-viewer-body iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #fff;
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body>
@@ -360,13 +457,13 @@
         <div>
           <div class="name-title"><span id="userNameDisplay">Amish</span> <span class="unlocked-tag"><i data-lucide="lock-open" style="width:12px; height:12px;"></i> Unlocked</span></div>
           <div class="meta-details">Roll / Course: <span id="userCourseDisplay">FYBA</span></div>
-          <div class="meta-details">🛡 Encrypted Vault · <span id="docCount">6 Documents</span></div>
+          <div class="meta-details">🛡 Encrypted Vault · <span id="docCount">18 Documents</span></div>
         </div>
       </div>
 
       <div class="actions-grid">
-        <button class="btn-primary" onclick="openUploadModal()"><i data-lucide="plus-circle" style="width:18px;"></i> Add Document</button>
-        <button class="btn-secondary" onclick="openQrModal()"><i data-lucide="qr-code" style="width:18px;"></i></button>
+        <button class="btn-primary" onclick="openQrModal()"><i data-lucide="qr-code" style="width:18px;"></i> Instant Scan</button>
+        <button class="btn-secondary" onclick="renderDocuments('All', this)"><i data-lucide="refresh-cw" style="width:18px;"></i></button>
         <button class="btn-danger" onclick="lockVault()"><i data-lucide="log-out" style="width:18px;"></i> Lock</button>
       </div>
     </div>
@@ -374,93 +471,262 @@
     <!-- Category Tabs -->
     <div class="tabs-slider">
       <div class="tab-pill active" onclick="filterCategory('All', this)">All Records</div>
-      <div class="tab-pill" onclick="filterCategory('Academic', this)">Academic Marksheets</div>
-      <div class="tab-pill" onclick="filterCategory('Identity', this)">ID Proofs</div>
-      <div class="tab-pill" onclick="filterCategory('Receipts', this)">Fee Receipts</div>
+      <div class="tab-pill" onclick="filterCategory('Identity', this)">Identity & Personal</div>
+      <div class="tab-pill" onclick="filterCategory('Academic', this)">Academic Records</div>
+      <div class="tab-pill" onclick="filterCategory('Administration', this)">Campus & Admin</div>
+      <div class="tab-pill" onclick="filterCategory('Scholarship', this)">Scholarship & Quota</div>
+      <div class="tab-pill" onclick="filterCategory('Banking', this)">Financial & Banking</div>
     </div>
 
     <!-- Digital Signature Section -->
     <div class="item-card">
       <div class="item-card-header">
         <div class="item-card-title"><i data-lucide="pen-tool" style="width:18px; color:#38bdf8;"></i> Digital Signature</div>
-        <button class="update-link" onclick="triggerFilePicker('signature')"><i data-lucide="refresh-cw" style="width:14px;"></i> Update</button>
+        <button class="card-action-btn primary" style="flex:none; padding:4px 10px;" onclick="triggerDocUpload('doc_signature')"><i data-lucide="refresh-cw" style="width:12px;"></i> Update</button>
       </div>
       <div class="preview-box" id="signatureBox">
         <span id="signatureFallback">Amish (Sign)</span>
       </div>
-      <div class="card-footer-meta">
-        <span>Official scanned signature</span>
-        <a href="#" id="downloadSignBtn" download="Amish_Signature.png" style="color:#60a5fa; text-decoration:none;"><i data-lucide="download" style="width:14px;"></i> Download</a>
+      <div class="doc-actions-row">
+        <button class="card-action-btn" onclick="previewDirectDoc('doc_signature')"><i data-lucide="eye" style="width:14px;"></i> Preview</button>
+        <a href="#" id="downloadSignBtn" class="card-action-btn" download="Digital_Signature.png"><i data-lucide="download" style="width:14px;"></i> Download</a>
       </div>
     </div>
 
-    <!-- Passport Photo & ID Section -->
+    <!-- Passport Photo Section -->
     <div class="item-card">
       <div class="item-card-header">
-        <div class="item-card-title"><i data-lucide="camera" style="width:18px; color:#38bdf8;"></i> Passport Photo & Identity</div>
-        <button class="update-link" onclick="triggerFilePicker('photo')"><i data-lucide="refresh-cw" style="width:14px;"></i> Update</button>
+        <div class="item-card-title"><i data-lucide="camera" style="width:18px; color:#38bdf8;"></i> Passport Size Photographs</div>
+        <button class="card-action-btn primary" style="flex:none; padding:4px 10px;" onclick="triggerDocUpload('doc_photo')"><i data-lucide="refresh-cw" style="width:12px;"></i> Update</button>
       </div>
       <div style="display:flex; align-items:center; gap:16px;">
-        <div id="photoBox" style="width:72px; height:80px; background:#1e293b; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#38bdf8; font-weight:bold;">
+        <div id="photoBox" style="width:72px; height:80px; background:#1e293b; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#38bdf8; font-weight:bold; overflow:hidden;">
           Photo
         </div>
         <div>
           <div style="font-weight:600; font-size:0.95rem;">White Background Photo</div>
-          <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Required for admit cards & exam portal uploads.</div>
+          <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Admit card aur verification ke liye (8–10 digital copies).</div>
         </div>
+      </div>
+      <div class="doc-actions-row">
+        <button class="card-action-btn" onclick="previewDirectDoc('doc_photo')"><i data-lucide="eye" style="width:14px;"></i> Preview</button>
+        <a href="#" id="downloadPhotoBtn" class="card-action-btn" download="Passport_Photo.png"><i data-lucide="download" style="width:14px;"></i> Download</a>
       </div>
     </div>
 
-    <!-- Documents List (Restored Original List) -->
+    <!-- Structured Documents List Container -->
     <div id="documentsList" style="display:flex; flex-direction:column; gap:12px;"></div>
 
   </div>
 
-  <!-- Hidden File Input -->
-  <input type="file" id="globalFileInput" class="hidden" onchange="handleDirectUpload(event)">
+  <!-- Hidden File Input for Document Uploads -->
+  <input type="file" id="universalFileInput" class="hidden" accept="image/*,application/pdf" onchange="handleUniversalFileUpload(event)">
 
-  <!-- Add Document Modal -->
-  <div id="uploadModal" class="modal-overlay hidden">
-    <div class="modal">
-      <h3 style="font-size:1.1rem;">Add Document</h3>
-      <input type="text" id="newDocTitle" class="input-field" placeholder="e.g. 10th Marksheet, Caste Certificate">
-      <select id="newDocCategory" class="input-field">
-        <option value="Academic">Academic Marksheets</option>
-        <option value="Identity">ID Proofs</option>
-        <option value="Receipts">Fee Receipts</option>
-      </select>
-      <input type="file" id="modalFileInput" class="input-field">
-      <div style="display:flex; gap:8px;">
-        <button class="btn-primary" onclick="submitModalDocument()">Save to Vault</button>
-        <button class="btn-secondary" onclick="closeUploadModal()">Cancel</button>
+  <!-- Exact QR Modal -->
+  <div id="qrModal" class="modal-overlay hidden" onclick="closeQrOnBackdrop(event)">
+    <div class="modal-qr-card" onclick="event.stopPropagation()">
+      <div class="modal-qr-title">Instant Vault Scan</div>
+      <div class="modal-qr-sub">Scan with any phone camera to access your records</div>
+      <div class="qr-code-wrapper">
+        <div id="qrcodeBox"></div>
+      </div>
+      <button class="modal-close-btn" onclick="closeQrModal()">Close</button>
+    </div>
+  </div>
+
+  <!-- In-line Document Viewer Modal -->
+  <div id="viewerModal" class="modal-overlay hidden" onclick="closeViewerOnBackdrop(event)">
+    <div class="modal-viewer-card" onclick="event.stopPropagation()">
+      <div class="modal-viewer-header">
+        <div id="viewerTitle" style="font-weight:600; font-size:0.95rem; color:#f1f5f9; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:260px;">Document Preview</div>
+        <button class="icon-btn" style="width:32px; height:32px;" onclick="closeViewerModal()"><i data-lucide="x" style="width:16px;"></i></button>
+      </div>
+      <div class="modal-viewer-body" id="viewerContent">
+        <!-- Image or PDF rendered here -->
+      </div>
+      <div style="padding:10px 14px; background:#111827; border-top:1px solid #1f2937; display:flex; gap:8px;">
+        <a id="viewerDownloadBtn" href="#" download class="btn-primary" style="text-decoration:none;"><i data-lucide="download" style="width:16px;"></i> Download File</a>
+        <button class="btn-secondary" style="flex:1;" onclick="closeViewerModal()">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- Full QR Modal -->
-  <div id="qrModal" class="modal-overlay hidden">
-    <div class="modal" style="text-align:center; align-items:center;">
-      <h3 style="font-size:1.1rem;">Instant Vault Scan</h3>
-      <p style="font-size:0.8rem; color:#94a3b8;">Scan with any phone camera to access your records</p>
-      <div id="qrcodeBox" style="background:#fff; padding:12px; border-radius:12px; margin:12px 0;"></div>
-      <button class="btn-secondary" style="width:100%;" onclick="closeQrModal()">Close</button>
-    </div>
-  </div>
-
   <script>
-    // ================= DEFAULT FULL DOCUMENTS LIST =================
-    const defaultDocuments = [
-      { id: '1', title: '10th (SSC) Marksheet & Certificate', category: 'Academic', link: '#', status: 'Ready' },
-      { id: '2', title: '12th (HSC) Marksheet & Passing', category: 'Academic', link: '#', status: 'Ready' },
-      { id: '3', title: 'Semester 1 Marksheet (FYBA)', category: 'Academic', link: '#', status: 'Ready' },
-      { id: '4', title: 'Aadhaar Card (Front & Back)', category: 'Identity', link: '#', status: 'Verified' },
-      { id: '5', title: 'APAAR / ABC ID Card', category: 'Identity', link: '#', status: 'Active' },
-      { id: '6', title: 'College Admission & Fee Receipt', category: 'Receipts', link: '#', status: 'Paid' }
+    // ================= FULL STRUCTURED COLLEGE DOCUMENTS LIST =================
+    const masterCollegeDocuments = [
+      // 1. Identity & Personal Documents
+      {
+        id: 'doc_aadhaar',
+        title: 'Aadhaar Card',
+        desc: 'Sabhi forms, verification aur biometric ke liye.',
+        category: 'Identity',
+        icon: 'id-card'
+      },
+      {
+        id: 'doc_voter_pan',
+        title: 'Voter ID / PAN Card / Driving License',
+        desc: 'Secondary identity proof aur bank verification.',
+        category: 'Identity',
+        icon: 'credit-card'
+      },
+      {
+        id: 'doc_birth_cert',
+        title: 'Birth Certificate',
+        desc: 'Date of birth verify karne ke liye.',
+        category: 'Identity',
+        icon: 'calendar'
+      },
+
+      // 2. Academic Records
+      {
+        id: 'doc_10th',
+        title: '10th (SSC) Marksheet & Passing Certificate',
+        desc: 'Date of birth aur primary schooling proof.',
+        category: 'Academic',
+        icon: 'file-badge'
+      },
+      {
+        id: 'doc_12th',
+        title: '12th (HSC) Marksheet & Passing Certificate',
+        desc: 'College admission eligibility proof.',
+        category: 'Academic',
+        icon: 'file-text'
+      },
+      {
+        id: 'doc_sem_marksheets',
+        title: 'Semester-wise Marksheets (FY / SY / TY)',
+        desc: 'Sabhi regular aur ATKT semester records.',
+        category: 'Academic',
+        icon: 'layers'
+      },
+      {
+        id: 'doc_tc_lc',
+        title: 'School / College Leaving Certificate (LC / TC)',
+        desc: 'Admission ke waqt submit karne ke liye.',
+        category: 'Academic',
+        icon: 'arrow-right-left'
+      },
+      {
+        id: 'doc_migration',
+        title: 'Migration Certificate',
+        desc: 'Board ya university change karne par pramaan.',
+        category: 'Academic',
+        icon: 'compass'
+      },
+      {
+        id: 'doc_provisional_degree',
+        title: 'Provisional / Degree Certificate',
+        desc: 'Course pura hone ke baad final documentation.',
+        category: 'Academic',
+        icon: 'award'
+      },
+
+      // 3. College Administration & Campus Records
+      {
+        id: 'doc_college_id',
+        title: 'College Identity Card (Digital / Physical)',
+        desc: 'Campus entry aur library access ke liye.',
+        category: 'Administration',
+        icon: 'contact'
+      },
+      {
+        id: 'doc_fee_receipt',
+        title: 'Admission Confirmation Slip & Fee Receipts',
+        desc: 'Har semester ki tuition aur exam fee receipts.',
+        category: 'Administration',
+        icon: 'receipt'
+      },
+      {
+        id: 'doc_admit_card',
+        title: 'Exam Hall Ticket / Admit Card',
+        desc: 'Semester examination me appear hone ke liye.',
+        category: 'Administration',
+        icon: 'ticket'
+      },
+      {
+        id: 'doc_library_card',
+        title: 'Library Card / Book Issue Passbook',
+        desc: 'Library issue transactions ke liye.',
+        category: 'Administration',
+        icon: 'book-open'
+      },
+      {
+        id: 'doc_anti_ragging',
+        title: 'Anti-Ragging Undertaking / Affidavit',
+        desc: 'UGC norms ke hisab se mandatory declaration.',
+        category: 'Administration',
+        icon: 'file-check'
+      },
+      {
+        id: 'doc_abc_apaar',
+        title: 'ABC ID (Academic Bank of Credits) / APAAR ID',
+        desc: 'University credit repository digital ID.',
+        category: 'Administration',
+        icon: 'binary'
+      },
+
+      // 4. Reservation & Scholarship Documents
+      {
+        id: 'doc_caste_cert',
+        title: 'Caste Certificate',
+        desc: 'Reserved category quota aur verification.',
+        category: 'Scholarship',
+        icon: 'shield-alert'
+      },
+      {
+        id: 'doc_ncl_cert',
+        title: 'Non-Creamy Layer (NCL) Certificate',
+        desc: 'OBC category students ke liye valid proof.',
+        category: 'Scholarship',
+        icon: 'file-check-2'
+      },
+      {
+        id: 'doc_caste_validity',
+        title: 'Caste Validity Certificate',
+        desc: 'Course verification confirmation ke liye.',
+        category: 'Scholarship',
+        icon: 'check-circle'
+      },
+      {
+        id: 'doc_income_cert',
+        title: 'Income Certificate (Tahsil / Collectorate)',
+        desc: 'Scholarship form DBT approval ke liye.',
+        category: 'Scholarship',
+        icon: 'wallet'
+      },
+      {
+        id: 'doc_domicile_cert',
+        title: 'Domicile Certificate',
+        desc: 'State quota seats aur state scholarships.',
+        category: 'Scholarship',
+        icon: 'map-pin'
+      },
+      {
+        id: 'doc_ews_cert',
+        title: 'EWS Certificate',
+        desc: 'Economically Weaker Section eligibility.',
+        category: 'Scholarship',
+        icon: 'landmark'
+      },
+      {
+        id: 'doc_gap_affidavit',
+        title: 'Gap Certificate / Affidavit',
+        desc: 'Academic gap justification ke liye.',
+        category: 'Scholarship',
+        icon: 'calendar-off'
+      },
+
+      // 5. Financial & Banking
+      {
+        id: 'doc_bank_passbook',
+        title: 'Bank Passbook / Cancelled Cheque',
+        desc: 'Aadhaar linked account, IFSC & DBT verification.',
+        category: 'Banking',
+        icon: 'banknote'
+      }
     ];
 
-    let vaultDocs = JSON.parse(localStorage.getItem('docvault_records')) || defaultDocuments;
-
-    // ================= PERSISTENT GOOGLE DRIVE TOKEN & SYNC =================
+    // ================= GOOGLE DRIVE API SETUP =================
     const CLIENT_ID = '236093224731-adpkdc0i5r83g6q306vg9c0f4ium763u.apps.googleusercontent.com';
     const SCOPES = 'https://www.googleapis.com/auth/drive.file';
     let tokenClient;
@@ -479,10 +745,9 @@
           callback: async (resp) => {
             if (resp.error) {
               console.error(resp);
-              alert("Google Drive authorization failed.");
+              alert("Google Drive connection failed.");
               return;
             }
-            // Save token to localStorage so refresh doesn't unlink
             localStorage.setItem('drive_access_token', resp.access_token);
             updateDriveUI(true);
             await createOrGetDriveFolder(resp.access_token);
@@ -494,13 +759,11 @@
     function checkSavedDriveSession() {
       const token = localStorage.getItem('drive_access_token');
       if (token) {
-        // Validate if token is alive by a quick call
         fetch('https://www.googleapis.com/drive/v3/files?pageSize=1', {
           headers: { Authorization: `Bearer ${token}` }
         }).then(res => {
-          if (res.ok) {
-            updateDriveUI(true);
-          } else {
+          if (res.ok) updateDriveUI(true);
+          else {
             localStorage.removeItem('drive_access_token');
             updateDriveUI(false);
           }
@@ -523,9 +786,7 @@
     }
 
     function handleAuthClick() {
-      if (tokenClient) {
-        tokenClient.requestAccessToken({ prompt: '' });
-      }
+      if (tokenClient) tokenClient.requestAccessToken({ prompt: '' });
     }
 
     function unlinkDrive() {
@@ -535,7 +796,6 @@
       updateDriveUI(false);
     }
 
-    // Direct Google Drive Folder Creation
     async function createOrGetDriveFolder(token) {
       try {
         const query = encodeURIComponent("mimeType='application/vnd.google-apps.folder' and name='DocVault_College_Records' and trashed=false");
@@ -547,7 +807,6 @@
         if (checkData.files && checkData.files.length > 0) {
           driveFolderId = checkData.files[0].id;
           localStorage.setItem('docvault_folder_id', driveFolderId);
-          console.log("Folder exists:", driveFolderId);
         } else {
           const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
             method: 'POST',
@@ -564,21 +823,19 @@
           if (newFolder.id) {
             driveFolderId = newFolder.id;
             localStorage.setItem('docvault_folder_id', driveFolderId);
-            alert("Google Drive me 'DocVault_College_Records' folder create ho gaya!");
           }
         }
       } catch (err) {
-        console.error("Folder creation error:", err);
+        console.error("Folder error:", err);
       }
     }
 
-    // Direct Upload to Drive
     async function uploadToDrive(file, customTitle) {
       const token = localStorage.getItem('drive_access_token');
       if (!token) return null;
 
       const metadata = {
-        name: customTitle ? `${customTitle}_${file.name}` : file.name,
+        name: `${customTitle}_${file.name}`,
         parents: driveFolderId ? [driveFolderId] : []
       };
 
@@ -599,31 +856,53 @@
       }
     }
 
-    // ================= RENDER DOCUMENTS =================
-    function renderDocuments(filter = 'All') {
+    // ================= RENDER STRUCTURED DOCUMENTS =================
+    function renderDocuments(category = 'All', activeBtn = null) {
       const list = document.getElementById('documentsList');
       list.innerHTML = '';
 
-      const filtered = filter === 'All' ? vaultDocs : vaultDocs.filter(d => d.category === filter);
-      document.getElementById('docCount').innerText = `${vaultDocs.length} Documents`;
+      const filtered = category === 'All' 
+        ? masterCollegeDocuments 
+        : masterCollegeDocuments.filter(d => d.category === category);
 
-      filtered.forEach((doc) => {
+      document.getElementById('docCount').innerText = `${masterCollegeDocuments.length} Documents`;
+
+      filtered.forEach(doc => {
+        const savedData = localStorage.getItem(`vault_file_${doc.id}`);
+        const hasFile = !!savedData;
+        const fileMeta = hasFile ? JSON.parse(savedData) : null;
+
         const item = document.createElement('div');
         item.className = 'item-card';
         item.innerHTML = `
           <div class="item-card-header">
-            <div class="item-card-title"><i data-lucide="file-text" style="width:18px; color:#60a5fa;"></i> ${doc.title}</div>
-            <span class="doc-status-badge">${doc.category}</span>
+            <div class="item-card-title">
+              <i data-lucide="${doc.icon || 'file-text'}" style="width:20px; color:#60a5fa; flex-shrink:0; margin-top:2px;"></i>
+              <div>
+                <div>${doc.title}</div>
+                <div class="item-card-desc">${doc.desc}</div>
+              </div>
+            </div>
+            <span class="doc-status-badge" style="${hasFile ? 'color:#34d399; border-color:#059669;' : ''}">
+              ${hasFile ? 'Available' : 'Pending'}
+            </span>
           </div>
-          <div class="card-footer-meta">
-            <span>Status: ${doc.status || 'Saved'}</span>
-            <a href="${doc.link || '#'}" target="_blank" style="color:#38bdf8; text-decoration:none; display:flex; align-items:center; gap:4px;">
-              <i data-lucide="external-link" style="width:14px;"></i> View File
-            </a>
+
+          <div class="doc-actions-row">
+            <button class="card-action-btn primary" onclick="triggerDocUpload('${doc.id}')">
+              <i data-lucide="upload" style="width:13px;"></i> ${hasFile ? 'Change' : 'Upload'}
+            </button>
+            <button class="card-action-btn" onclick="previewDocument('${doc.id}', '${doc.title}')" ${!hasFile ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''}>
+              <i data-lucide="eye" style="width:13px;"></i> Preview
+            </button>
+            <button class="card-action-btn" onclick="downloadDocument('${doc.id}', '${doc.title}')" ${!hasFile ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''}>
+              <i data-lucide="download" style="width:13px;"></i> Download
+            </button>
           </div>
         `;
         list.appendChild(item);
       });
+
       lucide.createIcons();
     }
 
@@ -633,91 +912,142 @@
       renderDocuments(cat);
     }
 
-    // ================= MODALS & FILE HANDLERS =================
-    function openUploadModal() { document.getElementById('uploadModal').classList.remove('hidden'); }
-    function closeUploadModal() { document.getElementById('uploadModal').classList.add('hidden'); }
+    // ================= UPLOAD, PREVIEW, DOWNLOAD HANDLERS =================
+    let currentUploadTargetId = null;
 
-    async function submitModalDocument() {
-      const title = document.getElementById('newDocTitle').value;
-      const category = document.getElementById('newDocCategory').value;
-      const fileInput = document.getElementById('modalFileInput');
+    function triggerDocUpload(docId) {
+      currentUploadTargetId = docId;
+      document.getElementById('universalFileInput').click();
+    }
 
-      if (!title) {
-        alert("Kripya title daalein.");
+    async function handleUniversalFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file || !currentUploadTargetId) return;
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const fileData = {
+          name: file.name,
+          type: file.type,
+          dataUrl: e.target.result,
+          updatedAt: new Date().toLocaleDateString()
+        };
+
+        // Specific Photo or Signature updates
+        if (currentUploadTargetId === 'doc_signature') {
+          document.getElementById('signatureBox').innerHTML = `<img src="${fileData.dataUrl}">`;
+          document.getElementById('downloadSignBtn').href = fileData.dataUrl;
+          localStorage.setItem('docvault_sign', fileData.dataUrl);
+        } else if (currentUploadTargetId === 'doc_photo') {
+          document.getElementById('photoBox').innerHTML = `<img src="${fileData.dataUrl}" style="width:100%; height:100%; object-fit:cover;">`;
+          document.getElementById('downloadPhotoBtn').href = fileData.dataUrl;
+          localStorage.setItem('docvault_photo', fileData.dataUrl);
+        }
+
+        // Store Document locally
+        localStorage.setItem(`vault_file_${currentUploadTargetId}`, JSON.stringify(fileData));
+
+        // Background Google Drive Upload
+        uploadToDrive(file, currentUploadTargetId);
+
+        renderDocuments(document.querySelector('.tab-pill.active').innerText === 'All Records' ? 'All' : document.querySelector('.tab-pill.active').innerText);
+        event.target.value = ''; // Reset input
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function previewDocument(docId, title) {
+      const saved = localStorage.getItem(`vault_file_${docId}`);
+      if (!saved) {
+        alert("Pehle document upload karein.");
         return;
       }
 
-      let driveLink = '#';
-      if (fileInput.files[0]) {
-        const driveRes = await uploadToDrive(fileInput.files[0], title);
-        if (driveRes && driveRes.webViewLink) {
-          driveLink = driveRes.webViewLink;
-        }
+      const fileData = JSON.parse(saved);
+      document.getElementById('viewerTitle').innerText = title || fileData.name;
+      const container = document.getElementById('viewerContent');
+      container.innerHTML = '';
+
+      if (fileData.type.startsWith('image/')) {
+        container.innerHTML = `<img src="${fileData.dataUrl}" alt="Preview">`;
+      } else if (fileData.type === 'application/pdf') {
+        container.innerHTML = `<iframe src="${fileData.dataUrl}"></iframe>`;
+      } else {
+        container.innerHTML = `<div style="color:#94a3b8; text-align:center;">Preview is not supported for this file format.<br>Please download to view.</div>`;
       }
 
-      vaultDocs.unshift({
-        id: Date.now().toString(),
-        title: title,
-        category: category,
-        link: driveLink,
-        status: 'Uploaded'
-      });
+      const dlBtn = document.getElementById('viewerDownloadBtn');
+      dlBtn.href = fileData.dataUrl;
+      dlBtn.download = fileData.name || `${title}.pdf`;
 
-      localStorage.setItem('docvault_records', JSON.stringify(vaultDocs));
-      closeUploadModal();
-      renderDocuments();
+      document.getElementById('viewerModal').classList.remove('hidden');
+      lucide.createIcons();
     }
 
-    let activePickerTarget = null;
-    function triggerFilePicker(target) {
-      activePickerTarget = target;
-      document.getElementById('globalFileInput').click();
+    function previewDirectDoc(docId) {
+      const sign = docId === 'doc_signature' ? localStorage.getItem('docvault_sign') : localStorage.getItem('docvault_photo');
+      if (!sign) {
+        alert("Koi scanned image nahi mili. Kripya pehle update karein.");
+        return;
+      }
+      document.getElementById('viewerTitle').innerText = docId === 'doc_signature' ? "Digital Signature" : "Passport Photo";
+      const container = document.getElementById('viewerContent');
+      container.innerHTML = `<img src="${sign}">`;
+
+      const dlBtn = document.getElementById('viewerDownloadBtn');
+      dlBtn.href = sign;
+      dlBtn.download = docId === 'doc_signature' ? "Signature.png" : "Passport_Photo.png";
+
+      document.getElementById('viewerModal').classList.remove('hidden');
+      lucide.createIcons();
     }
 
-    async function handleDirectUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
+    function downloadDocument(docId, title) {
+      const saved = localStorage.getItem(`vault_file_${docId}`);
+      if (!saved) return;
 
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        if (activePickerTarget === 'signature') {
-          document.getElementById('signatureBox').innerHTML = `<img src="${evt.target.result}" style="max-height:80px;">`;
-          document.getElementById('downloadSignBtn').href = evt.target.result;
-          localStorage.setItem('docvault_sign', evt.target.result);
-        } else if (activePickerTarget === 'photo') {
-          document.getElementById('photoBox').innerHTML = `<img src="${evt.target.result}" style="width:100%; height:100%; object-fit:cover; border-radius:10px;">`;
-          localStorage.setItem('docvault_photo', evt.target.result);
-        }
-      };
-      reader.readAsDataURL(file);
-
-      // Upload to Drive folder in background
-      await uploadToDrive(file, activePickerTarget);
+      const fileData = JSON.parse(saved);
+      const a = document.createElement('a');
+      a.href = fileData.dataUrl;
+      a.download = fileData.name || `${title}.${fileData.type === 'application/pdf' ? 'pdf' : 'png'}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
 
     function restoreSignatureAndPhoto() {
       const sign = localStorage.getItem('docvault_sign');
       if (sign) {
-        document.getElementById('signatureBox').innerHTML = `<img src="${sign}" style="max-height:80px;">`;
+        document.getElementById('signatureBox').innerHTML = `<img src="${sign}">`;
         document.getElementById('downloadSignBtn').href = sign;
       }
       const photo = localStorage.getItem('docvault_photo');
       if (photo) {
-        document.getElementById('photoBox').innerHTML = `<img src="${photo}" style="width:100%; height:100%; object-fit:cover; border-radius:10px;">`;
+        document.getElementById('photoBox').innerHTML = `<img src="${photo}" style="width:100%; height:100%; object-fit:cover;">`;
+        document.getElementById('downloadPhotoBtn').href = photo;
       }
     }
 
+    // Modal Visibility Controls
+    function closeViewerModal() { document.getElementById('viewerModal').classList.add('hidden'); }
+    function closeViewerOnBackdrop(e) { if(e.target.id === 'viewerModal') closeViewerModal(); }
+
     function openQrModal() {
-      document.getElementById('qrcodeBox').innerHTML = '';
-      new QRCode(document.getElementById('qrcodeBox'), {
+      const qrBox = document.getElementById('qrcodeBox');
+      qrBox.innerHTML = '';
+      new QRCode(qrBox, {
         text: window.location.href,
-        width: 170,
-        height: 170
+        width: 175,
+        height: 175,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
       });
       document.getElementById('qrModal').classList.remove('hidden');
     }
-
     function closeQrModal() { document.getElementById('qrModal').classList.add('hidden'); }
+    function closeQrOnBackdrop(e) { if(e.target.id === 'qrModal') closeQrModal(); }
+
     function lockVault() { window.location.reload(); }
   </script>
 </body>
