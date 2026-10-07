@@ -144,7 +144,7 @@
       cursor: pointer;
     }
 
-    /* Auto Lock Timer Banner */
+    /* Security Status Banner */
     .security-status-banner {
       display: flex;
       justify-content: space-between;
@@ -315,7 +315,7 @@
       border: 1px solid #334155;
     }
 
-    /* Action Buttons Inside Card */
+    /* Action Buttons in Card */
     .doc-actions-row {
       display: flex;
       gap: 8px;
@@ -488,7 +488,7 @@
         <button id="tabAccessData" class="auth-tab-btn active" onclick="switchAuthMode('login')">Access Data</button>
       </div>
 
-      <!-- Access Data Form (Master PIN Required Every Time) -->
+      <!-- Access Data Form (Master PIN Required) -->
       <div id="loginForm" class="auth-input-group">
         <div id="loginNameFieldContainer">
           <label>Vault Username</label>
@@ -538,9 +538,9 @@
         <button class="icon-btn" onclick="openQrModal()"><i data-lucide="qr-code"></i></button>
       </div>
 
-      <!-- Auto-Lock Security Banner -->
+      <!-- Security Status Banner -->
       <div class="security-status-banner">
-        <span>🛡 Auto-Lock Active (2 min idle / on exit)</span>
+        <span>🛡 Auto-Lock Active (3 min idle / tab exit)</span>
         <span style="color:#60a5fa; cursor:pointer;" onclick="lockVault()">Lock Now</span>
       </div>
 
@@ -689,15 +689,15 @@
     let currentSessionUser = null;
     let userVaultData = {};
     let inactivityTimer = null;
+    let isFilePickerOpen = false; // Flag to prevent logout while selecting files
 
-    // Reset Inactivity Timer on any screen interaction
+    // Inactivity Timer (3 minutes idle)
     function resetInactivityTimer() {
       clearTimeout(inactivityTimer);
-      if (currentSessionUser) {
-        // Auto lock after 2 minutes of idle time
+      if (currentSessionUser && !isFilePickerOpen) {
         inactivityTimer = setTimeout(() => {
           lockVault();
-        }, 2 * 60 * 1000);
+        }, 3 * 60 * 1000);
       }
     }
 
@@ -705,22 +705,29 @@
       window.addEventListener(evt, resetInactivityTimer, { passive: true });
     });
 
-    // Auto lock if tab goes to background or user switches apps
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden && currentSessionUser) {
-        lockVault();
-      }
+    // Window closed or refreshed out of session
+    window.addEventListener('beforeunload', () => {
+      sessionStorage.removeItem('docvault_active_session');
     });
 
     window.addEventListener('load', async () => {
       lucide.createIcons();
+
+      // Check if session was active within this same tab
+      const activeSession = sessionStorage.getItem('docvault_active_session');
+      if (activeSession) {
+        try {
+          const user = JSON.parse(activeSession);
+          await loadUserVault(user);
+          return;
+        } catch(e) {}
+      }
 
       // Check if opened via QR parameter
       const urlParams = new URLSearchParams(window.location.search);
       const scannedVault = urlParams.get('vault');
 
       if (scannedVault) {
-        // Prepare login screen for the scanned user
         document.getElementById('loginName').value = scannedVault;
         document.getElementById('loginNameFieldContainer').style.display = 'none';
         document.getElementById('authToggleGroup').style.display = 'none';
@@ -812,9 +819,10 @@
 
     async function loadUserVault(user) {
       currentSessionUser = user;
+      sessionStorage.setItem('docvault_active_session', JSON.stringify(user));
       resetInactivityTimer();
 
-      // Clean URL from browser history so no one can re-open from history directly
+      // Clean URL query from history
       if (window.history.replaceState) {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
@@ -844,11 +852,9 @@
       }
       currentSessionUser = null;
       userVaultData = {};
+      sessionStorage.removeItem('docvault_active_session');
       
-      // Wipe input fields
       document.getElementById('loginPin').value = '';
-      
-      // Reset views
       document.getElementById('vaultDashboard').classList.add('hidden');
       document.getElementById('authScreen').classList.remove('hidden');
       document.getElementById('loginNameFieldContainer').style.display = 'block';
@@ -911,15 +917,28 @@
       renderDocuments(cat);
     }
 
-    // ================= FILE UPLOADS =================
+    // ================= FILE UPLOADS (WITHOUT LOGOUT BUG) =================
     let currentUploadTargetId = null;
 
     function triggerDocUpload(docId) {
       currentUploadTargetId = docId;
+      isFilePickerOpen = true; // Protect session while camera/gallery is open
+      clearTimeout(inactivityTimer);
       document.getElementById('universalFileInput').click();
     }
 
+    // Cancel safety reset
+    window.addEventListener('focus', () => {
+      setTimeout(() => {
+        isFilePickerOpen = false;
+        resetInactivityTimer();
+      }, 1000);
+    });
+
     async function handleUniversalFileUpload(event) {
+      isFilePickerOpen = false;
+      resetInactivityTimer();
+
       const file = event.target.files[0];
       if (!file || !currentUploadTargetId || !currentSessionUser) return;
 
