@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DocVault - Secure College Vault</title>
 
-  <!-- Firebase App & Database (Compat SDKs for Direct Vanilla JS) -->
+  <!-- Firebase App & Database -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
@@ -144,17 +144,17 @@
       cursor: pointer;
     }
 
-    /* Cloud Sync Banner */
-    .sync-banner {
+    /* Auto Lock Timer Banner */
+    .security-status-banner {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 8px 14px;
       border-radius: 10px;
-      font-size: 0.8rem;
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      color: #34d399;
+      font-size: 0.78rem;
+      background: rgba(30, 58, 138, 0.25);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: #93c5fd;
     }
 
     /* Profile Card */
@@ -315,7 +315,7 @@
       border: 1px solid #334155;
     }
 
-    /* Action Buttons inside Card */
+    /* Action Buttons Inside Card */
     .doc-actions-row {
       display: flex;
       gap: 8px;
@@ -346,7 +346,7 @@
       color: #60a5fa;
     }
 
-    /* Signature & Photo Previews */
+    /* Preview Box */
     .preview-box {
       background: #ffffff;
       border-radius: 12px;
@@ -427,7 +427,7 @@
       cursor: pointer;
     }
 
-    /* Document Viewer Modal */
+    /* Document Viewer */
     .modal-viewer-card {
       background: #111827;
       border: 1px solid #334155;
@@ -488,7 +488,7 @@
         <button id="tabAccessData" class="auth-tab-btn active" onclick="switchAuthMode('login')">Access Data</button>
       </div>
 
-      <!-- Access Data Form (Zero Email / PIN based) -->
+      <!-- Access Data Form (Master PIN Required Every Time) -->
       <div id="loginForm" class="auth-input-group">
         <div id="loginNameFieldContainer">
           <label>Vault Username</label>
@@ -496,7 +496,7 @@
         </div>
         <div>
           <label>Master PIN</label>
-          <input type="password" id="loginPin" class="input-field" placeholder="Enter secret PIN" maxlength="8">
+          <input type="password" id="loginPin" class="input-field" placeholder="Enter Master PIN" maxlength="8">
         </div>
         <button class="btn-primary" style="margin-top:8px; padding:12px;" onclick="handleLogin()">Unlock Vault</button>
       </div>
@@ -504,7 +504,7 @@
       <!-- New User Form -->
       <div id="registerForm" class="auth-input-group hidden">
         <div>
-          <label>Choose Vault Username (No spaces)</label>
+          <label>Choose Username (No spaces)</label>
           <input type="text" id="regName" class="input-field" placeholder="e.g. amish">
         </div>
         <div>
@@ -531,17 +531,17 @@
         <div class="brand-group">
           <div class="brand-icon"><i data-lucide="shield-check"></i></div>
           <div>
-            <div class="brand-title">DocVault <span class="secure-badge">Cloud Sync</span></div>
-            <div class="brand-sub">Universal Zero-Login Access</div>
+            <div class="brand-title">DocVault <span class="secure-badge">Active</span></div>
+            <div class="brand-sub">Zero-Login Encrypted Session</div>
           </div>
         </div>
         <button class="icon-btn" onclick="openQrModal()"><i data-lucide="qr-code"></i></button>
       </div>
 
-      <!-- Live Sync Status -->
-      <div class="sync-banner">
-        <span>● Firebase Cloud: Connected</span>
-        <span id="syncTimestamp" style="font-size:0.75rem; color:#94a3b8;">Realtime</span>
+      <!-- Auto-Lock Security Banner -->
+      <div class="security-status-banner">
+        <span>🛡 Auto-Lock Active (2 min idle / on exit)</span>
+        <span style="color:#60a5fa; cursor:pointer;" onclick="lockVault()">Lock Now</span>
       </div>
 
       <!-- Profile Header Card -->
@@ -551,7 +551,7 @@
           <div>
             <div class="name-title"><span id="userNameDisplay">User</span> <span class="unlocked-tag"><i data-lucide="lock-open" style="width:12px; height:12px;"></i> Unlocked</span></div>
             <div class="meta-details">Roll / Course: <span id="userCourseDisplay">FYBA</span></div>
-            <div class="meta-details">🛡 Encrypted Vault · <span id="docCount">18 Documents</span></div>
+            <div class="meta-details">🛡 Cloud Synced · <span id="docCount">18 Documents</span></div>
           </div>
         </div>
 
@@ -688,28 +688,44 @@
 
     let currentSessionUser = null;
     let userVaultData = {};
+    let inactivityTimer = null;
 
-    // Check QR Scan param on URL
+    // Reset Inactivity Timer on any screen interaction
+    function resetInactivityTimer() {
+      clearTimeout(inactivityTimer);
+      if (currentSessionUser) {
+        // Auto lock after 2 minutes of idle time
+        inactivityTimer = setTimeout(() => {
+          lockVault();
+        }, 2 * 60 * 1000);
+      }
+    }
+
+    ['touchstart', 'mousemove', 'keydown', 'click', 'scroll'].forEach(evt => {
+      window.addEventListener(evt, resetInactivityTimer, { passive: true });
+    });
+
+    // Auto lock if tab goes to background or user switches apps
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && currentSessionUser) {
+        lockVault();
+      }
+    });
+
     window.addEventListener('load', async () => {
       lucide.createIcons();
 
+      // Check if opened via QR parameter
       const urlParams = new URLSearchParams(window.location.search);
       const scannedVault = urlParams.get('vault');
 
       if (scannedVault) {
+        // Prepare login screen for the scanned user
         document.getElementById('loginName').value = scannedVault;
         document.getElementById('loginNameFieldContainer').style.display = 'none';
         document.getElementById('authToggleGroup').style.display = 'none';
         document.getElementById('authSubtitle').innerText = `Locked Vault for "${scannedVault}" - Enter PIN`;
         switchAuthMode('login');
-      } else {
-        const savedSession = sessionStorage.getItem('docvault_active_user') || localStorage.getItem('docvault_active_user');
-        if (savedSession) {
-          try {
-            const user = JSON.parse(savedSession);
-            await loadUserVault(user);
-          } catch(e) {}
-        }
       }
     });
 
@@ -751,10 +767,9 @@
         return;
       }
 
-      // Check if username taken in Firebase
       const snapshot = await db.ref(`vaults/${name}/profile`).once('value');
       if (snapshot.exists()) {
-        alert("This username already exists! Please choose a different one or click Access Data.");
+        alert("This username already exists! Choose a different username or access existing vault.");
         return;
       }
 
@@ -766,7 +781,7 @@
       };
 
       await db.ref(`vaults/${name}/profile`).set(profileData);
-      alert("Cloud Vault created successfully! Loading...");
+      alert("Cloud Vault created! Loading your records...");
       await loadUserVault(profileData);
     }
 
@@ -797,8 +812,12 @@
 
     async function loadUserVault(user) {
       currentSessionUser = user;
-      localStorage.setItem('docvault_active_user', JSON.stringify(user));
-      sessionStorage.setItem('docvault_active_user', JSON.stringify(user));
+      resetInactivityTimer();
+
+      // Clean URL from browser history so no one can re-open from history directly
+      if (window.history.replaceState) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
 
       document.getElementById('authScreen').classList.add('hidden');
       document.getElementById('vaultDashboard').classList.remove('hidden');
@@ -807,7 +826,7 @@
       document.getElementById('userCourseDisplay').innerText = user.course;
       document.getElementById('avatarInitial').innerText = user.name.charAt(0).toUpperCase();
 
-      // Listen for Live Firebase updates for this user
+      // Live listener for real-time document updates
       db.ref(`vaults/${user.name}/documents`).on('value', (snap) => {
         userVaultData = snap.val() || {};
         renderDocuments('All');
@@ -817,11 +836,24 @@
       lucide.createIcons();
     }
 
+    // Fully lock and clear memory
     function lockVault() {
+      clearTimeout(inactivityTimer);
+      if (currentSessionUser) {
+        db.ref(`vaults/${currentSessionUser.name}/documents`).off();
+      }
       currentSessionUser = null;
-      localStorage.removeItem('docvault_active_user');
-      sessionStorage.removeItem('docvault_active_user');
-      window.location.href = window.location.origin + window.location.pathname;
+      userVaultData = {};
+      
+      // Wipe input fields
+      document.getElementById('loginPin').value = '';
+      
+      // Reset views
+      document.getElementById('vaultDashboard').classList.add('hidden');
+      document.getElementById('authScreen').classList.remove('hidden');
+      document.getElementById('loginNameFieldContainer').style.display = 'block';
+      document.getElementById('authToggleGroup').style.display = 'flex';
+      document.getElementById('authSubtitle').innerText = "Universal Encrypted College Records";
     }
 
     // ================= RENDER DOCUMENTS =================
@@ -900,7 +932,6 @@
           updatedAt: new Date().toLocaleDateString()
         };
 
-        // Save directly to Firebase
         await db.ref(`vaults/${currentSessionUser.name}/documents/${currentUploadTargetId}`).set(fileData);
         event.target.value = '';
       };
