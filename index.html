@@ -4,8 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DocVault - Secure College Vault</title>
-  <!-- Google Identity Services -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- Firebase App & Database (Compat SDKs for Direct Vanilla JS) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- QR Code Library -->
@@ -39,7 +42,7 @@
 
     .hidden { display: none !important; }
 
-    /* Auth Screen */
+    /* Auth Screens */
     .auth-card {
       background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
       border: 1px solid #334155;
@@ -141,26 +144,20 @@
       cursor: pointer;
     }
 
-    /* Drive Connection Banner */
-    .drive-banner {
+    /* Cloud Sync Banner */
+    .sync-banner {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 8px 14px;
       border-radius: 10px;
       font-size: 0.8rem;
-      background: rgba(30, 58, 138, 0.25);
-      border: 1px solid #1e3a8a;
-    }
-    .drive-btn {
-      background: none;
-      border: none;
-      color: #60a5fa;
-      font-weight: 600;
-      cursor: pointer;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
     }
 
-    /* Profile Header Card */
+    /* Profile Card */
     .profile-card {
       background: radial-gradient(circle at top left, #1e293b 0%, #0f172a 100%);
       border: 1px solid #334155;
@@ -254,7 +251,7 @@
       gap: 6px;
     }
 
-    /* Category Slider */
+    /* Tabs Slider */
     .tabs-slider {
       display: flex;
       gap: 8px;
@@ -318,7 +315,7 @@
       border: 1px solid #334155;
     }
 
-    /* Action Buttons Inside Document Card */
+    /* Action Buttons inside Card */
     .doc-actions-row {
       display: flex;
       gap: 8px;
@@ -342,17 +339,14 @@
       gap: 5px;
       text-decoration: none;
     }
-    .card-action-btn:hover {
-      background: #334155;
-      color: #fff;
-    }
+    .card-action-btn:hover { background: #334155; color: #fff; }
     .card-action-btn.primary {
       background: rgba(37, 99, 235, 0.2);
       border-color: #2563eb;
       color: #60a5fa;
     }
 
-    /* Preview Box for Signature/Photo */
+    /* Signature & Photo Previews */
     .preview-box {
       background: #ffffff;
       border-radius: 12px;
@@ -410,18 +404,8 @@
       gap: 14px;
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
     }
-    .modal-qr-title {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #f8fafc;
-    }
-    .modal-qr-sub {
-      font-size: 0.85rem;
-      color: #94a3b8;
-      line-height: 1.4;
-      margin-top: -6px;
-      max-width: 260px;
-    }
+    .modal-qr-title { font-size: 1.25rem; font-weight: 700; color: #f8fafc; }
+    .modal-qr-sub { font-size: 0.85rem; color: #94a3b8; line-height: 1.4; margin-top: -6px; max-width: 260px; }
     .qr-code-wrapper {
       background: #ffffff;
       padding: 14px;
@@ -443,7 +427,7 @@
       cursor: pointer;
     }
 
-    /* Preview Full View */
+    /* Document Viewer Modal */
     .modal-viewer-card {
       background: #111827;
       border: 1px solid #334155;
@@ -496,71 +480,68 @@
         <div class="brand-icon" style="width:48px; height:48px;"><i data-lucide="shield-check" style="width:26px; height:26px;"></i></div>
       </div>
       <h2 style="font-size:1.35rem; font-weight:700;">DocVault</h2>
-      <p style="font-size:0.8rem; color:#94a3b8; margin-top:-8px;">Encrypted College Credentials & Records</p>
+      <p id="authSubtitle" style="font-size:0.8rem; color:#94a3b8; margin-top:-8px;">Universal Encrypted College Records</p>
 
-      <!-- Side-by-Side: New User (Left) & Access Data (Right) -->
-      <div class="auth-toggle-row">
+      <!-- Toggle: New User vs Access Data -->
+      <div class="auth-toggle-row" id="authToggleGroup">
         <button id="tabNewUser" class="auth-tab-btn" onclick="switchAuthMode('register')">New User</button>
         <button id="tabAccessData" class="auth-tab-btn active" onclick="switchAuthMode('login')">Access Data</button>
       </div>
 
-      <!-- Access Data Form -->
+      <!-- Access Data Form (Zero Email / PIN based) -->
       <div id="loginForm" class="auth-input-group">
-        <div>
-          <label>Your Name</label>
-          <input type="text" id="loginName" class="input-field" placeholder="Enter your registered name">
+        <div id="loginNameFieldContainer">
+          <label>Vault Username</label>
+          <input type="text" id="loginName" class="input-field" placeholder="Enter username (e.g. amish)">
         </div>
         <div>
           <label>Master PIN</label>
-          <input type="password" id="loginPin" class="input-field" placeholder="Enter Master PIN" maxlength="8">
+          <input type="password" id="loginPin" class="input-field" placeholder="Enter secret PIN" maxlength="8">
         </div>
-        <button class="btn-primary" style="margin-top:8px; padding:12px;" onclick="handleLogin()">Access Vault</button>
-        
-        <div style="text-align:center; font-size:0.75rem; color:#94a3b8; margin-top:4px;">
-          Opening on another device? <a href="#" onclick="handleCloudAccountRestore()" style="color:#60a5fa; text-decoration:none;">Sync with Google Drive</a>
-        </div>
+        <button class="btn-primary" style="margin-top:8px; padding:12px;" onclick="handleLogin()">Unlock Vault</button>
       </div>
 
       <!-- New User Form -->
       <div id="registerForm" class="auth-input-group hidden">
         <div>
-          <label>Full Name</label>
-          <input type="text" id="regName" class="input-field" placeholder="e.g. Amish Pawar">
+          <label>Choose Vault Username (No spaces)</label>
+          <input type="text" id="regName" class="input-field" placeholder="e.g. amish">
         </div>
         <div>
           <label>Course / Year</label>
           <input type="text" id="regCourse" class="input-field" placeholder="e.g. FYBA">
         </div>
         <div>
-          <label>Create Master PIN (4 to 8 digits)</label>
-          <input type="password" id="regPin" class="input-field" placeholder="Set your secret PIN" maxlength="8">
+          <label>Set Master PIN (4 to 8 digits)</label>
+          <input type="password" id="regPin" class="input-field" placeholder="Create secret PIN" maxlength="8">
         </div>
         <div>
-          <label>Confirm PIN</label>
-          <input type="password" id="regPinConfirm" class="input-field" placeholder="Re-enter secret PIN" maxlength="8">
+          <label>Confirm Master PIN</label>
+          <input type="password" id="regPinConfirm" class="input-field" placeholder="Confirm secret PIN" maxlength="8">
         </div>
-        <button class="btn-primary" style="margin-top:8px; padding:12px;" onclick="handleRegister()">Create Account & Open</button>
+        <button class="btn-primary" style="margin-top:8px; padding:12px;" onclick="handleRegister()">Create Cloud Vault</button>
       </div>
     </div>
 
     <!-- ================= VAULT DASHBOARD ================= -->
     <div id="vaultDashboard" class="hidden" style="display:flex; flex-direction:column; gap:16px;">
+      
       <!-- Top Bar -->
       <div class="header">
         <div class="brand-group">
           <div class="brand-icon"><i data-lucide="shield-check"></i></div>
           <div>
-            <div class="brand-title">DocVault <span class="secure-badge">Secure</span></div>
-            <div class="brand-sub">College Credentials & Records</div>
+            <div class="brand-title">DocVault <span class="secure-badge">Cloud Sync</span></div>
+            <div class="brand-sub">Universal Zero-Login Access</div>
           </div>
         </div>
         <button class="icon-btn" onclick="openQrModal()"><i data-lucide="qr-code"></i></button>
       </div>
 
-      <!-- Google Drive Sync Status Banner -->
-      <div id="driveBanner" class="drive-banner">
-        <span id="driveText">Google Drive: Not Linked</span>
-        <button id="authBtn" class="drive-btn" onclick="handleAuthClick()">Link Drive</button>
+      <!-- Live Sync Status -->
+      <div class="sync-banner">
+        <span>● Firebase Cloud: Connected</span>
+        <span id="syncTimestamp" style="font-size:0.75rem; color:#94a3b8;">Realtime</span>
       </div>
 
       <!-- Profile Header Card -->
@@ -575,7 +556,7 @@
         </div>
 
         <div class="actions-grid">
-          <button class="btn-primary" onclick="openQrModal()"><i data-lucide="qr-code" style="width:18px;"></i> Instant Scan</button>
+          <button class="btn-primary" onclick="openQrModal()"><i data-lucide="qr-code" style="width:18px;"></i> Instant QR Scan</button>
           <button class="btn-secondary" onclick="renderDocuments('All', null)"><i data-lucide="refresh-cw" style="width:18px;"></i></button>
           <button class="btn-danger" onclick="lockVault()"><i data-lucide="log-out" style="width:18px;"></i> Lock</button>
         </div>
@@ -618,7 +599,7 @@
           </div>
           <div>
             <div style="font-weight:600; font-size:0.95rem;">White Background Photo</div>
-            <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Admit card aur verification ke liye (8–10 digital copies).</div>
+            <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Admit card aur verification ke liye (digital copy).</div>
           </div>
         </div>
         <div class="doc-actions-row">
@@ -640,7 +621,7 @@
   <div id="qrModal" class="modal-overlay hidden" onclick="closeQrOnBackdrop(event)">
     <div class="modal-qr-card" onclick="event.stopPropagation()">
       <div class="modal-qr-title">Instant Vault Scan</div>
-      <div class="modal-qr-sub">Scan with any phone camera to access your records</div>
+      <div class="modal-qr-sub">Scan with any phone to open this vault directly (Only PIN needed)</div>
       <div class="qr-code-wrapper">
         <div id="qrcodeBox"></div>
       </div>
@@ -648,7 +629,7 @@
     </div>
   </div>
 
-  <!-- In-line Document Viewer Modal -->
+  <!-- Document Viewer Modal -->
   <div id="viewerModal" class="modal-overlay hidden" onclick="closeViewerOnBackdrop(event)">
     <div class="modal-viewer-card" onclick="event.stopPropagation()">
       <div class="modal-viewer-header">
@@ -664,69 +645,71 @@
   </div>
 
   <script>
+    // ================= FIREBASE SETUP =================
+    const firebaseConfig = {
+      apiKey: "AIzaSyCbvlAXsngeRNMYUium80rJlf06VSSPmFM",
+      authDomain: "docvault-d9ded.firebaseapp.com",
+      databaseURL: "https://docvault-d9ded-default-rtdb.firebaseio.com",
+      projectId: "docvault-d9ded",
+      storageBucket: "docvault-d9ded.firebasestorage.app",
+      messagingSenderId: "18053064593",
+      appId: "1:18053064593:web:283d71fbf570a5f0105c30"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
     // ================= FULL STRUCTURED COLLEGE DOCUMENTS LIST =================
     const masterCollegeDocuments = [
-      { id: 'doc_aadhaar', title: 'Aadhaar Card', desc: 'Sabhi forms, verification aur biometric ke liye.', category: 'Identity', folderKey: '1_Identity_Personal_Docs', icon: 'id-card' },
-      { id: 'doc_voter_pan', title: 'Voter ID / PAN Card / Driving License', desc: 'Secondary identity proof aur bank verification.', category: 'Identity', folderKey: '1_Identity_Personal_Docs', icon: 'credit-card' },
-      { id: 'doc_birth_cert', title: 'Birth Certificate', desc: 'Date of birth verify karne ke liye.', category: 'Identity', folderKey: '1_Identity_Personal_Docs', icon: 'calendar' },
-      { id: 'doc_10th', title: '10th (SSC) Marksheet & Passing Certificate', desc: 'Date of birth aur primary schooling proof.', category: 'Academic', folderKey: '2_Academic_Records', icon: 'file-badge' },
-      { id: 'doc_12th', title: '12th (HSC) Marksheet & Passing Certificate', desc: 'College admission eligibility proof.', category: 'Academic', folderKey: '2_Academic_Records', icon: 'file-text' },
-      { id: 'doc_sem_marksheets', title: 'Semester-wise Marksheets (FY / SY / TY)', desc: 'Sabhi regular aur ATKT semester records.', category: 'Academic', folderKey: '2_Academic_Records', icon: 'layers' },
-      { id: 'doc_tc_lc', title: 'School / College Leaving Certificate (LC / TC)', desc: 'Admission ke waqt submit karne ke liye.', category: 'Academic', folderKey: '2_Academic_Records', icon: 'arrow-right-left' },
-      { id: 'doc_migration', title: 'Migration Certificate', desc: 'Board ya university change karne par pramaan.', category: 'Academic', folderKey: '2_Academic_Records', icon: 'compass' },
-      { id: 'doc_provisional_degree', title: 'Provisional / Degree Certificate', desc: 'Course pura hone ke baad final documentation.', category: 'Academic', folderKey: '2_Academic_Records', icon: 'award' },
-      { id: 'doc_college_id', title: 'College Identity Card (Digital / Physical)', desc: 'Campus entry aur library access ke liye.', category: 'Administration', folderKey: '3_Campus_Administration', icon: 'contact' },
-      { id: 'doc_fee_receipt', title: 'Admission Confirmation Slip & Fee Receipts', desc: 'Har semester ki tuition aur exam fee receipts.', category: 'Administration', folderKey: '3_Campus_Administration', icon: 'receipt' },
-      { id: 'doc_admit_card', title: 'Exam Hall Ticket / Admit Card', desc: 'Semester examination me appear hone ke liye.', category: 'Administration', folderKey: '3_Campus_Administration', icon: 'ticket' },
-      { id: 'doc_library_card', title: 'Library Card / Book Issue Passbook', desc: 'Library issue transactions ke liye.', category: 'Administration', folderKey: '3_Campus_Administration', icon: 'book-open' },
-      { id: 'doc_anti_ragging', title: 'Anti-Ragging Undertaking / Affidavit', desc: 'UGC norms ke hisab se mandatory declaration.', category: 'Administration', folderKey: '3_Campus_Administration', icon: 'file-check' },
-      { id: 'doc_abc_apaar', title: 'ABC ID (Academic Bank of Credits) / APAAR ID', desc: 'University credit repository digital ID.', category: 'Administration', folderKey: '3_Campus_Administration', icon: 'binary' },
-      { id: 'doc_caste_cert', title: 'Caste Certificate', desc: 'Reserved category quota aur verification.', category: 'Scholarship', folderKey: '4_Scholarships_Quotas', icon: 'shield-alert' },
-      { id: 'doc_ncl_cert', title: 'Non-Creamy Layer (NCL) Certificate', desc: 'OBC category students ke liye valid proof.', category: 'Scholarship', folderKey: '4_Scholarships_Quotas', icon: 'file-check-2' },
-      { id: 'doc_caste_validity', title: 'Caste Validity Certificate', desc: 'Course verification confirmation ke liye.', category: 'Scholarship', folderKey: '4_Scholarships_Quotas', icon: 'check-circle' },
-      { id: 'doc_income_cert', title: 'Income Certificate (Tahsil / Collectorate)', desc: 'Scholarship form DBT approval ke liye.', category: 'Scholarship', folderKey: '4_Scholarships_Quotas', icon: 'wallet' },
-      { id: 'doc_domicile_cert', title: 'Domicile Certificate', desc: 'State quota seats aur state scholarships.', category: 'Scholarship', folderKey: '4_Scholarships_Quotas', icon: 'map-pin' },
-      { id: 'doc_ews_cert', title: 'EWS Certificate', desc: 'Economically Weaker Section eligibility.', category: 'Scholarship', folderKey: '4_Scholarships_Quotas', icon: 'landmark' },
-      { id: 'doc_gap_affidavit', title: 'Gap Certificate / Affidavit', desc: 'Academic gap justification ke liye.', category: 'Scholarship', folderKey: '4_Scholarships_Quotas', icon: 'calendar-off' },
-      { id: 'doc_bank_passbook', title: 'Bank Passbook / Cancelled Cheque', desc: 'Aadhaar linked account, IFSC & DBT verification.', category: 'Banking', folderKey: '5_Banking_Financial', icon: 'banknote' }
+      { id: 'doc_aadhaar', title: 'Aadhaar Card', desc: 'Forms, verification aur biometric ke liye.', category: 'Identity', icon: 'id-card' },
+      { id: 'doc_voter_pan', title: 'Voter ID / PAN Card / Driving License', desc: 'Secondary identity proof aur bank verification.', category: 'Identity', icon: 'credit-card' },
+      { id: 'doc_birth_cert', title: 'Birth Certificate', desc: 'Date of birth verify karne ke liye.', category: 'Identity', icon: 'calendar' },
+      { id: 'doc_10th', title: '10th (SSC) Marksheet & Passing Certificate', desc: 'Date of birth aur primary schooling proof.', category: 'Academic', icon: 'file-badge' },
+      { id: 'doc_12th', title: '12th (HSC) Marksheet & Passing Certificate', desc: 'College admission eligibility proof.', category: 'Academic', icon: 'file-text' },
+      { id: 'doc_sem_marksheets', title: 'Semester-wise Marksheets (FY / SY / TY)', desc: 'Regular aur ATKT semester records.', category: 'Academic', icon: 'layers' },
+      { id: 'doc_tc_lc', title: 'School / College Leaving Certificate (LC / TC)', desc: 'Admission ke waqt submit karne ke liye.', category: 'Academic', icon: 'arrow-right-left' },
+      { id: 'doc_migration', title: 'Migration Certificate', desc: 'Board ya university change karne par pramaan.', category: 'Academic', icon: 'compass' },
+      { id: 'doc_provisional_degree', title: 'Provisional / Degree Certificate', desc: 'Course pura hone ke baad final documentation.', category: 'Academic', icon: 'award' },
+      { id: 'doc_college_id', title: 'College Identity Card (Digital / Physical)', desc: 'Campus entry aur library access ke liye.', category: 'Administration', icon: 'contact' },
+      { id: 'doc_fee_receipt', title: 'Admission Confirmation Slip & Fee Receipts', desc: 'Har semester ki tuition aur exam fee receipts.', category: 'Administration', icon: 'receipt' },
+      { id: 'doc_admit_card', title: 'Exam Hall Ticket / Admit Card', desc: 'Semester examination me appear hone ke liye.', category: 'Administration', icon: 'ticket' },
+      { id: 'doc_library_card', title: 'Library Card / Book Issue Passbook', desc: 'Library issue transactions ke liye.', category: 'Administration', icon: 'book-open' },
+      { id: 'doc_anti_ragging', title: 'Anti-Ragging Undertaking / Affidavit', desc: 'UGC norms ke hisab se mandatory declaration.', category: 'Administration', icon: 'file-check' },
+      { id: 'doc_abc_apaar', title: 'ABC ID / APAAR ID', desc: 'University credit repository digital ID.', category: 'Administration', icon: 'binary' },
+      { id: 'doc_caste_cert', title: 'Caste Certificate', desc: 'Reserved category quota aur verification.', category: 'Scholarship', icon: 'shield-alert' },
+      { id: 'doc_ncl_cert', title: 'Non-Creamy Layer (NCL) Certificate', desc: 'OBC category students ke liye valid proof.', category: 'Scholarship', icon: 'file-check-2' },
+      { id: 'doc_caste_validity', title: 'Caste Validity Certificate', desc: 'Course verification confirmation ke liye.', category: 'Scholarship', icon: 'check-circle' },
+      { id: 'doc_income_cert', title: 'Income Certificate (Tahsil / Collectorate)', desc: 'Scholarship form approval ke liye.', category: 'Scholarship', icon: 'wallet' },
+      { id: 'doc_domicile_cert', title: 'Domicile Certificate', desc: 'State quota seats aur state scholarships.', category: 'Scholarship', icon: 'map-pin' },
+      { id: 'doc_ews_cert', title: 'EWS Certificate', desc: 'Economically Weaker Section eligibility.', category: 'Scholarship', icon: 'landmark' },
+      { id: 'doc_gap_affidavit', title: 'Gap Certificate / Affidavit', desc: 'Academic gap justification ke liye.', category: 'Scholarship', icon: 'calendar-off' },
+      { id: 'doc_bank_passbook', title: 'Bank Passbook / Cancelled Cheque', desc: 'Aadhaar linked account & DBT verification.', category: 'Banking', icon: 'banknote' }
     ];
 
     let currentSessionUser = null;
-    const CLIENT_ID = '236093224731-adpkdc0i5r83g6q306vg9c0f4ium763u.apps.googleusercontent.com';
-    const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-    let tokenClient;
-    let mainVaultFolderId = null;
-    let categoryFolderMap = {};
+    let userVaultData = {};
 
-    // ================= LIFECYCLE & PERSISTENT SESSION =================
-    window.addEventListener('load', () => {
+    // Check QR Scan param on URL
+    window.addEventListener('load', async () => {
       lucide.createIcons();
 
-      // Check if user was already unlocked in this browser session (Fix for refresh bug)
-      const savedSession = sessionStorage.getItem('docvault_active_user') || localStorage.getItem('docvault_active_user');
-      if (savedSession) {
-        try {
-          const user = JSON.parse(savedSession);
-          activateUserSession(user);
-        } catch(e) {}
-      }
+      const urlParams = new URLSearchParams(window.location.search);
+      const scannedVault = urlParams.get('vault');
 
-      if (window.google) {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: CLIENT_ID,
-          scope: SCOPES,
-          callback: async (resp) => {
-            if (resp.error) {
-              console.error(resp);
-              alert("Google Drive authorization failed.");
-              return;
-            }
-            localStorage.setItem('drive_access_token', resp.access_token);
-            updateDriveUI(true);
-            await setupDriveFolderHierarchy(resp.access_token);
-            await syncCloudConfigToLocal(resp.access_token);
-          },
-        });
+      if (scannedVault) {
+        document.getElementById('loginName').value = scannedVault;
+        document.getElementById('loginNameFieldContainer').style.display = 'none';
+        document.getElementById('authToggleGroup').style.display = 'none';
+        document.getElementById('authSubtitle').innerText = `Locked Vault for "${scannedVault}" - Enter PIN`;
+        switchAuthMode('login');
+      } else {
+        const savedSession = sessionStorage.getItem('docvault_active_user') || localStorage.getItem('docvault_active_user');
+        if (savedSession) {
+          try {
+            const user = JSON.parse(savedSession);
+            await loadUserVault(user);
+          } catch(e) {}
+        }
       }
     });
 
@@ -750,13 +733,13 @@
     }
 
     async function handleRegister() {
-      const name = document.getElementById('regName').value.trim();
+      const name = document.getElementById('regName').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
       const course = document.getElementById('regCourse').value.trim() || 'Student';
       const pin = document.getElementById('regPin').value.trim();
       const pinConfirm = document.getElementById('regPinConfirm').value.trim();
 
       if (!name || !pin) {
-        alert("Please enter Name and PIN.");
+        alert("Please enter a username and PIN.");
         return;
       }
       if (pin.length < 4) {
@@ -768,54 +751,51 @@
         return;
       }
 
-      const users = JSON.parse(localStorage.getItem('docvault_users') || '{}');
-      const userKey = name.toLowerCase();
+      // Check if username taken in Firebase
+      const snapshot = await db.ref(`vaults/${name}/profile`).once('value');
+      if (snapshot.exists()) {
+        alert("This username already exists! Please choose a different one or click Access Data.");
+        return;
+      }
 
-      const newUserObj = {
+      const profileData = {
         name: name,
         course: course,
         pin: pin,
         createdAt: new Date().toISOString()
       };
 
-      users[userKey] = newUserObj;
-      localStorage.setItem('docvault_users', JSON.stringify(users));
-
-      // Backup config to Drive if token is available
-      saveUserConfigToDrive(newUserObj);
-
-      alert("Account created successfully!");
-      activateUserSession(newUserObj);
+      await db.ref(`vaults/${name}/profile`).set(profileData);
+      alert("Cloud Vault created successfully! Loading...");
+      await loadUserVault(profileData);
     }
 
-    function handleLogin() {
-      const name = document.getElementById('loginName').value.trim();
+    async function handleLogin() {
+      const name = document.getElementById('loginName').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
       const pin = document.getElementById('loginPin').value.trim();
 
       if (!name || !pin) {
-        alert("Please enter Name and PIN.");
+        alert("Please enter Username and PIN.");
         return;
       }
 
-      const users = JSON.parse(localStorage.getItem('docvault_users') || '{}');
-      const userKey = name.toLowerCase();
-      const user = users[userKey];
+      const snapshot = await db.ref(`vaults/${name}/profile`).once('value');
+      const user = snapshot.val();
 
       if (!user) {
-        // If not found locally, try checking if they created it with a default name or need cloud restore
-        alert("This browser has no record of '" + name + "'.\n\nIf you created this account on another phone/browser, click 'Sync with Google Drive' below.");
+        alert("No vault found for this username on the cloud. If you are new, click 'New User' to register.");
         return;
       }
 
       if (user.pin !== pin) {
-        alert("Incorrect PIN. Please re-enter your secret PIN.");
+        alert("Incorrect PIN. Please re-enter.");
         return;
       }
 
-      activateUserSession(user);
+      await loadUserVault(user);
     }
 
-    function activateUserSession(user) {
+    async function loadUserVault(user) {
       currentSessionUser = user;
       localStorage.setItem('docvault_active_user', JSON.stringify(user));
       sessionStorage.setItem('docvault_active_user', JSON.stringify(user));
@@ -823,13 +803,17 @@
       document.getElementById('authScreen').classList.add('hidden');
       document.getElementById('vaultDashboard').classList.remove('hidden');
 
-      document.getElementById('userNameDisplay').innerText = user.name;
+      document.getElementById('userNameDisplay').innerText = user.name.toUpperCase();
       document.getElementById('userCourseDisplay').innerText = user.course;
       document.getElementById('avatarInitial').innerText = user.name.charAt(0).toUpperCase();
 
-      renderDocuments('All');
-      restoreSignatureAndPhoto();
-      checkSavedDriveSession();
+      // Listen for Live Firebase updates for this user
+      db.ref(`vaults/${user.name}/documents`).on('value', (snap) => {
+        userVaultData = snap.val() || {};
+        renderDocuments('All');
+        restoreSignatureAndPhoto();
+      });
+
       lucide.createIcons();
     }
 
@@ -837,202 +821,10 @@
       currentSessionUser = null;
       localStorage.removeItem('docvault_active_user');
       sessionStorage.removeItem('docvault_active_user');
-      document.getElementById('authScreen').classList.remove('hidden');
-      document.getElementById('vaultDashboard').classList.add('hidden');
-      document.getElementById('loginPin').value = '';
-    }
-
-    // ================= MULTI-DEVICE GOOGLE DRIVE SYNC =================
-    function handleCloudAccountRestore() {
-      if (!tokenClient) {
-        alert("Loading Google authentication, please wait...");
-        return;
-      }
-      tokenClient.requestAccessToken({ prompt: 'consent' });
-    }
-
-    async function syncCloudConfigToLocal(token) {
-      try {
-        const q = encodeURIComponent("name='vault_config.json' and trashed=false");
-        const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-
-        if (data.files && data.files.length > 0) {
-          const fileId = data.files[0].id;
-          const contentRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          const cloudConfig = await contentRes.json();
-
-          if (cloudConfig && cloudConfig.name) {
-            const users = JSON.parse(localStorage.getItem('docvault_users') || '{}');
-            users[cloudConfig.name.toLowerCase()] = cloudConfig;
-            localStorage.setItem('docvault_users', JSON.stringify(users));
-
-            document.getElementById('loginName').value = cloudConfig.name;
-            alert(`Account synced from Google Drive for ${cloudConfig.name}! Now enter your PIN.`);
-          }
-        }
-      } catch (err) {
-        console.log("Cloud config sync note:", err);
-      }
-    }
-
-    async function saveUserConfigToDrive(userObj) {
-      const token = localStorage.getItem('drive_access_token');
-      if (!token || !mainVaultFolderId) return;
-
-      const metadata = {
-        name: 'vault_config.json',
-        parents: [mainVaultFolderId]
-      };
-
-      const form = new FormData();
-      form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-      form.append('file', new Blob([JSON.stringify(userObj)], { type: 'application/json' }));
-
-      fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: form
-      }).catch(e => console.error("Cloud config save error:", e));
-    }
-
-    // ================= DRIVE FOLDER HIERARCHY =================
-    function checkSavedDriveSession() {
-      const token = localStorage.getItem('drive_access_token');
-      if (token) {
-        fetch('https://www.googleapis.com/drive/v3/files?pageSize=1', {
-          headers: { Authorization: `Bearer ${token}` }
-        }).then(res => {
-          if (res.ok) {
-            updateDriveUI(true);
-            setupDriveFolderHierarchy(token);
-          } else {
-            localStorage.removeItem('drive_access_token');
-            updateDriveUI(false);
-          }
-        }).catch(() => updateDriveUI(false));
-      }
-    }
-
-    function updateDriveUI(isLinked) {
-      const driveText = document.getElementById('driveText');
-      const authBtn = document.getElementById('authBtn');
-      if (isLinked) {
-        driveText.innerHTML = "Google Drive: Linked ✓";
-        authBtn.innerText = "Unlink";
-        authBtn.onclick = unlinkDrive;
-      } else {
-        driveText.innerHTML = "Google Drive: Not Linked";
-        authBtn.innerText = "Link Drive";
-        authBtn.onclick = handleAuthClick;
-      }
-    }
-
-    function handleAuthClick() {
-      if (tokenClient) tokenClient.requestAccessToken({ prompt: '' });
-    }
-
-    function unlinkDrive() {
-      localStorage.removeItem('drive_access_token');
-      categoryFolderMap = {};
-      mainVaultFolderId = null;
-      updateDriveUI(false);
-    }
-
-    async function setupDriveFolderHierarchy(token) {
-      try {
-        const mainQuery = encodeURIComponent("mimeType='application/vnd.google-apps.folder' and name='DocVault_College_Records' and trashed=false");
-        const mainRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${mainQuery}&fields=files(id,name)`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const mainData = await mainRes.json();
-
-        if (mainData.files && mainData.files.length > 0) {
-          mainVaultFolderId = mainData.files[0].id;
-        } else {
-          const createMain = await fetch('https://www.googleapis.com/drive/v3/files', {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: 'DocVault_College_Records', mimeType: 'application/vnd.google-apps.folder' })
-          });
-          const newMain = await createMain.json();
-          mainVaultFolderId = newMain.id;
-        }
-
-        const subfolders = [
-          '1_Identity_Personal_Docs',
-          '2_Academic_Records',
-          '3_Campus_Administration',
-          '4_Scholarships_Quotas',
-          '5_Banking_Financial'
-        ];
-
-        for (const subName of subfolders) {
-          const subQuery = encodeURIComponent(`mimeType='application/vnd.google-apps.folder' and name='${subName}' and '${mainVaultFolderId}' in parents and trashed=false`);
-          const subRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${subQuery}&fields=files(id,name)`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          const subData = await subRes.json();
-
-          if (subData.files && subData.files.length > 0) {
-            categoryFolderMap[subName] = subData.files[0].id;
-          } else {
-            const createSub = await fetch('https://www.googleapis.com/drive/v3/files', {
-              method: 'POST',
-              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                name: subName,
-                mimeType: 'application/vnd.google-apps.folder',
-                parents: [mainVaultFolderId]
-              })
-            });
-            const newSub = await createSub.json();
-            categoryFolderMap[subName] = newSub.id;
-          }
-        }
-      } catch (err) {
-        console.error("Folder Hierarchy Error:", err);
-      }
-    }
-
-    async function uploadToDriveSubfolder(file, folderKey, customTitle) {
-      const token = localStorage.getItem('drive_access_token');
-      if (!token) return null;
-
-      const targetFolderId = categoryFolderMap[folderKey] || mainVaultFolderId;
-
-      const metadata = {
-        name: `${customTitle}_${file.name}`,
-        parents: targetFolderId ? [targetFolderId] : []
-      };
-
-      const form = new FormData();
-      form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-      form.append('file', file);
-
-      try {
-        const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-          body: form
-        });
-        return await res.json();
-      } catch (e) {
-        console.error("Upload error:", e);
-        return null;
-      }
+      window.location.href = window.location.origin + window.location.pathname;
     }
 
     // ================= RENDER DOCUMENTS =================
-    function getUserDocStorageKey(docId) {
-      const u = currentSessionUser ? currentSessionUser.name.toLowerCase() : 'guest';
-      return `vault_file_${u}_${docId}`;
-    }
-
     function renderDocuments(category = 'All', activeBtn = null) {
       const list = document.getElementById('documentsList');
       list.innerHTML = '';
@@ -1044,8 +836,8 @@
       document.getElementById('docCount').innerText = `${masterCollegeDocuments.length} Documents`;
 
       filtered.forEach(doc => {
-        const savedData = localStorage.getItem(getUserDocStorageKey(doc.id));
-        const hasFile = !!savedData;
+        const fileMeta = userVaultData[doc.id];
+        const hasFile = !!fileMeta;
 
         const item = document.createElement('div');
         item.className = 'item-card';
@@ -1087,7 +879,7 @@
       renderDocuments(cat);
     }
 
-    // ================= FILE HANDLERS =================
+    // ================= FILE UPLOADS =================
     let currentUploadTargetId = null;
 
     function triggerDocUpload(docId) {
@@ -1097,7 +889,7 @@
 
     async function handleUniversalFileUpload(event) {
       const file = event.target.files[0];
-      if (!file || !currentUploadTargetId) return;
+      if (!file || !currentUploadTargetId || !currentSessionUser) return;
 
       const reader = new FileReader();
       reader.onload = async function(e) {
@@ -1108,36 +900,17 @@
           updatedAt: new Date().toLocaleDateString()
         };
 
-        const uKey = currentSessionUser ? currentSessionUser.name.toLowerCase() : 'guest';
-
-        if (currentUploadTargetId === 'doc_signature') {
-          document.getElementById('signatureBox').innerHTML = `<img src="${fileData.dataUrl}">`;
-          document.getElementById('downloadSignBtn').href = fileData.dataUrl;
-          localStorage.setItem(`docvault_sign_${uKey}`, fileData.dataUrl);
-          await uploadToDriveSubfolder(file, '1_Identity_Personal_Docs', 'Signature');
-        } else if (currentUploadTargetId === 'doc_photo') {
-          document.getElementById('photoBox').innerHTML = `<img src="${fileData.dataUrl}" style="width:100%; height:100%; object-fit:cover;">`;
-          document.getElementById('downloadPhotoBtn').href = fileData.dataUrl;
-          localStorage.setItem(`docvault_photo_${uKey}`, fileData.dataUrl);
-          await uploadToDriveSubfolder(file, '1_Identity_Personal_Docs', 'Passport_Photo');
-        } else {
-          localStorage.setItem(getUserDocStorageKey(currentUploadTargetId), JSON.stringify(fileData));
-          const docDef = masterCollegeDocuments.find(d => d.id === currentUploadTargetId);
-          const fKey = docDef ? docDef.folderKey : '1_Identity_Personal_Docs';
-          await uploadToDriveSubfolder(file, fKey, docDef ? docDef.title : 'Doc');
-        }
-
-        renderDocuments(document.querySelector('.tab-pill.active')?.innerText === 'All Records' ? 'All' : document.querySelector('.tab-pill.active')?.innerText || 'All');
+        // Save directly to Firebase
+        await db.ref(`vaults/${currentSessionUser.name}/documents/${currentUploadTargetId}`).set(fileData);
         event.target.value = '';
       };
       reader.readAsDataURL(file);
     }
 
     function previewDocument(docId, title) {
-      const saved = localStorage.getItem(getUserDocStorageKey(docId));
-      if (!saved) return;
+      const fileData = userVaultData[docId];
+      if (!fileData) return;
 
-      const fileData = JSON.parse(saved);
       document.getElementById('viewerTitle').innerText = title || fileData.name;
       const container = document.getElementById('viewerContent');
       container.innerHTML = '';
@@ -1147,7 +920,7 @@
       } else if (fileData.type === 'application/pdf') {
         container.innerHTML = `<iframe src="${fileData.dataUrl}"></iframe>`;
       } else {
-        container.innerHTML = `<div style="color:#94a3b8; text-align:center;">Format preview not supported.<br>Please click download.</div>`;
+        container.innerHTML = `<div style="color:#94a3b8; text-align:center;">Preview not supported.<br>Click download.</div>`;
       }
 
       const dlBtn = document.getElementById('viewerDownloadBtn');
@@ -1159,29 +932,18 @@
     }
 
     function previewDirectDoc(docId) {
-      const uKey = currentSessionUser ? currentSessionUser.name.toLowerCase() : 'guest';
-      const sign = docId === 'doc_signature' ? localStorage.getItem(`docvault_sign_${uKey}`) : localStorage.getItem(`docvault_photo_${uKey}`);
-      if (!sign) {
+      const fileData = userVaultData[docId];
+      if (!fileData) {
         alert("No scanned photo or signature uploaded yet.");
         return;
       }
-      document.getElementById('viewerTitle').innerText = docId === 'doc_signature' ? "Digital Signature" : "Passport Photo";
-      const container = document.getElementById('viewerContent');
-      container.innerHTML = `<img src="${sign}">`;
-
-      const dlBtn = document.getElementById('viewerDownloadBtn');
-      dlBtn.href = sign;
-      dlBtn.download = docId === 'doc_signature' ? "Signature.png" : "Passport_Photo.png";
-
-      document.getElementById('viewerModal').classList.remove('hidden');
-      lucide.createIcons();
+      previewDocument(docId, docId === 'doc_signature' ? "Digital Signature" : "Passport Photo");
     }
 
     function downloadDocument(docId, title) {
-      const saved = localStorage.getItem(getUserDocStorageKey(docId));
-      if (!saved) return;
+      const fileData = userVaultData[docId];
+      if (!fileData) return;
 
-      const fileData = JSON.parse(saved);
       const a = document.createElement('a');
       a.href = fileData.dataUrl;
       a.download = fileData.name || `${title}.${fileData.type === 'application/pdf' ? 'pdf' : 'png'}`;
@@ -1191,19 +953,18 @@
     }
 
     function restoreSignatureAndPhoto() {
-      const uKey = currentSessionUser ? currentSessionUser.name.toLowerCase() : 'guest';
-      const sign = localStorage.getItem(`docvault_sign_${uKey}`);
+      const sign = userVaultData['doc_signature'];
       if (sign) {
-        document.getElementById('signatureBox').innerHTML = `<img src="${sign}">`;
-        document.getElementById('downloadSignBtn').href = sign;
+        document.getElementById('signatureBox').innerHTML = `<img src="${sign.dataUrl}">`;
+        document.getElementById('downloadSignBtn').href = sign.dataUrl;
       } else {
         document.getElementById('signatureBox').innerHTML = `<span style="font-size:1.1rem; color:#64748b;">No signature uploaded</span>`;
       }
 
-      const photo = localStorage.getItem(`docvault_photo_${uKey}`);
+      const photo = userVaultData['doc_photo'];
       if (photo) {
-        document.getElementById('photoBox').innerHTML = `<img src="${photo}" style="width:100%; height:100%; object-fit:cover;">`;
-        document.getElementById('downloadPhotoBtn').href = photo;
+        document.getElementById('photoBox').innerHTML = `<img src="${photo.dataUrl}" style="width:100%; height:100%; object-fit:cover;">`;
+        document.getElementById('downloadPhotoBtn').href = photo.dataUrl;
       } else {
         document.getElementById('photoBox').innerHTML = `Photo`;
       }
@@ -1214,16 +975,21 @@
     function closeViewerOnBackdrop(e) { if(e.target.id === 'viewerModal') closeViewerModal(); }
 
     function openQrModal() {
+      if (!currentSessionUser) return;
       const qrBox = document.getElementById('qrcodeBox');
       qrBox.innerHTML = '';
+
+      const vaultUrl = `${window.location.origin}${window.location.pathname}?vault=${currentSessionUser.name}`;
+
       new QRCode(qrBox, {
-        text: window.location.href,
+        text: vaultUrl,
         width: 175,
         height: 175,
         colorDark: "#000000",
         colorLight: "#ffffff",
         correctLevel: QRCode.CorrectLevel.H
       });
+
       document.getElementById('qrModal').classList.remove('hidden');
     }
     function closeQrModal() { document.getElementById('qrModal').classList.add('hidden'); }
