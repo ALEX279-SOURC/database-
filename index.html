@@ -550,21 +550,21 @@
     /* Flashcard Border Container */
     .flashcard-document-frame {
       background: #ffffff;
-      border: 2px solid #cbd5e1;
-      border-radius: 14px;
-      padding: 14px;
+      border: 1.5px solid #94a3b8;
+      border-radius: 12px;
+      padding: 10px;
       width: 100%;
       max-width: 380px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+      gap: 10px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
     .flashcard-side-slot {
-      border: 1.5px dashed #94a3b8;
-      border-radius: 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
       min-height: 140px;
-      background: #f8fafc;
+      background: #ffffff;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -575,7 +575,7 @@
     .flashcard-side-slot img {
       width: 100%;
       height: auto;
-      max-height: 190px;
+      max-height: 200px;
       object-fit: contain;
       display: block;
     }
@@ -831,13 +831,13 @@
   <div id="flashcardModal" class="modal-overlay hidden" onclick="closeFlashcardOnBackdrop(event)">
     <div class="modal-viewer-card" style="height:auto; max-height:92vh;" onclick="event.stopPropagation()">
       
-      <!-- Top Title Bar (As in Photo 2) -->
+      <!-- Top Title Bar -->
       <div class="modal-viewer-header">
         <div id="flashcardModalTitle" style="font-weight:600; font-size:1rem; color:#f1f5f9;">Aadhaar Card</div>
         <button class="icon-btn" style="width:32px; height:32px;" onclick="closeFlashcardModal()"><i data-lucide="x" style="width:16px;"></i></button>
       </div>
 
-      <!-- Flashcard Body with Border Frame (Photo 3 Sketch) -->
+      <!-- Flashcard Body with Border Frame -->
       <div class="modal-viewer-body" style="padding:16px; background:#0b1120;">
         <div class="flashcard-document-frame" id="printableFlashcardArea">
           
@@ -866,7 +866,7 @@
         </div>
       </div>
 
-      <!-- Bottom Actions Bar (Upload/Change, Preview, Download PDF) -->
+      <!-- Bottom Actions Bar -->
       <div style="padding:12px 14px; background:#111827; border-top:1px solid #1f2937; display:flex; flex-direction:column; gap:8px;">
         <div style="display:flex; gap:8px;">
           <button id="flashcardUploadBtn" class="card-action-btn primary" onclick="triggerSideUpload('front')">
@@ -1137,12 +1137,10 @@
       filtered.forEach(doc => {
         const item = document.createElement('div');
 
-        // Special handling for Aadhaar Card (No bottom 3 buttons, whole card clickable)
         if (doc.isAadhaarCustom) {
           item.className = 'item-card clickable-card';
           item.onclick = openAadhaarFamilyModal;
 
-          // Check if at least one family aadhaar exists
           const myDoc = userVaultData['my_aadhaar'];
           const fatDoc = userVaultData['father_aadhaar'];
           const motDoc = userVaultData['mother_aadhaar'];
@@ -1167,7 +1165,6 @@
             </div>
           `;
         } else {
-          // Standard documents
           const fileMeta = userVaultData[doc.id];
           const hasFile = !!fileMeta;
 
@@ -1212,9 +1209,9 @@
     }
 
     // ================= AADHAAR FAMILY & FLASHCARD SYSTEM =================
-    let activeAadhaarTarget = 'my_aadhaar'; // my_aadhaar, father_aadhaar, mother_aadhaar
+    let activeAadhaarTarget = 'my_aadhaar';
     let activeAadhaarLabel = 'My Aadhaar Card';
-    let currentSideTarget = 'front'; // front or back
+    let currentSideTarget = 'front';
 
     function openAadhaarFamilyModal() {
       updateAadhaarFamilyStatusIndicators();
@@ -1264,7 +1261,6 @@
     function renderFlashcardView() {
       const record = userVaultData[activeAadhaarTarget] || {};
 
-      // Front Side
       const frontImg = document.getElementById('frontSideImg');
       const frontPlaceholder = document.getElementById('frontSidePlaceholder');
       if (record.front) {
@@ -1277,7 +1273,6 @@
         frontPlaceholder.classList.remove('hidden');
       }
 
-      // Back Side
       const backImg = document.getElementById('backSideImg');
       const backPlaceholder = document.getElementById('backSidePlaceholder');
       if (record.back) {
@@ -1290,7 +1285,6 @@
         backPlaceholder.classList.remove('hidden');
       }
 
-      // Dynamic change button text
       const upLabel = document.getElementById('flashcardUploadLabel');
       if (upLabel) {
         upLabel.innerText = record.front ? "Change Front" : "Upload Front";
@@ -1315,7 +1309,6 @@
       reader.onload = async function(e) {
         const base64Data = e.target.result;
 
-        // Fetch existing or initialize
         const cur = userVaultData[activeAadhaarTarget] || {};
         cur[currentSideTarget] = base64Data;
         cur.updatedAt = new Date().toLocaleDateString();
@@ -1327,7 +1320,7 @@
       reader.readAsDataURL(file);
     }
 
-    // Direct Flashcard Download in High-Resolution PDF
+    // Direct Flashcard Download in Clean, Centered A4 PDF (No extra text, no FRONT/BACK labels)
     async function downloadFlashcardPDF() {
       const printableArea = document.getElementById('printableFlashcardArea');
       const record = userVaultData[activeAadhaarTarget] || {};
@@ -1337,9 +1330,13 @@
         return;
       }
 
+      // Hide FRONT/BACK labels temporarily during capture
+      const labels = printableArea.querySelectorAll('.flashcard-side-label');
+      labels.forEach(l => l.style.display = 'none');
+
       try {
         const canvas = await html2canvas(printableArea, {
-          scale: 2.5,
+          scale: 3,
           useCORS: true,
           backgroundColor: '#ffffff'
         });
@@ -1349,29 +1346,25 @@
         const pdf = new jsPDF('portrait', 'mm', 'a4');
 
         const pdfWidth = pdf.internal.pageSize.getWidth();
-        const cardWidth = 110; // Clean ID card document width in mm
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        
+        // Slightly bigger card width (130 mm) for optimal A4 display
+        const cardWidth = 130;
         const cardHeight = (canvas.height * cardWidth) / canvas.width;
+        
+        // Center aligned both horizontally and vertically
         const xPos = (pdfWidth - cardWidth) / 2;
-        const yPos = 30;
+        const yPos = (pdfHeight - cardHeight) / 2;
 
-        // Title Header
-        pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(14);
-        pdf.text(activeAadhaarLabel.toUpperCase(), pdfWidth / 2, 20, { align: "center" });
-
-        // Add Border Flashcard
+        // Add ONLY the centered card (No title text, no footer text)
         pdf.addImage(imgData, 'PNG', xPos, yPos, cardWidth, cardHeight);
 
-        // Verification Footer
-        pdf.setFontSize(9);
-        pdf.setFont("helvetica", "normal");
-        pdf.setTextColor(120);
-        pdf.text("DocVault Digital Verified College Record Flashcard", pdfWidth / 2, yPos + cardHeight + 12, { align: "center" });
-
-        pdf.save(`${activeAadhaarTarget}_Flashcard.pdf`);
+        pdf.save(`${activeAadhaarTarget}_Card.pdf`);
       } catch (err) {
         console.error("PDF Export error:", err);
         alert("Could not generate PDF. Please try again.");
+      } finally {
+        labels.forEach(l => l.style.display = '');
       }
     }
 
