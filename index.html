@@ -13,6 +13,9 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- QR Code Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- HTML2Canvas & jsPDF for Direct Flashcard PDF Export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
     * {
@@ -42,7 +45,7 @@
 
     .hidden { display: none !important; }
 
-    /* Top Live Metrics Widget */
+    /* Top Live Metrics */
     .metrics-bar {
       display: flex;
       gap: 10px;
@@ -335,6 +338,14 @@
       flex-direction: column;
       gap: 12px;
     }
+    .item-card.clickable-card {
+      cursor: pointer;
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+    .item-card.clickable-card:hover {
+      border-color: #38bdf8;
+      background: #131d33;
+    }
     .item-card-header {
       display: flex;
       justify-content: space-between;
@@ -518,13 +529,75 @@
       background: #fff;
       border-radius: 8px;
     }
+
+    /* ================= FLASHCARD & AADHAAR FAMILY STYLES ================= */
+    .family-tab-option {
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 14px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .family-tab-option:hover {
+      border-color: #3b82f6;
+      background: #25334d;
+    }
+
+    /* Flashcard Border Container */
+    .flashcard-document-frame {
+      background: #ffffff;
+      border: 2px solid #cbd5e1;
+      border-radius: 14px;
+      padding: 14px;
+      width: 100%;
+      max-width: 380px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    }
+    .flashcard-side-slot {
+      border: 1.5px dashed #94a3b8;
+      border-radius: 10px;
+      min-height: 140px;
+      background: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+    .flashcard-side-slot img {
+      width: 100%;
+      height: auto;
+      max-height: 190px;
+      object-fit: contain;
+      display: block;
+    }
+    .flashcard-side-label {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      background: rgba(15, 23, 42, 0.75);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
   </style>
 </head>
 <body>
 
   <div class="app-container">
 
-    <!-- ================= METRICS BAR (ACTIVE & TOTAL REGISTERED) ================= -->
+    <!-- ================= METRICS BAR ================= -->
     <div class="metrics-bar">
       <div class="metric-badge">
         <div class="metric-info">
@@ -682,8 +755,9 @@
 
   </div>
 
-  <!-- Hidden File Input -->
+  <!-- Hidden File Inputs -->
   <input type="file" id="universalFileInput" class="hidden" accept="image/*,application/pdf" onchange="handleUniversalFileUpload(event)">
+  <input type="file" id="sideFileInput" class="hidden" accept="image/*" onchange="handleSideFileUpload(event)">
 
   <!-- Exact QR Modal -->
   <div id="qrModal" class="modal-overlay hidden" onclick="closeQrOnBackdrop(event)">
@@ -697,7 +771,7 @@
     </div>
   </div>
 
-  <!-- Document Viewer Modal -->
+  <!-- Document Viewer Modal (General Files) -->
   <div id="viewerModal" class="modal-overlay hidden" onclick="closeViewerOnBackdrop(event)">
     <div class="modal-viewer-card" onclick="event.stopPropagation()">
       <div class="modal-viewer-header">
@@ -709,6 +783,107 @@
         <a id="viewerDownloadBtn" href="#" download class="btn-primary" style="text-decoration:none;"><i data-lucide="download" style="width:16px;"></i> Download File</a>
         <button class="btn-secondary" style="flex:1;" onclick="closeViewerModal()">Close</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ================= AADHAAR FAMILY SELECTOR MODAL ================= -->
+  <div id="aadhaarFamilyModal" class="modal-overlay hidden" onclick="closeFamilySelectorOnBackdrop(event)">
+    <div class="modal-qr-card" style="max-width:380px; text-align:left; align-items:stretch;" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-weight:700; font-size:1.15rem; color:#f8fafc; display:flex; align-items:center; gap:8px;">
+          <i data-lucide="id-card" style="color:#38bdf8;"></i> Aadhaar Vault
+        </div>
+        <button class="icon-btn" style="width:32px; height:32px;" onclick="closeAadhaarFamilyModal()"><i data-lucide="x" style="width:16px;"></i></button>
+      </div>
+      <p style="font-size:0.8rem; color:#94a3b8; margin-top:-6px;">Select which Aadhaar Card you want to manage:</p>
+
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:4px;">
+        <div class="family-tab-option" onclick="openFlashcardManager('my_aadhaar', 'My Aadhaar Card')">
+          <div>
+            <div style="font-weight:600; color:#f1f5f9;">My Aadhaar Card</div>
+            <div style="font-size:0.75rem; color:#94a3b8;" id="statusText_my_aadhaar">Checking...</div>
+          </div>
+          <i data-lucide="chevron-right" style="color:#60a5fa;"></i>
+        </div>
+
+        <div class="family-tab-option" onclick="openFlashcardManager('father_aadhaar', 'Father\'s Aadhaar Card')">
+          <div>
+            <div style="font-weight:600; color:#f1f5f9;">Father's Aadhaar Card</div>
+            <div style="font-size:0.75rem; color:#94a3b8;" id="statusText_father_aadhaar">Checking...</div>
+          </div>
+          <i data-lucide="chevron-right" style="color:#60a5fa;"></i>
+        </div>
+
+        <div class="family-tab-option" onclick="openFlashcardManager('mother_aadhaar', 'Mother\'s Aadhaar Card')">
+          <div>
+            <div style="font-weight:600; color:#f1f5f9;">Mother's Aadhaar Card</div>
+            <div style="font-size:0.75rem; color:#94a3b8;" id="statusText_mother_aadhaar">Checking...</div>
+          </div>
+          <i data-lucide="chevron-right" style="color:#60a5fa;"></i>
+        </div>
+      </div>
+
+      <button class="modal-close-btn" style="margin-top:6px;" onclick="closeAadhaarFamilyModal()">Close</button>
+    </div>
+  </div>
+
+  <!-- ================= FLASHCARD DEDICATED MODAL (PHOTO 2 + PHOTO 3 STRUCTURE) ================= -->
+  <div id="flashcardModal" class="modal-overlay hidden" onclick="closeFlashcardOnBackdrop(event)">
+    <div class="modal-viewer-card" style="height:auto; max-height:92vh;" onclick="event.stopPropagation()">
+      
+      <!-- Top Title Bar (As in Photo 2) -->
+      <div class="modal-viewer-header">
+        <div id="flashcardModalTitle" style="font-weight:600; font-size:1rem; color:#f1f5f9;">Aadhaar Card</div>
+        <button class="icon-btn" style="width:32px; height:32px;" onclick="closeFlashcardModal()"><i data-lucide="x" style="width:16px;"></i></button>
+      </div>
+
+      <!-- Flashcard Body with Border Frame (Photo 3 Sketch) -->
+      <div class="modal-viewer-body" style="padding:16px; background:#0b1120;">
+        <div class="flashcard-document-frame" id="printableFlashcardArea">
+          
+          <!-- Front Side -->
+          <div class="flashcard-side-slot" id="frontSlotArea">
+            <span class="flashcard-side-label">FRONT</span>
+            <img id="frontSideImg" src="" class="hidden" alt="Front Side">
+            <div id="frontSidePlaceholder" style="text-align:center; padding:16px; color:#64748b;">
+              <i data-lucide="image-plus" style="width:32px; height:32px; margin-bottom:4px; color:#94a3b8;"></i>
+              <div style="font-size:0.8rem; font-weight:600;">No Front Photo</div>
+              <button class="card-action-btn primary" style="margin-top:8px; padding:4px 12px;" onclick="triggerSideUpload('front')">Upload Front</button>
+            </div>
+          </div>
+
+          <!-- Back Side -->
+          <div class="flashcard-side-slot" id="backSlotArea">
+            <span class="flashcard-side-label">BACK</span>
+            <img id="backSideImg" src="" class="hidden" alt="Back Side">
+            <div id="backSidePlaceholder" style="text-align:center; padding:16px; color:#64748b;">
+              <i data-lucide="image-plus" style="width:32px; height:32px; margin-bottom:4px; color:#94a3b8;"></i>
+              <div style="font-size:0.8rem; font-weight:600;">No Back Photo</div>
+              <button class="card-action-btn primary" style="margin-top:8px; padding:4px 12px;" onclick="triggerSideUpload('back')">Upload Back</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Bottom Actions Bar (Upload/Change, Preview, Download PDF) -->
+      <div style="padding:12px 14px; background:#111827; border-top:1px solid #1f2937; display:flex; flex-direction:column; gap:8px;">
+        <div style="display:flex; gap:8px;">
+          <button id="flashcardUploadBtn" class="card-action-btn primary" onclick="triggerSideUpload('front')">
+            <i data-lucide="upload" style="width:14px;"></i> <span id="flashcardUploadLabel">Change Front</span>
+          </button>
+          <button class="card-action-btn primary" onclick="triggerSideUpload('back')">
+            <i data-lucide="upload" style="width:14px;"></i> Change Back
+          </button>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-primary" style="flex:1;" onclick="downloadFlashcardPDF()">
+            <i data-lucide="download" style="width:16px;"></i> Download Flashcard PDF
+          </button>
+          <button class="btn-secondary" style="flex:0.6;" onclick="closeFlashcardModal()">Close</button>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -727,9 +902,8 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // ================= REALTIME PRESENCE & REGISTERED USERS =================
+    // ================= LIVE METRICS =================
     function initLiveMetrics() {
-      // 1. Live Active Users (Presence)
       const presenceRef = db.ref('active_presence');
       const myConnectionRef = presenceRef.push();
       const connectedRef = db.ref('.info/connected');
@@ -737,10 +911,7 @@
       connectedRef.on('value', (snap) => {
         if (snap.val() === true) {
           myConnectionRef.onDisconnect().remove();
-          myConnectionRef.set({
-            online: true,
-            ts: firebase.database.ServerValue.TIMESTAMP
-          });
+          myConnectionRef.set({ online: true, ts: firebase.database.ServerValue.TIMESTAMP });
         }
       });
 
@@ -749,16 +920,14 @@
         document.getElementById('activeUsersCount').innerText = count > 0 ? count : 1;
       });
 
-      // 2. Total Registered Vaults
       db.ref('vaults').on('value', (snap) => {
-        const total = snap.numChildren();
-        document.getElementById('totalUsersCount').innerText = total;
+        document.getElementById('totalUsersCount').innerText = snap.numChildren();
       });
     }
 
     // ================= FULL STRUCTURED COLLEGE DOCUMENTS LIST =================
     const masterCollegeDocuments = [
-      { id: 'doc_aadhaar', title: 'Aadhaar Card', desc: 'Forms, verification aur biometric ke liye.', category: 'Identity', icon: 'id-card' },
+      { id: 'doc_aadhaar', title: 'Aadhaar Card', desc: 'Forms, verification aur biometric ke liye.', category: 'Identity', icon: 'id-card', isAadhaarCustom: true },
       { id: 'doc_voter_pan', title: 'Voter ID / PAN Card / Driving License', desc: 'Secondary identity proof aur bank verification.', category: 'Identity', icon: 'credit-card' },
       { id: 'doc_birth_cert', title: 'Birth Certificate', desc: 'Date of birth verify karne ke liye.', category: 'Identity', icon: 'calendar' },
       { id: 'doc_10th', title: '10th (SSC) Marksheet & Passing Certificate', desc: 'Date of birth aur primary schooling proof.', category: 'Academic', icon: 'file-badge' },
@@ -931,6 +1100,7 @@
         userVaultData = snap.val() || {};
         renderDocuments('All');
         restoreSignatureAndPhoto();
+        updateAadhaarFamilyStatusIndicators();
       });
 
       lucide.createIcons();
@@ -965,37 +1135,70 @@
       document.getElementById('docCount').innerText = `${masterCollegeDocuments.length} Documents`;
 
       filtered.forEach(doc => {
-        const fileMeta = userVaultData[doc.id];
-        const hasFile = !!fileMeta;
-
         const item = document.createElement('div');
-        item.className = 'item-card';
-        item.innerHTML = `
-          <div class="item-card-header">
-            <div class="item-card-title">
-              <i data-lucide="${doc.icon || 'file-text'}" style="width:20px; color:#60a5fa; flex-shrink:0; margin-top:2px;"></i>
-              <div>
-                <div>${doc.title}</div>
-                <div class="item-card-desc">${doc.desc}</div>
-              </div>
-            </div>
-            <span class="doc-status-badge" style="${hasFile ? 'color:#34d399; border-color:#059669;' : ''}">
-              ${hasFile ? 'Available' : 'Pending'}
-            </span>
-          </div>
 
-          <div class="doc-actions-row">
-            <button class="card-action-btn primary" onclick="triggerDocUpload('${doc.id}')">
-              <i data-lucide="upload" style="width:13px;"></i> ${hasFile ? 'Change' : 'Upload'}
-            </button>
-            <button class="card-action-btn" onclick="previewDocument('${doc.id}', '${doc.title}')" ${!hasFile ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''}>
-              <i data-lucide="eye" style="width:13px;"></i> Preview
-            </button>
-            <button class="card-action-btn" onclick="downloadDocument('${doc.id}', '${doc.title}')" ${!hasFile ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''}>
-              <i data-lucide="download" style="width:13px;"></i> Download
-            </button>
-          </div>
-        `;
+        // Special handling for Aadhaar Card (No bottom 3 buttons, whole card clickable)
+        if (doc.isAadhaarCustom) {
+          item.className = 'item-card clickable-card';
+          item.onclick = openAadhaarFamilyModal;
+
+          // Check if at least one family aadhaar exists
+          const myDoc = userVaultData['my_aadhaar'];
+          const fatDoc = userVaultData['father_aadhaar'];
+          const motDoc = userVaultData['mother_aadhaar'];
+          const hasAny = (myDoc && (myDoc.front || myDoc.back)) || (fatDoc && (fatDoc.front || fatDoc.back)) || (motDoc && (motDoc.front || motDoc.back));
+
+          item.innerHTML = `
+            <div class="item-card-header">
+              <div class="item-card-title">
+                <i data-lucide="${doc.icon || 'id-card'}" style="width:20px; color:#60a5fa; flex-shrink:0; margin-top:2px;"></i>
+                <div>
+                  <div>${doc.title}</div>
+                  <div class="item-card-desc">${doc.desc}</div>
+                </div>
+              </div>
+              <span class="doc-status-badge" style="${hasAny ? 'color:#34d399; border-color:#059669;' : ''}">
+                ${hasAny ? 'Available' : 'Pending'}
+              </span>
+            </div>
+            <div style="font-size:0.75rem; color:#60a5fa; display:flex; align-items:center; justify-content:space-between; margin-top:4px;">
+              <span>Manage: My, Father's & Mother's Aadhaar</span>
+              <i data-lucide="chevron-right" style="width:16px;"></i>
+            </div>
+          `;
+        } else {
+          // Standard documents
+          const fileMeta = userVaultData[doc.id];
+          const hasFile = !!fileMeta;
+
+          item.className = 'item-card';
+          item.innerHTML = `
+            <div class="item-card-header">
+              <div class="item-card-title">
+                <i data-lucide="${doc.icon || 'file-text'}" style="width:20px; color:#60a5fa; flex-shrink:0; margin-top:2px;"></i>
+                <div>
+                  <div>${doc.title}</div>
+                  <div class="item-card-desc">${doc.desc}</div>
+                </div>
+              </div>
+              <span class="doc-status-badge" style="${hasFile ? 'color:#34d399; border-color:#059669;' : ''}">
+                ${hasFile ? 'Available' : 'Pending'}
+              </span>
+            </div>
+
+            <div class="doc-actions-row">
+              <button class="card-action-btn primary" onclick="triggerDocUpload('${doc.id}')">
+                <i data-lucide="upload" style="width:13px;"></i> ${hasFile ? 'Change' : 'Upload'}
+              </button>
+              <button class="card-action-btn" onclick="previewDocument('${doc.id}', '${doc.title}')" ${!hasFile ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''}>
+                <i data-lucide="eye" style="width:13px;"></i> Preview
+              </button>
+              <button class="card-action-btn" onclick="downloadDocument('${doc.id}', '${doc.title}')" ${!hasFile ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''}>
+                <i data-lucide="download" style="width:13px;"></i> Download
+              </button>
+            </div>
+          `;
+        }
         list.appendChild(item);
       });
 
@@ -1008,7 +1211,171 @@
       renderDocuments(cat);
     }
 
-    // ================= FILE UPLOADS =================
+    // ================= AADHAAR FAMILY & FLASHCARD SYSTEM =================
+    let activeAadhaarTarget = 'my_aadhaar'; // my_aadhaar, father_aadhaar, mother_aadhaar
+    let activeAadhaarLabel = 'My Aadhaar Card';
+    let currentSideTarget = 'front'; // front or back
+
+    function openAadhaarFamilyModal() {
+      updateAadhaarFamilyStatusIndicators();
+      document.getElementById('aadhaarFamilyModal').classList.remove('hidden');
+    }
+
+    function closeAadhaarFamilyModal() {
+      document.getElementById('aadhaarFamilyModal').classList.add('hidden');
+    }
+
+    function closeFamilySelectorOnBackdrop(e) {
+      if (e.target.id === 'aadhaarFamilyModal') closeAadhaarFamilyModal();
+    }
+
+    function updateAadhaarFamilyStatusIndicators() {
+      const keys = ['my_aadhaar', 'father_aadhaar', 'mother_aadhaar'];
+      keys.forEach(k => {
+        const el = document.getElementById(`statusText_${k}`);
+        if (el) {
+          const rec = userVaultData[k];
+          if (rec && rec.front && rec.back) el.innerText = "✓ Front & Back Available";
+          else if (rec && (rec.front || rec.back)) el.innerText = "⚠ Incomplete (1 side)";
+          else el.innerText = "Not Uploaded";
+        }
+      });
+    }
+
+    function openFlashcardManager(key, label) {
+      activeAadhaarTarget = key;
+      activeAadhaarLabel = label;
+      closeAadhaarFamilyModal();
+
+      document.getElementById('flashcardModalTitle').innerText = label;
+      renderFlashcardView();
+      document.getElementById('flashcardModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeFlashcardModal() {
+      document.getElementById('flashcardModal').classList.add('hidden');
+    }
+
+    function closeFlashcardOnBackdrop(e) {
+      if (e.target.id === 'flashcardModal') closeFlashcardModal();
+    }
+
+    function renderFlashcardView() {
+      const record = userVaultData[activeAadhaarTarget] || {};
+
+      // Front Side
+      const frontImg = document.getElementById('frontSideImg');
+      const frontPlaceholder = document.getElementById('frontSidePlaceholder');
+      if (record.front) {
+        frontImg.src = record.front;
+        frontImg.classList.remove('hidden');
+        frontPlaceholder.classList.add('hidden');
+      } else {
+        frontImg.src = '';
+        frontImg.classList.add('hidden');
+        frontPlaceholder.classList.remove('hidden');
+      }
+
+      // Back Side
+      const backImg = document.getElementById('backSideImg');
+      const backPlaceholder = document.getElementById('backSidePlaceholder');
+      if (record.back) {
+        backImg.src = record.back;
+        backImg.classList.remove('hidden');
+        backPlaceholder.classList.add('hidden');
+      } else {
+        backImg.src = '';
+        backImg.classList.add('hidden');
+        backPlaceholder.classList.remove('hidden');
+      }
+
+      // Dynamic change button text
+      const upLabel = document.getElementById('flashcardUploadLabel');
+      if (upLabel) {
+        upLabel.innerText = record.front ? "Change Front" : "Upload Front";
+      }
+    }
+
+    function triggerSideUpload(side) {
+      currentSideTarget = side;
+      isFilePickerOpen = true;
+      clearTimeout(inactivityTimer);
+      document.getElementById('sideFileInput').click();
+    }
+
+    async function handleSideFileUpload(event) {
+      isFilePickerOpen = false;
+      resetInactivityTimer();
+
+      const file = event.target.files[0];
+      if (!file || !currentSessionUser) return;
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const base64Data = e.target.result;
+
+        // Fetch existing or initialize
+        const cur = userVaultData[activeAadhaarTarget] || {};
+        cur[currentSideTarget] = base64Data;
+        cur.updatedAt = new Date().toLocaleDateString();
+
+        await db.ref(`vaults/${currentSessionUser.name}/documents/${activeAadhaarTarget}`).set(cur);
+        renderFlashcardView();
+        event.target.value = '';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Direct Flashcard Download in High-Resolution PDF
+    async function downloadFlashcardPDF() {
+      const printableArea = document.getElementById('printableFlashcardArea');
+      const record = userVaultData[activeAadhaarTarget] || {};
+
+      if (!record.front && !record.back) {
+        alert("Please upload at least one side (Front or Back) before downloading!");
+        return;
+      }
+
+      try {
+        const canvas = await html2canvas(printableArea, {
+          scale: 2.5,
+          useCORS: true,
+          backgroundColor: '#ffffff'
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('portrait', 'mm', 'a4');
+
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const cardWidth = 110; // Clean ID card document width in mm
+        const cardHeight = (canvas.height * cardWidth) / canvas.width;
+        const xPos = (pdfWidth - cardWidth) / 2;
+        const yPos = 30;
+
+        // Title Header
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(14);
+        pdf.text(activeAadhaarLabel.toUpperCase(), pdfWidth / 2, 20, { align: "center" });
+
+        // Add Border Flashcard
+        pdf.addImage(imgData, 'PNG', xPos, yPos, cardWidth, cardHeight);
+
+        // Verification Footer
+        pdf.setFontSize(9);
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(120);
+        pdf.text("DocVault Digital Verified College Record Flashcard", pdfWidth / 2, yPos + cardHeight + 12, { align: "center" });
+
+        pdf.save(`${activeAadhaarTarget}_Flashcard.pdf`);
+      } catch (err) {
+        console.error("PDF Export error:", err);
+        alert("Could not generate PDF. Please try again.");
+      }
+    }
+
+    // ================= FILE UPLOADS (GENERAL) =================
     let currentUploadTargetId = null;
 
     function triggerDocUpload(docId) {
