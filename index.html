@@ -13,8 +13,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- QR Code Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <!-- HTML2Canvas & jsPDF for Direct Flashcard PDF Export -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- jsPDF Library for Clean Direct PDF Export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
@@ -530,7 +529,7 @@
       border-radius: 8px;
     }
 
-    /* ================= FLASHCARD & AADHAAR FAMILY STYLES ================= */
+    /* Family Options */
     .family-tab-option {
       background: #1e293b;
       border: 1px solid #334155;
@@ -547,18 +546,17 @@
       background: #25334d;
     }
 
-    /* Flashcard Border Container */
+    /* Flashcard UI Frame */
     .flashcard-document-frame {
       background: #ffffff;
-      border: 1.5px solid #94a3b8;
+      border: 2px solid #cbd5e1;
       border-radius: 12px;
-      padding: 10px;
+      padding: 12px;
       width: 100%;
       max-width: 380px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      gap: 12px;
     }
     .flashcard-side-slot {
       border: 1px solid #cbd5e1;
@@ -597,7 +595,7 @@
 
   <div class="app-container">
 
-    <!-- ================= METRICS BAR ================= -->
+    <!-- Metrics Bar -->
     <div class="metrics-bar">
       <div class="metric-badge">
         <div class="metric-info">
@@ -615,7 +613,7 @@
       </div>
     </div>
 
-    <!-- ================= AUTH SCREEN ================= -->
+    <!-- Auth Screen -->
     <div id="authScreen" class="auth-card">
       <div style="display:flex; justify-content:center; margin-bottom:4px;">
         <div class="brand-icon" style="width:48px; height:48px;"><i data-lucide="shield-check" style="width:26px; height:26px;"></i></div>
@@ -623,13 +621,11 @@
       <h2 style="font-size:1.35rem; font-weight:700;">DocVault</h2>
       <p id="authSubtitle" style="font-size:0.8rem; color:#94a3b8; margin-top:-8px;">Universal Encrypted College Records</p>
 
-      <!-- Toggle: New User vs Access Data -->
       <div class="auth-toggle-row" id="authToggleGroup">
         <button id="tabNewUser" class="auth-tab-btn" onclick="switchAuthMode('register')">New User</button>
         <button id="tabAccessData" class="auth-tab-btn active" onclick="switchAuthMode('login')">Access Data</button>
       </div>
 
-      <!-- Access Data Form (Master PIN Required) -->
       <div id="loginForm" class="auth-input-group">
         <div id="loginNameFieldContainer">
           <label>Vault Username</label>
@@ -642,7 +638,6 @@
         <button class="btn-primary" style="margin-top:8px; padding:12px;" onclick="handleLogin()">Unlock Vault</button>
       </div>
 
-      <!-- New User Form -->
       <div id="registerForm" class="auth-input-group hidden">
         <div>
           <label>Choose Username (No spaces)</label>
@@ -664,10 +659,9 @@
       </div>
     </div>
 
-    <!-- ================= VAULT DASHBOARD ================= -->
+    <!-- Vault Dashboard -->
     <div id="vaultDashboard" class="hidden" style="display:flex; flex-direction:column; gap:16px;">
       
-      <!-- Top Bar -->
       <div class="header">
         <div class="brand-group">
           <div class="brand-icon"><i data-lucide="shield-check"></i></div>
@@ -679,13 +673,11 @@
         <button class="icon-btn" onclick="openQrModal()"><i data-lucide="qr-code"></i></button>
       </div>
 
-      <!-- Security Status Banner -->
       <div class="security-status-banner">
         <span>🛡 Auto-Lock Active (3 min idle / tab exit)</span>
         <span style="color:#60a5fa; cursor:pointer;" onclick="lockVault()">Lock Now</span>
       </div>
 
-      <!-- Profile Header Card -->
       <div class="profile-card">
         <div class="user-info">
           <div class="avatar" id="avatarInitial">U</div>
@@ -703,7 +695,6 @@
         </div>
       </div>
 
-      <!-- Category Tabs -->
       <div class="tabs-slider">
         <div class="tab-pill active" onclick="filterCategory('All', this)">All Records</div>
         <div class="tab-pill" onclick="filterCategory('Identity', this)">Identity & Personal</div>
@@ -749,17 +740,17 @@
         </div>
       </div>
 
-      <!-- Structured Documents List Container -->
+      <!-- Documents List Container -->
       <div id="documentsList" style="display:flex; flex-direction:column; gap:12px;"></div>
     </div>
 
   </div>
 
-  <!-- Hidden File Inputs -->
+  <!-- Hidden Inputs -->
   <input type="file" id="universalFileInput" class="hidden" accept="image/*,application/pdf" onchange="handleUniversalFileUpload(event)">
   <input type="file" id="sideFileInput" class="hidden" accept="image/*" onchange="handleSideFileUpload(event)">
 
-  <!-- Exact QR Modal -->
+  <!-- QR Modal -->
   <div id="qrModal" class="modal-overlay hidden" onclick="closeQrOnBackdrop(event)">
     <div class="modal-qr-card" onclick="event.stopPropagation()">
       <div class="modal-qr-title">Instant Vault Scan</div>
@@ -771,7 +762,7 @@
     </div>
   </div>
 
-  <!-- Document Viewer Modal (General Files) -->
+  <!-- Document Viewer Modal -->
   <div id="viewerModal" class="modal-overlay hidden" onclick="closeViewerOnBackdrop(event)">
     <div class="modal-viewer-card" onclick="event.stopPropagation()">
       <div class="modal-viewer-header">
@@ -786,7 +777,7 @@
     </div>
   </div>
 
-  <!-- ================= AADHAAR FAMILY SELECTOR MODAL ================= -->
+  <!-- Aadhaar Family Selector Modal -->
   <div id="aadhaarFamilyModal" class="modal-overlay hidden" onclick="closeFamilySelectorOnBackdrop(event)">
     <div class="modal-qr-card" style="max-width:380px; text-align:left; align-items:stretch;" onclick="event.stopPropagation()">
       <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -827,17 +818,15 @@
     </div>
   </div>
 
-  <!-- ================= FLASHCARD DEDICATED MODAL (PHOTO 2 + PHOTO 3 STRUCTURE) ================= -->
+  <!-- Flashcard Dedicated Modal -->
   <div id="flashcardModal" class="modal-overlay hidden" onclick="closeFlashcardOnBackdrop(event)">
     <div class="modal-viewer-card" style="height:auto; max-height:92vh;" onclick="event.stopPropagation()">
       
-      <!-- Top Title Bar -->
       <div class="modal-viewer-header">
         <div id="flashcardModalTitle" style="font-weight:600; font-size:1rem; color:#f1f5f9;">Aadhaar Card</div>
         <button class="icon-btn" style="width:32px; height:32px;" onclick="closeFlashcardModal()"><i data-lucide="x" style="width:16px;"></i></button>
       </div>
 
-      <!-- Flashcard Body with Border Frame -->
       <div class="modal-viewer-body" style="padding:16px; background:#0b1120;">
         <div class="flashcard-document-frame" id="printableFlashcardArea">
           
@@ -866,7 +855,6 @@
         </div>
       </div>
 
-      <!-- Bottom Actions Bar -->
       <div style="padding:12px 14px; background:#111827; border-top:1px solid #1f2937; display:flex; flex-direction:column; gap:8px;">
         <div style="display:flex; gap:8px;">
           <button id="flashcardUploadBtn" class="card-action-btn primary" onclick="triggerSideUpload('front')">
@@ -925,7 +913,7 @@
       });
     }
 
-    // ================= FULL STRUCTURED COLLEGE DOCUMENTS LIST =================
+    // ================= MASTER DOCUMENTS =================
     const masterCollegeDocuments = [
       { id: 'doc_aadhaar', title: 'Aadhaar Card', desc: 'Forms, verification aur biometric ke liye.', category: 'Identity', icon: 'id-card', isAadhaarCustom: true },
       { id: 'doc_voter_pan', title: 'Voter ID / PAN Card / Driving License', desc: 'Secondary identity proof aur bank verification.', category: 'Identity', icon: 'credit-card' },
@@ -1320,9 +1308,19 @@
       reader.readAsDataURL(file);
     }
 
-    // Direct Flashcard Download in Clean, Centered A4 PDF (No extra text, no FRONT/BACK labels)
+    // Helper Image Loader for Crisp PDF Layout
+    function loadImageElement(src) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+    }
+
+    // Direct Clean PDF Generator: Exact Centered, Bigger, No Text/Labels
     async function downloadFlashcardPDF() {
-      const printableArea = document.getElementById('printableFlashcardArea');
       const record = userVaultData[activeAadhaarTarget] || {};
 
       if (!record.front && !record.back) {
@@ -1330,42 +1328,67 @@
         return;
       }
 
-      // Hide FRONT/BACK labels temporarily during capture
-      const labels = printableArea.querySelectorAll('.flashcard-side-label');
-      labels.forEach(l => l.style.display = 'none');
+      const frontImg = record.front ? await loadImageElement(record.front) : null;
+      const backImg = record.back ? await loadImageElement(record.back) : null;
 
-      try {
-        const canvas = await html2canvas(printableArea, {
-          scale: 3,
-          useCORS: true,
-          backgroundColor: '#ffffff'
-        });
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('portrait', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
 
-        const imgData = canvas.toDataURL('image/png');
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('portrait', 'mm', 'a4');
+      // Slightly bigger card width for A4
+      const targetWidth = 145; // mm
+      const gap = 10; // mm gap between front and back
+      const borderPadding = 6; // mm padding inside border
 
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        
-        // Slightly bigger card width (130 mm) for optimal A4 display
-        const cardWidth = 130;
-        const cardHeight = (canvas.height * cardWidth) / canvas.width;
-        
-        // Center aligned both horizontally and vertically
-        const xPos = (pdfWidth - cardWidth) / 2;
-        const yPos = (pdfHeight - cardHeight) / 2;
+      let frontHeight = 0;
+      let backHeight = 0;
 
-        // Add ONLY the centered card (No title text, no footer text)
-        pdf.addImage(imgData, 'PNG', xPos, yPos, cardWidth, cardHeight);
-
-        pdf.save(`${activeAadhaarTarget}_Card.pdf`);
-      } catch (err) {
-        console.error("PDF Export error:", err);
-        alert("Could not generate PDF. Please try again.");
-      } finally {
-        labels.forEach(l => l.style.display = '');
+      if (frontImg) {
+        frontHeight = (frontImg.height * targetWidth) / frontImg.width;
       }
+      if (backImg) {
+        backHeight = (backImg.height * targetWidth) / backImg.width;
+      }
+
+      const totalItemsHeight = (frontHeight > 0 && backHeight > 0)
+        ? (frontHeight + backHeight + gap)
+        : (frontHeight || backHeight);
+
+      const frameWidth = targetWidth + (borderPadding * 2);
+      const frameHeight = totalItemsHeight + (borderPadding * 2);
+
+      // Centered X and Y on A4 page
+      const frameX = (pdfWidth - frameWidth) / 2;
+      const frameY = (pdfHeight - frameHeight) / 2;
+
+      // Draw Outer Card Frame Border
+      pdf.setDrawColor(180, 185, 195);
+      pdf.setLineWidth(0.8);
+      pdf.roundedRect(frameX, frameY, frameWidth, frameHeight, 4, 4);
+
+      let currentY = frameY + borderPadding;
+      const imgX = (pdfWidth - targetWidth) / 2;
+
+      // Render Front Side
+      if (frontImg) {
+        pdf.addImage(frontImg, 'PNG', imgX, currentY, targetWidth, frontHeight);
+        pdf.setDrawColor(210, 215, 225);
+        pdf.setLineWidth(0.4);
+        pdf.rect(imgX, currentY, targetWidth, frontHeight);
+        currentY += frontHeight + gap;
+      }
+
+      // Render Back Side
+      if (backImg) {
+        pdf.addImage(backImg, 'PNG', imgX, currentY, targetWidth, backHeight);
+        pdf.setDrawColor(210, 215, 225);
+        pdf.setLineWidth(0.4);
+        pdf.rect(imgX, currentY, targetWidth, backHeight);
+      }
+
+      // Save Clean PDF without titles, labels, or verification texts
+      pdf.save(`${activeAadhaarTarget}_Card.pdf`);
     }
 
     // ================= FILE UPLOADS (GENERAL) =================
