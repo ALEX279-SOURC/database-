@@ -42,6 +42,56 @@
 
     .hidden { display: none !important; }
 
+    /* Top Live Metrics Widget */
+    .metrics-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 2px;
+    }
+    .metric-badge {
+      flex: 1;
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 14px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    }
+    .metric-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .metric-label {
+      font-size: 0.72rem;
+      color: #94a3b8;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .metric-val {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #f8fafc;
+      margin-top: 2px;
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #10b981;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: pulse 1.6s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
     /* Auth Screens */
     .auth-card {
       background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
@@ -52,7 +102,7 @@
       flex-direction: column;
       gap: 16px;
       text-align: center;
-      margin-top: 30px;
+      margin-top: 10px;
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
     }
     .auth-toggle-row {
@@ -474,6 +524,24 @@
 
   <div class="app-container">
 
+    <!-- ================= METRICS BAR (ACTIVE & TOTAL REGISTERED) ================= -->
+    <div class="metrics-bar">
+      <div class="metric-badge">
+        <div class="metric-info">
+          <span class="metric-label"><span class="pulse-dot"></span> Active Users</span>
+          <span class="metric-val" id="activeUsersCount">1</span>
+        </div>
+        <i data-lucide="activity" style="width:20px; color:#10b981;"></i>
+      </div>
+      <div class="metric-badge">
+        <div class="metric-info">
+          <span class="metric-label"><i data-lucide="users" style="width:12px; height:12px;"></i> Total Vaults</span>
+          <span class="metric-val" id="totalUsersCount">0</span>
+        </div>
+        <i data-lucide="folder-lock" style="width:20px; color:#38bdf8;"></i>
+      </div>
+    </div>
+
     <!-- ================= AUTH SCREEN ================= -->
     <div id="authScreen" class="auth-card">
       <div style="display:flex; justify-content:center; margin-bottom:4px;">
@@ -659,6 +727,35 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // ================= REALTIME PRESENCE & REGISTERED USERS =================
+    function initLiveMetrics() {
+      // 1. Live Active Users (Presence)
+      const presenceRef = db.ref('active_presence');
+      const myConnectionRef = presenceRef.push();
+      const connectedRef = db.ref('.info/connected');
+
+      connectedRef.on('value', (snap) => {
+        if (snap.val() === true) {
+          myConnectionRef.onDisconnect().remove();
+          myConnectionRef.set({
+            online: true,
+            ts: firebase.database.ServerValue.TIMESTAMP
+          });
+        }
+      });
+
+      presenceRef.on('value', (snap) => {
+        const count = snap.numChildren();
+        document.getElementById('activeUsersCount').innerText = count > 0 ? count : 1;
+      });
+
+      // 2. Total Registered Vaults
+      db.ref('vaults').on('value', (snap) => {
+        const total = snap.numChildren();
+        document.getElementById('totalUsersCount').innerText = total;
+      });
+    }
+
     // ================= FULL STRUCTURED COLLEGE DOCUMENTS LIST =================
     const masterCollegeDocuments = [
       { id: 'doc_aadhaar', title: 'Aadhaar Card', desc: 'Forms, verification aur biometric ke liye.', category: 'Identity', icon: 'id-card' },
@@ -689,9 +786,8 @@
     let currentSessionUser = null;
     let userVaultData = {};
     let inactivityTimer = null;
-    let isFilePickerOpen = false; // Flag to prevent logout while selecting files
+    let isFilePickerOpen = false;
 
-    // Inactivity Timer (3 minutes idle)
     function resetInactivityTimer() {
       clearTimeout(inactivityTimer);
       if (currentSessionUser && !isFilePickerOpen) {
@@ -705,15 +801,14 @@
       window.addEventListener(evt, resetInactivityTimer, { passive: true });
     });
 
-    // Window closed or refreshed out of session
     window.addEventListener('beforeunload', () => {
       sessionStorage.removeItem('docvault_active_session');
     });
 
     window.addEventListener('load', async () => {
       lucide.createIcons();
+      initLiveMetrics();
 
-      // Check if session was active within this same tab
       const activeSession = sessionStorage.getItem('docvault_active_session');
       if (activeSession) {
         try {
@@ -723,7 +818,6 @@
         } catch(e) {}
       }
 
-      // Check if opened via QR parameter
       const urlParams = new URLSearchParams(window.location.search);
       const scannedVault = urlParams.get('vault');
 
@@ -822,7 +916,6 @@
       sessionStorage.setItem('docvault_active_session', JSON.stringify(user));
       resetInactivityTimer();
 
-      // Clean URL query from history
       if (window.history.replaceState) {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
@@ -834,7 +927,6 @@
       document.getElementById('userCourseDisplay').innerText = user.course;
       document.getElementById('avatarInitial').innerText = user.name.charAt(0).toUpperCase();
 
-      // Live listener for real-time document updates
       db.ref(`vaults/${user.name}/documents`).on('value', (snap) => {
         userVaultData = snap.val() || {};
         renderDocuments('All');
@@ -844,7 +936,6 @@
       lucide.createIcons();
     }
 
-    // Fully lock and clear memory
     function lockVault() {
       clearTimeout(inactivityTimer);
       if (currentSessionUser) {
@@ -917,17 +1008,16 @@
       renderDocuments(cat);
     }
 
-    // ================= FILE UPLOADS (WITHOUT LOGOUT BUG) =================
+    // ================= FILE UPLOADS =================
     let currentUploadTargetId = null;
 
     function triggerDocUpload(docId) {
       currentUploadTargetId = docId;
-      isFilePickerOpen = true; // Protect session while camera/gallery is open
+      isFilePickerOpen = true;
       clearTimeout(inactivityTimer);
       document.getElementById('universalFileInput').click();
     }
 
-    // Cancel safety reset
     window.addEventListener('focus', () => {
       setTimeout(() => {
         isFilePickerOpen = false;
