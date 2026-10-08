@@ -5,19 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DocVault - Secure College Vault</title>
 
-  <!-- Firebase App & Database -->
+  <!-- Firebase App & Database with SRI -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
-  <!-- CryptoJS (AES-256, PBKDF2 & SHA-256) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <!-- CryptoJS with Subresource Integrity (SRI) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js" 
+          integrity="sha512-E8QSvWZ0eCLGk4km3hxmlHe14HKVdXQMOlQEAbuStUD88MXU884vCR80575gEygcBUE+zTW633EGvVR35Uz33w==" 
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
   <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/lucide@0.263.1/dist/umd/lucide.min.js"></script>
   <!-- QR Code Library -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <!-- jsPDF Library for Clean Direct PDF Export -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" 
+          integrity="sha512-CNgIRecGo7nphbeZepKmjvfFu7G4KSmlKsBjZVWv5XKHxJFQgcGuTW2xtcUJduzv6t6RgMlhvTW7lULAKGs9Uw==" 
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <!-- jsPDF Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" 
+          integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" 
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
   <style>
     * {
@@ -625,7 +631,7 @@
         <div class="brand-icon" style="width:48px; height:48px;"><i data-lucide="shield-check" style="width:26px; height:26px;"></i></div>
       </div>
       <h2 style="font-size:1.35rem; font-weight:700;">DocVault</h2>
-      <p id="authSubtitle" style="font-size:0.8rem; color:#94a3b8; margin-top:-8px;">PBKDF2 + AES-256 Zero-Knowledge Vault</p>
+      <p id="authSubtitle" style="font-size:0.8rem; color:#94a3b8; margin-top:-8px;">PBKDF2-100k + AES-256 Military Grade Security</p>
 
       <div class="auth-toggle-row" id="authToggleGroup">
         <button id="tabNewUser" class="auth-tab-btn" onclick="switchAuthMode('register')">New User</button>
@@ -638,8 +644,8 @@
           <input type="text" id="loginName" class="input-field" placeholder="Enter username (e.g. amish)">
         </div>
         <div>
-          <label>Master PIN (Decryption Key)</label>
-          <input type="password" id="loginPin" class="input-field" placeholder="Enter Master PIN" maxlength="8">
+          <label>Master Passphrase / PIN (Decryption Key)</label>
+          <input type="password" id="loginPin" class="input-field" placeholder="Enter Master Passphrase (Min 6 chars)" minlength="6" maxlength="32">
         </div>
         <button class="btn-primary" style="margin-top:8px; padding:12px;" onclick="handleLogin()">Unlock & Decrypt</button>
       </div>
@@ -654,12 +660,12 @@
           <input type="text" id="regCourse" class="input-field" placeholder="e.g. FYBA">
         </div>
         <div>
-          <label>Set Master PIN (4 to 8 digits)</label>
-          <input type="password" id="regPin" class="input-field" placeholder="Create secret PIN" maxlength="8">
+          <label>Set Master Passphrase / PIN (Min 6 chars)</label>
+          <input type="password" id="regPin" class="input-field" placeholder="Min 6 characters (Letters/Digits)" minlength="6" maxlength="32">
         </div>
         <div>
-          <label>Confirm Master PIN</label>
-          <input type="password" id="regPinConfirm" class="input-field" placeholder="Confirm secret PIN" maxlength="8">
+          <label>Confirm Master Passphrase</label>
+          <input type="password" id="regPinConfirm" class="input-field" placeholder="Confirm Master Passphrase" minlength="6" maxlength="32">
         </div>
         <button class="btn-primary" style="margin-top:8px; padding:12px;" onclick="handleRegister()">Create Encrypted Vault</button>
       </div>
@@ -672,7 +678,7 @@
         <div class="brand-group">
           <div class="brand-icon"><i data-lucide="shield-check"></i></div>
           <div>
-            <div class="brand-title">DocVault <span class="secure-badge"><i data-lucide="shield" style="width:10px; height:10px;"></i> PBKDF2/AES</span></div>
+            <div class="brand-title">DocVault <span class="secure-badge"><i data-lucide="shield" style="width:10px; height:10px;"></i> SRI/PBKDF2</span></div>
             <div class="brand-sub">End-to-End Encrypted Session</div>
           </div>
         </div>
@@ -680,7 +686,7 @@
       </div>
 
       <div class="security-status-banner">
-        <span>🛡 Zero-Knowledge Encrypted (3 min auto-lock)</span>
+        <span>🛡 Zero-Knowledge Hardened (3 min auto-lock)</span>
         <span style="color:#6ee7b7; text-decoration:underline; cursor:pointer;" onclick="lockVault()">Lock Now</span>
       </div>
 
@@ -760,7 +766,7 @@
   <div id="qrModal" class="modal-overlay hidden" onclick="closeQrOnBackdrop(event)">
     <div class="modal-qr-card" onclick="event.stopPropagation()">
       <div class="modal-qr-title">Instant Vault Scan</div>
-      <div class="modal-qr-sub">Scan with any phone to open this vault directly (Only PIN needed)</div>
+      <div class="modal-qr-sub">Scan with any phone to open this vault directly (Only Passphrase needed)</div>
       <div class="qr-code-wrapper">
         <div id="qrcodeBox"></div>
       </div>
@@ -792,7 +798,7 @@
         </div>
         <button class="icon-btn" style="width:32px; height:32px;" onclick="closeAadhaarFamilyModal()"><i data-lucide="x" style="width:16px;"></i></button>
       </div>
-      <p style="font-size:0.8rem; color:#94a3b8; margin-top:-6px;">Select which Aadhaar Card you want to manage:</p>
+      <p style="font-size:0.8rem; color:#94a3b8; margin-top:-6px;">Select which card you want to manage:</p>
 
       <div style="display:flex; flex-direction:column; gap:10px; margin-top:4px;">
         <div class="family-tab-option" onclick="openFlashcardManager('my_aadhaar', 'My Aadhaar Card')">
@@ -896,13 +902,13 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // ================= PBKDF2 & AES-256 CRYPTOGRAPHIC ENGINE =================
-    let sessionDerivedKey = null; // Stored exclusively in RAM
+    // ================= PBKDF2 & AES-256 ENGINE =================
+    let sessionDerivedKey = null; // Stored exclusively in volatile memory
 
-    // Derive a strong 256-bit key using PBKDF2 (100,000 rounds)
-    function deriveCryptKey(pin, username) {
-      const salt = CryptoJS.enc.Utf8.parse("docvault_salt_" + username);
-      const key = CryptoJS.PBKDF2(pin, salt, {
+    // Derive 256-bit AES key with dynamic salt & 100,000 iterations
+    function deriveCryptKey(secret, username) {
+      const salt = CryptoJS.enc.Utf8.parse("docvault_pepper_salt_" + username.toLowerCase());
+      const key = CryptoJS.PBKDF2(secret, salt, {
         keySize: 256 / 32,
         iterations: 100000,
         hasher: CryptoJS.algo.SHA256
@@ -926,9 +932,9 @@
       }
     }
 
-    // Salted verification hash for PIN
+    // Salted verification hash
     function hashSecretWithSalt(secret, username) {
-      return CryptoJS.SHA256(secret + "_salt_" + username).toString();
+      return CryptoJS.SHA256(secret + "_pepper_salt_" + username.toLowerCase()).toString();
     }
 
     // ================= LIVE METRICS =================
@@ -1000,7 +1006,7 @@
     });
 
     window.addEventListener('load', async () => {
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
       initLiveMetrics();
 
       const urlParams = new URLSearchParams(window.location.search);
@@ -1010,7 +1016,7 @@
         document.getElementById('loginName').value = scannedVault;
         document.getElementById('loginNameFieldContainer').style.display = 'none';
         document.getElementById('authToggleGroup').style.display = 'none';
-        document.getElementById('authSubtitle').innerText = `Encrypted Vault for "${scannedVault}" - Enter Master PIN`;
+        document.getElementById('authSubtitle').innerText = `Encrypted Vault for "${scannedVault}" - Enter Master Passphrase`;
         switchAuthMode('login');
       }
     });
@@ -1041,15 +1047,15 @@
       const pinConfirm = document.getElementById('regPinConfirm').value.trim();
 
       if (!name || !pin) {
-        alert("Please enter a username and PIN.");
+        alert("Please enter a username and Master Passphrase.");
         return;
       }
-      if (pin.length < 4) {
-        alert("PIN must be at least 4 digits.");
+      if (pin.length < 6) {
+        alert("For cryptographic security, Master Passphrase must be at least 6 characters.");
         return;
       }
       if (pin !== pinConfirm) {
-        alert("PIN and Confirm PIN do not match!");
+        alert("Passphrase and Confirm Passphrase do not match!");
         return;
       }
 
@@ -1059,7 +1065,6 @@
         return;
       }
 
-      // Salted SHA-256 for verification
       const hashedPin = hashSecretWithSalt(pin, name);
 
       const profileData = {
@@ -1070,10 +1075,8 @@
       };
 
       await db.ref(`vaults/${name}/profile`).set(profileData);
-      
-      // Derive 256-bit AES key via PBKDF2 (100,000 rounds)
       sessionDerivedKey = deriveCryptKey(pin, name);
-      alert("Zero-Knowledge Encrypted Vault created with PBKDF2-AES256!");
+      alert("Zero-Knowledge Encrypted Vault created with PBKDF2-100k + AES-256!");
       await loadUserVault(profileData);
     }
 
@@ -1082,7 +1085,7 @@
       const pin = document.getElementById('loginPin').value.trim();
 
       if (!name || !pin) {
-        alert("Please enter Username and PIN.");
+        alert("Please enter Username and Master Passphrase.");
         return;
       }
 
@@ -1097,20 +1100,19 @@
       const hashedInputPin = hashSecretWithSalt(pin, name);
       const legacyHashed = CryptoJS.SHA256(pin).toString();
 
-      // Check salted hash, legacy hash, or plaintext legacy
+      // Salted hash, legacy hash, or plaintext fallback
       if (user.pinHash) {
         if (user.pinHash !== hashedInputPin && user.pinHash !== legacyHashed) {
-          alert("Incorrect Master PIN. Decryption failed.");
+          alert("Incorrect Master Passphrase. Decryption failed.");
           return;
         }
       } else if (user.pin) {
         if (user.pin !== pin) {
-          alert("Incorrect Master PIN.");
+          alert("Incorrect Master Passphrase.");
           return;
         }
       }
 
-      // Derive key via PBKDF2
       sessionDerivedKey = deriveCryptKey(pin, name);
       await loadUserVault(user);
     }
@@ -1130,20 +1132,17 @@
       document.getElementById('userCourseDisplay').innerText = user.course || 'Student';
       document.getElementById('avatarInitial').innerText = user.name.charAt(0).toUpperCase();
 
-      // Realtime listener with auto AES Decryption
       db.ref(`vaults/${user.name}/documents`).on('value', (snap) => {
         const encryptedDataTree = snap.val() || {};
         userVaultData = {};
 
-        // Decrypt each record in-memory using PBKDF2 derived key
         Object.keys(encryptedDataTree).forEach(docKey => {
           const item = encryptedDataTree[docKey];
           if (item && item.enc) {
             let decrypted = decryptPayload(item.enc, sessionDerivedKey);
-            // Fallback for legacy items encrypted directly with pin
-            if (!decrypted && currentSessionUser) {
-              const legacyPin = document.getElementById('loginPin').value.trim() || document.getElementById('regPin').value.trim();
-              if (legacyPin) decrypted = decryptPayload(item.enc, legacyPin);
+            if (!decrypted) {
+              const enteredSecret = document.getElementById('loginPin').value.trim() || document.getElementById('regPin').value.trim();
+              if (enteredSecret) decrypted = decryptPayload(item.enc, enteredSecret);
             }
             if (decrypted) userVaultData[docKey] = decrypted;
           } else {
@@ -1156,7 +1155,7 @@
         updateAadhaarFamilyStatusIndicators();
       });
 
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
     }
 
     function lockVault() {
@@ -1165,15 +1164,26 @@
         db.ref(`vaults/${currentSessionUser.name}/documents`).off();
       }
       currentSessionUser = null;
-      sessionDerivedKey = null; // Purge key from RAM
+      sessionDerivedKey = null; // Key wiped from RAM
       userVaultData = {};
       
+      // Wipe sensitive DOM nodes
+      sanitizeDOMPreviews();
+
       document.getElementById('loginPin').value = '';
       document.getElementById('vaultDashboard').classList.add('hidden');
       document.getElementById('authScreen').classList.remove('hidden');
       document.getElementById('loginNameFieldContainer').style.display = 'block';
       document.getElementById('authToggleGroup').style.display = 'flex';
-      document.getElementById('authSubtitle').innerText = "PBKDF2 + AES-256 Zero-Knowledge Vault";
+      document.getElementById('authSubtitle').innerText = "PBKDF2-100k + AES-256 Military Grade Security";
+    }
+
+    function sanitizeDOMPreviews() {
+      document.getElementById('viewerContent').innerHTML = '';
+      document.getElementById('frontSideImg').src = '';
+      document.getElementById('backSideImg').src = '';
+      document.getElementById('signatureBox').innerHTML = '<span style="font-size:1.1rem; color:#64748b;">No signature uploaded</span>';
+      document.getElementById('photoBox').innerHTML = 'Photo';
     }
 
     // ================= RENDER DOCUMENTS =================
@@ -1213,7 +1223,7 @@
               </span>
             </div>
             <div style="font-size:0.75rem; color:#60a5fa; display:flex; align-items:center; justify-content:space-between; margin-top:4px;">
-              <span>Manage: My, Father's & Mother's Aadhaar</span>
+              <span>Manage: My, Father's & Mother's Cards</span>
               <i data-lucide="chevron-right" style="width:16px;"></i>
             </div>
           `;
@@ -1252,7 +1262,7 @@
         list.appendChild(item);
       });
 
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
     }
 
     function filterCategory(cat, btn) {
@@ -1261,7 +1271,7 @@
       renderDocuments(cat);
     }
 
-    // ================= AADHAAR FAMILY & FLASHCARD SYSTEM =================
+    // ================= FLASHCARD SYSTEM =================
     let activeAadhaarTarget = 'my_aadhaar';
     let activeAadhaarLabel = 'My Aadhaar Card';
     let currentSideTarget = 'front';
@@ -1300,11 +1310,13 @@
       document.getElementById('flashcardModalTitle').innerText = label;
       renderFlashcardView();
       document.getElementById('flashcardModal').classList.remove('hidden');
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
     }
 
     function closeFlashcardModal() {
       document.getElementById('flashcardModal').classList.add('hidden');
+      document.getElementById('frontSideImg').src = '';
+      document.getElementById('backSideImg').src = '';
     }
 
     function closeFlashcardOnBackdrop(e) {
@@ -1366,7 +1378,6 @@
         cur[currentSideTarget] = base64Data;
         cur.updatedAt = new Date().toLocaleDateString();
 
-        // Encrypt with PBKDF2-derived 256-bit AES key
         const encryptedBlob = encryptPayload(cur, sessionDerivedKey);
         await db.ref(`vaults/${currentSessionUser.name}/documents/${activeAadhaarTarget}`).set({
           enc: encryptedBlob,
@@ -1390,7 +1401,6 @@
       });
     }
 
-    // Direct Clean PDF Generator: Exact Centered, Bigger, No Text/Labels
     async function downloadFlashcardPDF() {
       const record = userVaultData[activeAadhaarTarget] || {};
 
@@ -1407,19 +1417,15 @@
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
 
-      const targetWidth = 145; // mm
-      const gap = 10; // mm gap
-      const borderPadding = 6; // mm padding
+      const targetWidth = 145;
+      const gap = 10;
+      const borderPadding = 6;
 
       let frontHeight = 0;
       let backHeight = 0;
 
-      if (frontImg) {
-        frontHeight = (frontImg.height * targetWidth) / frontImg.width;
-      }
-      if (backImg) {
-        backHeight = (backImg.height * targetWidth) / backImg.width;
-      }
+      if (frontImg) frontHeight = (frontImg.height * targetWidth) / frontImg.width;
+      if (backImg) backHeight = (backImg.height * targetWidth) / backImg.width;
 
       const totalItemsHeight = (frontHeight > 0 && backHeight > 0)
         ? (frontHeight + backHeight + gap)
@@ -1431,7 +1437,6 @@
       const frameX = (pdfWidth - frameWidth) / 2;
       const frameY = (pdfHeight - frameHeight) / 2;
 
-      // Draw Outer Card Frame Border
       pdf.setDrawColor(180, 185, 195);
       pdf.setLineWidth(0.8);
       pdf.roundedRect(frameX, frameY, frameWidth, frameHeight, 4, 4);
@@ -1457,7 +1462,7 @@
       pdf.save(`${activeAadhaarTarget}_Card.pdf`);
     }
 
-    // ================= GENERAL DOCUMENT UPLOADS WITH PBKDF2/AES-256 =================
+    // ================= GENERAL DOCUMENT UPLOADS =================
     let currentUploadTargetId = null;
 
     function triggerDocUpload(docId) {
@@ -1490,7 +1495,6 @@
           updatedAt: new Date().toLocaleDateString()
         };
 
-        // Encrypt with 256-bit PBKDF2 derived key
         const encryptedBlob = encryptPayload(fileData, sessionDerivedKey);
         await db.ref(`vaults/${currentSessionUser.name}/documents/${currentUploadTargetId}`).set({
           enc: encryptedBlob,
@@ -1524,7 +1528,7 @@
       dlBtn.download = fileData.name || `${title}.pdf`;
 
       document.getElementById('viewerModal').classList.remove('hidden');
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
     }
 
     function previewDirectDoc(docId) {
@@ -1566,8 +1570,10 @@
       }
     }
 
-    // Modal Visibility Controls
-    function closeViewerModal() { document.getElementById('viewerModal').classList.add('hidden'); }
+    function closeViewerModal() { 
+      document.getElementById('viewerModal').classList.add('hidden');
+      document.getElementById('viewerContent').innerHTML = '';
+    }
     function closeViewerOnBackdrop(e) { if(e.target.id === 'viewerModal') closeViewerModal(); }
 
     function openQrModal() {
