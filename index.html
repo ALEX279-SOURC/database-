@@ -1013,16 +1013,16 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // ================= OPTIMIZED CRYPTO ENGINE =================
+    // ================= ENCRYPTION ENGINE =================
     let sessionDerivedKey = null;
-    let encryptedRawCache = {};
-    let decryptedCache = {};
+    let localKeysCache = {}; // Tracks which keys exist on cloud without downloading heavy payloads
+    let itemDecryptedMemory = {};
 
     function deriveCryptKey(secret, username) {
       const salt = CryptoJS.enc.Utf8.parse("docvault_salt_" + username.toLowerCase());
       const key = CryptoJS.PBKDF2(secret, salt, {
         keySize: 256 / 32,
-        iterations: 2000,
+        iterations: 1500, // Balanced for zero-wait UI on mobile
         hasher: CryptoJS.algo.SHA256
       });
       return key.toString(CryptoJS.enc.Hex);
@@ -1048,7 +1048,7 @@
       return CryptoJS.SHA256(secret + "_salt_" + username.toLowerCase()).toString();
     }
 
-    // ================= REALTIME LIVE METRICS =================
+    // ================= REALTIME METRICS =================
     function initLiveMetrics() {
       const presenceRef = db.ref('active_presence');
       const myConnectionRef = presenceRef.push();
@@ -1176,40 +1176,38 @@
       btn.innerText = "Creating Vault...";
       btn.disabled = true;
 
-      setTimeout(async () => {
-        try {
-          const snapshot = await db.ref(`vaults/${name}/profile`).once('value');
-          if (snapshot.exists()) {
-            alert("This username already exists! Click 'Access Data' to login.");
-            btn.innerText = "Create Encrypted Vault";
-            btn.disabled = false;
-            return;
-          }
-
-          const hashedPin = hashSecretWithSalt(pin, name);
-
-          const profileData = {
-            name: name,
-            course: course,
-            pinHash: hashedPin,
-            createdAt: new Date().toISOString()
-          };
-
-          await db.ref(`vaults/${name}/profile`).set(profileData);
-          sessionDerivedKey = deriveCryptKey(pin, name);
-
-          db.ref('public_meta/vault_count').transaction((cur) => (cur || 0) + 1);
-
-          alert("Encrypted Vault created successfully!");
-          await loadUserVault(profileData);
-        } catch (err) {
-          console.error("Vault Creation Error:", err);
-          alert("Database error: " + (err.message || "Failed to create account"));
-        } finally {
+      try {
+        const snapshot = await db.ref(`vaults/${name}/profile`).once('value');
+        if (snapshot.exists()) {
+          alert("This username already exists! Click 'Access Data' to login.");
           btn.innerText = "Create Encrypted Vault";
           btn.disabled = false;
+          return;
         }
-      }, 30);
+
+        const hashedPin = hashSecretWithSalt(pin, name);
+
+        const profileData = {
+          name: name,
+          course: course,
+          pinHash: hashedPin,
+          createdAt: new Date().toISOString()
+        };
+
+        await db.ref(`vaults/${name}/profile`).set(profileData);
+        sessionDerivedKey = deriveCryptKey(pin, name);
+
+        db.ref('public_meta/vault_count').transaction((cur) => (cur || 0) + 1);
+
+        alert("Encrypted Vault created successfully!");
+        await loadUserVault(profileData);
+      } catch (err) {
+        console.error("Vault Creation Error:", err);
+        alert("Database error: " + (err.message || "Failed to create account"));
+      } finally {
+        btn.innerText = "Create Encrypted Vault";
+        btn.disabled = false;
+      }
     }
 
     async function handleLogin() {
@@ -1222,50 +1220,47 @@
         return;
       }
 
-      btn.innerText = "Decrypting...";
+      btn.innerText = "Unlocking...";
       btn.disabled = true;
 
-      // Yield execution to prevent UI freeze and load instantly
-      setTimeout(async () => {
-        try {
-          const snapshot = await db.ref(`vaults/${name}/profile`).once('value');
-          const user = snapshot.val();
+      try {
+        const snapshot = await db.ref(`vaults/${name}/profile`).once('value');
+        const user = snapshot.val();
 
-          if (!user) {
-            alert("No vault found for this username on cloud.");
-            btn.innerText = "Unlock & Decrypt";
-            btn.disabled = false;
-            return;
-          }
-
-          const hashedInputPin = hashSecretWithSalt(pin, name);
-          const legacyHash1 = CryptoJS.SHA256(pin).toString();
-          const legacyHash2 = CryptoJS.SHA256(pin + "_pepper_salt_" + name).toString();
-
-          if (user.pinHash) {
-            if (user.pinHash !== hashedInputPin && user.pinHash !== legacyHash1 && user.pinHash !== legacyHash2) {
-              alert("Incorrect Master Passphrase. Decryption failed.");
-              btn.innerText = "Unlock & Decrypt";
-              btn.disabled = false;
-              return;
-            }
-          } else if (user.pin && user.pin !== pin) {
-            alert("Incorrect Master Passphrase.");
-            btn.innerText = "Unlock & Decrypt";
-            btn.disabled = false;
-            return;
-          }
-
-          sessionDerivedKey = deriveCryptKey(pin, name);
-          await loadUserVault(user);
-        } catch (err) {
-          console.error("Login Error:", err);
-          alert("Connection error: " + (err.message || "Failed to reach Firebase"));
-        } finally {
+        if (!user) {
+          alert("No vault found for this username on cloud.");
           btn.innerText = "Unlock & Decrypt";
           btn.disabled = false;
+          return;
         }
-      }, 20);
+
+        const hashedInputPin = hashSecretWithSalt(pin, name);
+        const legacyHash1 = CryptoJS.SHA256(pin).toString();
+        const legacyHash2 = CryptoJS.SHA256(pin + "_pepper_salt_" + name).toString();
+
+        if (user.pinHash) {
+          if (user.pinHash !== hashedInputPin && user.pinHash !== legacyHash1 && user.pinHash !== legacyHash2) {
+            alert("Incorrect Master Passphrase. Decryption failed.");
+            btn.innerText = "Unlock & Decrypt";
+            btn.disabled = false;
+            return;
+          }
+        } else if (user.pin && user.pin !== pin) {
+          alert("Incorrect Master Passphrase.");
+          btn.innerText = "Unlock & Decrypt";
+          btn.disabled = false;
+          return;
+        }
+
+        sessionDerivedKey = deriveCryptKey(pin, name);
+        await loadUserVault(user);
+      } catch (err) {
+        console.error("Login Error:", err);
+        alert("Connection error: " + (err.message || "Failed to reach Firebase"));
+      } finally {
+        btn.innerText = "Unlock & Decrypt";
+        btn.disabled = false;
+      }
     }
 
     async function loadUserVault(user) {
@@ -1276,6 +1271,7 @@
         window.history.replaceState({}, document.title, window.location.pathname);
       }
 
+      // Switch screens immediately
       document.getElementById('authScreen').classList.add('hidden');
       document.getElementById('vaultDashboard').classList.remove('hidden');
 
@@ -1283,38 +1279,46 @@
       document.getElementById('userCourseDisplay').innerText = user.course || 'Student';
       document.getElementById('avatarInitial').innerText = user.name.charAt(0).toUpperCase();
 
-      // Render documents shell immediately
+      // Zero-wait Instant UI rendering from static array
       renderDocuments('All');
 
-      // Fast Realtime listener: Caches raw payloads without heavy bulk decryption
+      // Fetch lightweight presence keys only
       db.ref(`vaults/${user.name}/documents`).on('value', (snap) => {
-        encryptedRawCache = snap.val() || {};
-        decryptedCache = {}; // Flush old cache
-        
+        const val = snap.val() || {};
+        localKeysCache = {};
+        Object.keys(val).forEach(k => {
+          localKeysCache[k] = true;
+        });
+
         renderDocuments('All');
         updateAllCustomCardStatusIndicators();
 
-        // Background load light items only (Signature & Photo)
-        setTimeout(() => {
-          restoreSignatureAndPhoto();
-        }, 10);
+        // Load Signature & Photo in background without UI freezing
+        if (localKeysCache['doc_signature'] && !itemDecryptedMemory['doc_signature']) {
+          fetchAndDecryptSingleDoc('doc_signature').then(restoreSignatureAndPhoto);
+        }
+        if (localKeysCache['doc_photo'] && !itemDecryptedMemory['doc_photo']) {
+          fetchAndDecryptSingleDoc('doc_photo').then(restoreSignatureAndPhoto);
+        }
       });
     }
 
-    function getDecryptedDoc(docId) {
-      if (decryptedCache[docId]) return decryptedCache[docId];
-      const raw = encryptedRawCache[docId];
-      if (!raw) return null;
+    async function fetchAndDecryptSingleDoc(docId) {
+      if (itemDecryptedMemory[docId]) return itemDecryptedMemory[docId];
 
-      if (raw.enc) {
-        const decrypted = decryptPayload(raw.enc, sessionDerivedKey);
+      const snap = await db.ref(`vaults/${currentSessionUser.name}/documents/${docId}`).once('value');
+      const item = snap.val();
+      if (!item) return null;
+
+      if (item.enc) {
+        const decrypted = decryptPayload(item.enc, sessionDerivedKey);
         if (decrypted) {
-          decryptedCache[docId] = decrypted;
+          itemDecryptedMemory[docId] = decrypted;
           return decrypted;
         }
       } else {
-        decryptedCache[docId] = raw;
-        return raw;
+        itemDecryptedMemory[docId] = item;
+        return item;
       }
       return null;
     }
@@ -1326,8 +1330,8 @@
       }
       currentSessionUser = null;
       sessionDerivedKey = null;
-      encryptedRawCache = {};
-      decryptedCache = {};
+      localKeysCache = {};
+      itemDecryptedMemory = {};
 
       sanitizeDOMPreviews();
 
@@ -1365,7 +1369,7 @@
           item.className = 'item-card clickable-card';
           item.onclick = openAadhaarFamilyModal;
 
-          const hasAny = !!(encryptedRawCache['my_aadhaar'] || encryptedRawCache['father_aadhaar'] || encryptedRawCache['mother_aadhaar']);
+          const hasAny = !!(localKeysCache['my_aadhaar'] || localKeysCache['father_aadhaar'] || localKeysCache['mother_aadhaar']);
 
           item.innerHTML = `
             <div class="item-card-header">
@@ -1389,7 +1393,7 @@
           item.className = 'item-card clickable-card';
           item.onclick = openSecondaryIdModal;
 
-          const hasAny = !!(encryptedRawCache['doc_voter_card'] || encryptedRawCache['doc_pan_card'] || encryptedRawCache['doc_dl_card']);
+          const hasAny = !!(localKeysCache['doc_voter_card'] || localKeysCache['doc_pan_card'] || localKeysCache['doc_dl_card']);
 
           item.innerHTML = `
             <div class="item-card-header">
@@ -1410,7 +1414,7 @@
           `;
         } 
         else {
-          const hasFile = !!encryptedRawCache[doc.id];
+          const hasFile = !!localKeysCache[doc.id];
 
           item.className = 'item-card';
           item.innerHTML = `
@@ -1481,7 +1485,7 @@
       keys.forEach(k => {
         const el = document.getElementById(`statusText_${k}`);
         if (el) {
-          if (encryptedRawCache[k]) {
+          if (localKeysCache[k]) {
             el.innerText = "✓ Record Available";
           } else {
             el.innerText = "Not Uploaded";
@@ -1490,15 +1494,18 @@
       });
     }
 
-    function openFlashcardManager(key, label) {
+    async function openFlashcardManager(key, label) {
       activeCardTarget = key;
       activeCardLabel = label;
       closeAadhaarFamilyModal();
       closeSecondaryIdModal();
 
       document.getElementById('flashcardModalTitle').innerText = label;
-      renderFlashcardView();
       document.getElementById('flashcardModal').classList.remove('hidden');
+
+      // Fetch target flashcard lazy
+      await fetchAndDecryptSingleDoc(activeCardTarget);
+      renderFlashcardView();
     }
 
     function closeFlashcardModal() {
@@ -1512,7 +1519,7 @@
     }
 
     function renderFlashcardView() {
-      const record = getDecryptedDoc(activeCardTarget) || {};
+      const record = itemDecryptedMemory[activeCardTarget] || {};
 
       const frontImg = document.getElementById('frontSideImg');
       const frontPlaceholder = document.getElementById('frontSidePlaceholder');
@@ -1562,7 +1569,7 @@
       reader.onload = async function(e) {
         const base64Data = e.target.result;
 
-        const cur = getDecryptedDoc(activeCardTarget) || {};
+        const cur = itemDecryptedMemory[activeCardTarget] || {};
         cur[currentSideTarget] = base64Data;
         cur.updatedAt = new Date().toLocaleDateString();
 
@@ -1572,7 +1579,8 @@
           updatedAt: new Date().toLocaleDateString()
         });
 
-        decryptedCache[activeCardTarget] = cur;
+        itemDecryptedMemory[activeCardTarget] = cur;
+        localKeysCache[activeCardTarget] = true;
         renderFlashcardView();
         event.target.value = '';
       };
@@ -1590,7 +1598,7 @@
     }
 
     async function downloadFlashcardPDF() {
-      const record = getDecryptedDoc(activeCardTarget) || {};
+      const record = itemDecryptedMemory[activeCardTarget] || {};
 
       if (!record.front && !record.back) {
         alert("Please upload at least one side (Front or Back) before downloading!");
@@ -1689,14 +1697,19 @@
           updatedAt: new Date().toLocaleDateString()
         });
 
-        decryptedCache[currentUploadTargetId] = fileData;
+        itemDecryptedMemory[currentUploadTargetId] = fileData;
+        localKeysCache[currentUploadTargetId] = true;
+        renderDocuments('All');
         event.target.value = '';
       };
       reader.readAsDataURL(file);
     }
 
-    function previewDocument(docId, title) {
-      const fileData = getDecryptedDoc(docId);
+    async function previewDocument(docId, title) {
+      let fileData = itemDecryptedMemory[docId];
+      if (!fileData) {
+        fileData = await fetchAndDecryptSingleDoc(docId);
+      }
       if (!fileData) {
         alert("Document data could not be decrypted.");
         return;
@@ -1721,8 +1734,11 @@
       document.getElementById('viewerModal').classList.remove('hidden');
     }
 
-    function previewDirectDoc(docId) {
-      const fileData = getDecryptedDoc(docId);
+    async function previewDirectDoc(docId) {
+      let fileData = itemDecryptedMemory[docId];
+      if (!fileData) {
+        fileData = await fetchAndDecryptSingleDoc(docId);
+      }
       if (!fileData) {
         alert("No photo or signature uploaded yet.");
         return;
@@ -1730,8 +1746,11 @@
       previewDocument(docId, docId === 'doc_signature' ? "Digital Signature" : "Passport Photo");
     }
 
-    function downloadDocument(docId, title) {
-      const fileData = getDecryptedDoc(docId);
+    async function downloadDocument(docId, title) {
+      let fileData = itemDecryptedMemory[docId];
+      if (!fileData) {
+        fileData = await fetchAndDecryptSingleDoc(docId);
+      }
       if (!fileData) return;
 
       const a = document.createElement('a');
@@ -1743,7 +1762,7 @@
     }
 
     function restoreSignatureAndPhoto() {
-      const sign = getDecryptedDoc('doc_signature');
+      const sign = itemDecryptedMemory['doc_signature'];
       if (sign) {
         document.getElementById('signatureBox').innerHTML = `<img src="${sign.dataUrl}">`;
         document.getElementById('downloadSignBtn').href = sign.dataUrl;
@@ -1751,7 +1770,7 @@
         document.getElementById('signatureBox').innerHTML = `<span style="font-size:1.1rem; color:#64748b;">No signature uploaded</span>`;
       }
 
-      const photo = getDecryptedDoc('doc_photo');
+      const photo = itemDecryptedMemory['doc_photo'];
       if (photo) {
         document.getElementById('photoBox').innerHTML = `<img src="${photo.dataUrl}" style="width:100%; height:100%; object-fit:cover;">`;
         document.getElementById('downloadPhotoBtn').href = photo.dataUrl;
