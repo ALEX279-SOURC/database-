@@ -5,14 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DocVault - Secure College Vault</title>
 
-  <!-- Firebase App & Database -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
-  <!-- CryptoJS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
-  <!-- QR Code, html2canvas & jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -31,7 +28,7 @@
       min-height: 100vh;
       display: flex;
       justify-content: center;
-      padding: 16px 16px 72px 16px; /* Bottom padding for fixed footer */
+      padding: 16px 16px 74px 16px;
     }
 
     .app-container {
@@ -44,7 +41,7 @@
 
     .hidden { display: none !important; }
 
-    /* Compact Fixed Footer for Active Users & Total Vaults */
+    /* Compact Fixed Footer */
     .fixed-footer-bar {
       position: fixed;
       bottom: 0;
@@ -471,63 +468,153 @@
       z-index: 999;
     }
 
-    /* Black Flashcard QR Model */
-    .qr-flashcard-outer {
-      background: #05070c;
-      border: 2px solid #2a3449;
-      width: 100%;
-      max-width: 310px;
-      border-radius: 26px;
-      padding: 24px 20px 20px 20px;
+    /* ================= EXACT PHOTO 2 TALL/LONG FLASHCARD ================= */
+    .qr-flashcard-long {
+      background: #090a0f;
+      border: 2px solid #1e2638;
+      width: 295px;
+      min-height: 475px;
+      border-radius: 28px;
+      padding: 24px 22px 20px 22px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      text-align: center;
-      box-shadow: 0 25px 35px -5px rgba(0, 0, 0, 0.7);
+      box-shadow: 0 30px 45px -10px rgba(0, 0, 0, 0.85);
+      position: relative;
     }
-    .qr-flashcard-header {
+    .qr-long-top-header {
+      width: 100%;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      gap: 8px;
       margin-bottom: 18px;
     }
-    .qr-flashcard-brand {
-      font-size: 1.35rem;
+    .qr-long-brand {
+      font-size: 1.3rem;
       font-weight: 800;
-      letter-spacing: 0.5px;
-      color: #f8fafc;
+      letter-spacing: 1px;
+      color: #f87171; /* Orange-Red accent as in Thai Ming */
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
-    .qr-inner-white-card {
+    
+    /* White Card Area inside Flashcard */
+    .qr-long-white-frame {
       background: #ffffff;
       width: 100%;
       border-radius: 20px;
-      padding: 18px 14px 14px 14px;
+      padding: 20px 14px 14px 14px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.35);
     }
-    .qr-card-username {
+    .qr-code-holder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .qr-code-holder img, .qr-code-holder canvas {
+      display: block;
+    }
+    .qr-long-id-num {
       margin-top: 10px;
       font-size: 0.95rem;
       font-weight: 800;
-      letter-spacing: 1.2px;
+      letter-spacing: 2px;
       color: #0b1120;
       text-transform: uppercase;
       font-family: monospace, sans-serif;
     }
-    .qr-flashcard-subtext {
-      margin-top: 14px;
-      font-size: 0.74rem;
-      color: #64748b;
+
+    /* Lower Middle Brand Accent */
+    .qr-long-accent-text {
+      margin-top: 24px;
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: #f87171;
+      text-transform: lowercase;
+      font-family: serif, system-ui;
     }
+
+    /* Bottom Badges */
+    .qr-long-footer {
+      width: 100%;
+      margin-top: auto;
+      padding-top: 20px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+    .qr-long-fid-badge {
+      background: #ffffff;
+      color: #090a0f;
+      font-size: 0.68rem;
+      font-weight: 900;
+      padding: 3px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.8px;
+    }
+    .qr-long-sub-note {
+      font-size: 0.62rem;
+      color: #94a3b8;
+      text-align: right;
+      line-height: 1.25;
+      max-width: 150px;
+    }
+
     .qr-actions-row {
       width: 100%;
+      max-width: 295px;
       display: flex;
       gap: 8px;
-      margin-top: 16px;
+      margin-top: 14px;
+    }
+
+    /* Document Viewer */
+    .modal-viewer-card {
+      background: #111827;
+      border: 1px solid #334155;
+      width: 100%;
+      max-width: 440px;
+      height: 82vh;
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .modal-viewer-header {
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #1f2937;
+    }
+    .modal-viewer-body {
+      flex: 1;
+      background: #030712;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+      padding: 10px;
+    }
+    .modal-viewer-body img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+    .modal-viewer-body iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #fff;
+      border-radius: 8px;
     }
 
     /* Flashcard UI Frame */
@@ -594,7 +681,6 @@
 
   <div class="app-container">
 
-    <!-- Auth Screen -->
     <div id="authScreen" class="auth-card">
       <div class="brand-icon">
         <svg class="svg-icon" style="width:28px; height:28px; color:#38bdf8;" viewBox="0 0 24 24">
@@ -610,7 +696,6 @@
         <button id="tabAccessData" class="auth-tab-btn" onclick="switchAuthMode('login')">Access Data</button>
       </div>
 
-      <!-- Access Data Form -->
       <div id="loginForm" class="auth-input-group hidden">
         <div id="loginNameFieldContainer">
           <label>Vault Username</label>
@@ -623,7 +708,6 @@
         <button id="btnLoginAction" class="btn-primary" style="margin-top:8px;" onclick="handleLogin()">Unlock & Decrypt</button>
       </div>
 
-      <!-- Register Form -->
       <div id="registerForm" class="auth-input-group">
         <div>
           <label>Choose Username (No spaces)</label>
@@ -645,7 +729,6 @@
       </div>
     </div>
 
-    <!-- Vault Dashboard -->
     <div id="vaultDashboard" class="hidden" style="display:flex; flex-direction:column; gap:16px;">
       
       <div class="header">
@@ -698,7 +781,6 @@
         <div class="tab-pill" onclick="filterCategory('Banking', this)">Financial & Banking</div>
       </div>
 
-      <!-- Digital Signature Section -->
       <div class="item-card">
         <div class="item-card-header">
           <div class="item-card-title">Digital Signature</div>
@@ -713,7 +795,6 @@
         </div>
       </div>
 
-      <!-- Passport Photo Section -->
       <div class="item-card">
         <div class="item-card-header">
           <div class="item-card-title">Passport Size Photographs</div>
@@ -734,13 +815,11 @@
         </div>
       </div>
 
-      <!-- Documents List Container -->
       <div id="documentsList" style="display:flex; flex-direction:column; gap:12px;"></div>
     </div>
 
   </div>
 
-  <!-- ================= FIXED FOOTER FOR ACTIVE USERS & VAULTS ================= -->
   <div class="fixed-footer-bar">
     <div class="footer-metrics-container">
       <div class="footer-metric-pill">
@@ -754,38 +833,50 @@
     </div>
   </div>
 
-  <!-- Hidden Inputs -->
   <input type="file" id="universalFileInput" class="hidden" accept="image/*,application/pdf" onchange="handleUniversalFileUpload(event)">
   <input type="file" id="sideFileInput" class="hidden" accept="image/*" onchange="handleSideFileUpload(event)">
 
-  <!-- ================= BLACK FLASHCARD QR MODAL ================= -->
   <div id="qrModal" class="modal-overlay hidden" onclick="closeQrOnBackdrop(event)">
     <div style="display:flex; flex-direction:column; align-items:center; width:100%; max-width:320px;">
-      <div class="qr-flashcard-outer" id="printableQrFlashcard" onclick="event.stopPropagation()">
-        <div class="qr-flashcard-header">
-          <svg class="svg-icon" style="width:24px; height:24px; color:#38bdf8;" viewBox="0 0 24 24">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            <path d="m9 12 2 2 4-4"/>
-          </svg>
-          <span class="qr-flashcard-brand">DocVault</span>
+      
+      <div class="qr-flashcard-long" id="printableQrFlashcard" onclick="event.stopPropagation()">
+        
+        <div class="qr-long-top-header">
+          <div class="qr-long-brand">
+            <svg class="svg-icon" style="width:22px; height:22px; color:#f87171;" viewBox="0 0 24 24">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+            DocVault
+          </div>
         </div>
 
-        <div class="qr-inner-white-card">
-          <div id="qrcodeBox" style="display:flex; align-items:center; justify-content:center;"></div>
-          <div class="qr-card-username" id="qrCardUsernameDisplay">USER</div>
+        <div class="qr-long-white-frame">
+          <div class="qr-code-holder" id="qrcodeBox"></div>
+          <div class="qr-long-id-num" id="qrCardUsernameDisplay">0123456789</div>
         </div>
 
-        <div class="qr-flashcard-subtext">Instant Scan & Secure Key Decrypt Access</div>
+        <div class="qr-long-accent-text">
+          campus vault id
+        </div>
+
+        <div class="qr-long-footer">
+          <div class="qr-long-fid-badge">DOC FID</div>
+          <div class="qr-long-sub-note">
+            AES-256 Zero-Knowledge Encrypted Key Access
+          </div>
+        </div>
+
       </div>
 
       <div class="qr-actions-row" onclick="event.stopPropagation()">
         <button class="btn-primary" onclick="downloadQrFlashcard()">Download Card</button>
         <button class="btn-secondary" style="flex:0.6;" onclick="closeQrModal()">Close</button>
       </div>
+
     </div>
   </div>
 
-  <!-- Document Viewer Modal -->
   <div id="viewerModal" class="modal-overlay hidden" onclick="closeViewerOnBackdrop(event)">
     <div class="modal-viewer-card" onclick="event.stopPropagation()">
       <div class="modal-viewer-header">
@@ -800,7 +891,6 @@
     </div>
   </div>
 
-  <!-- ================= AADHAAR FAMILY SELECTOR MODAL ================= -->
   <div id="aadhaarFamilyModal" class="modal-overlay hidden" onclick="closeAadhaarModalOnBackdrop(event)">
     <div class="modal-qr-card" style="max-width:380px; text-align:left; background:#111827; border-radius:22px; padding:20px; border:1px solid #334155;" onclick="event.stopPropagation()">
       <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -839,7 +929,6 @@
     </div>
   </div>
 
-  <!-- ================= SECONDARY ID (VOTER / PAN / DL) SELECTOR MODAL ================= -->
   <div id="secondaryIdModal" class="modal-overlay hidden" onclick="closeSecondaryIdModalOnBackdrop(event)">
     <div class="modal-qr-card" style="max-width:380px; text-align:left; background:#111827; border-radius:22px; padding:20px; border:1px solid #334155;" onclick="event.stopPropagation()">
       <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -878,7 +967,6 @@
     </div>
   </div>
 
-  <!-- ================= 2-SIDED FLASHCARD DEDICATED MODAL ================= -->
   <div id="flashcardModal" class="modal-overlay hidden" onclick="closeFlashcardOnBackdrop(event)">
     <div style="width:100%; max-width:420px; background:#111827; border:1px solid #334155; border-radius:20px; overflow:hidden;" onclick="event.stopPropagation()">
       <div style="padding:14px 18px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1f2937;">
@@ -973,7 +1061,6 @@
 
     // ================= REALTIME LIVE METRICS =================
     function initLiveMetrics() {
-      // 1. Online Active Users (Presence)
       const presenceRef = db.ref('active_presence');
       const myConnectionRef = presenceRef.push();
       const connectedRef = db.ref('.info/connected');
@@ -990,7 +1077,6 @@
         document.getElementById('activeUsersCount').innerText = count > 0 ? count : 1;
       });
 
-      // 2. Total Vaults Registered Count
       db.ref('vaults').on('value', (snap) => {
         if (snap.exists()) {
           const total = snap.numChildren();
@@ -1123,7 +1209,6 @@
         await db.ref(`vaults/${name}/profile`).set(profileData);
         sessionDerivedKey = deriveCryptKey(pin, name);
 
-        // Update public total counter
         db.ref('public_meta/vault_count').transaction((cur) => (cur || 0) + 1);
 
         alert("Encrypted Vault created successfully!");
@@ -1205,7 +1290,6 @@
       document.getElementById('userCourseDisplay').innerText = user.course || 'Student';
       document.getElementById('avatarInitial').innerText = user.name.charAt(0).toUpperCase();
 
-      // Realtime listener with fast asynchronous lazy decryption
       db.ref(`vaults/${user.name}/documents`).on('value', (snap) => {
         const encryptedDataTree = snap.val() || {};
         userVaultData = {};
@@ -1267,7 +1351,6 @@
       filtered.forEach(doc => {
         const item = document.createElement('div');
 
-        // 1. Aadhaar Card Special Clickable
         if (doc.isAadhaarCustom) {
           item.className = 'item-card clickable-card';
           item.onclick = openAadhaarFamilyModal;
@@ -1295,7 +1378,6 @@
             </div>
           `;
         }
-        // 2. Secondary ID (Voter / PAN / DL) Special Clickable
         else if (doc.isSecondaryIdCustom) {
           item.className = 'item-card clickable-card';
           item.onclick = openSecondaryIdModal;
@@ -1323,7 +1405,6 @@
             </div>
           `;
         } 
-        // 3. Regular College Documents
         else {
           const fileMeta = userVaultData[doc.id];
           const hasFile = !!fileMeta;
@@ -1370,7 +1451,6 @@
     let activeCardLabel = 'Identity Card';
     let currentSideTarget = 'front';
 
-    // Aadhaar Modal Handlers
     function openAadhaarFamilyModal() {
       updateAllCustomCardStatusIndicators();
       document.getElementById('aadhaarFamilyModal').classList.remove('hidden');
@@ -1382,7 +1462,6 @@
       if (e.target.id === 'aadhaarFamilyModal') closeAadhaarFamilyModal();
     }
 
-    // Secondary ID Modal Handlers
     function openSecondaryIdModal() {
       updateAllCustomCardStatusIndicators();
       document.getElementById('secondaryIdModal').classList.remove('hidden');
@@ -1522,7 +1601,7 @@
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
 
-      const targetWidth = 145; // mm width
+      const targetWidth = 145;
       const gap = 10;
       const borderPadding = 6;
 
@@ -1680,13 +1759,14 @@
     }
     function closeViewerOnBackdrop(e) { if(e.target.id === 'viewerModal') closeViewerModal(); }
 
-    // ================= FLASHCARD QR ENGINE & DOWNLOAD =================
+    // ================= TALL/LONG FLASHCARD QR ENGINE & DOWNLOAD =================
     function openQrModal() {
       if (!currentSessionUser) return;
       const qrBox = document.getElementById('qrcodeBox');
       qrBox.innerHTML = '';
 
-      document.getElementById('qrCardUsernameDisplay').innerText = currentSessionUser.name;
+      // Format username or ID under QR
+      document.getElementById('qrCardUsernameDisplay').innerText = currentSessionUser.name.toUpperCase();
 
       const vaultUrl = `${window.location.origin}${window.location.pathname}?vault=${currentSessionUser.name}`;
 
@@ -1709,20 +1789,23 @@
       if(e.target.id === 'qrModal') closeQrModal(); 
     }
 
+    // High-Resolution Vertical Long Card Exporter
     async function downloadQrFlashcard() {
       const flashcardEl = document.getElementById('printableQrFlashcard');
       if (!flashcardEl || !currentSessionUser) return;
 
       try {
         const canvas = await html2canvas(flashcardEl, {
-          scale: 3,
+          scale: 3, // HD Resolution output
           useCORS: true,
-          backgroundColor: '#05070c'
+          backgroundColor: '#090a0f',
+          width: flashcardEl.offsetWidth,
+          height: flashcardEl.offsetHeight
         });
 
         const imageUri = canvas.toDataURL('image/png');
         const link = document.createElement('a');
-        link.download = `${currentSessionUser.name}_DocVault_QR_Card.png`;
+        link.download = `${currentSessionUser.name}_DocVault_Long_Card.png`;
         link.href = imageUri;
         document.body.appendChild(link);
         link.click();
