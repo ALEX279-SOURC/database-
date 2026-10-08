@@ -31,7 +31,7 @@
       min-height: 100vh;
       display: flex;
       justify-content: center;
-      padding: 16px;
+      padding: 16px 16px 72px 16px; /* Bottom padding for fixed footer */
     }
 
     .app-container {
@@ -40,58 +40,62 @@
       display: flex;
       flex-direction: column;
       gap: 16px;
-      padding-bottom: 40px;
     }
 
     .hidden { display: none !important; }
 
-    /* Top Live Metrics */
-    .metrics-bar {
+    /* Compact Fixed Footer for Active Users & Total Vaults */
+    .fixed-footer-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(11, 17, 32, 0.94);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-top: 1px solid #1f2937;
+      padding: 8px 16px;
       display: flex;
-      gap: 10px;
-      margin-bottom: 2px;
+      justify-content: center;
+      z-index: 100;
     }
-    .metric-badge {
+    .footer-metrics-container {
+      width: 100%;
+      max-width: 460px;
+      display: flex;
+      gap: 12px;
+    }
+    .footer-metric-pill {
       flex: 1;
       background: #111827;
       border: 1px solid #1f2937;
-      border-radius: 14px;
-      padding: 10px 12px;
+      border-radius: 20px;
+      padding: 6px 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-    }
-    .metric-info {
-      display: flex;
-      flex-direction: column;
-    }
-    .metric-label {
       font-size: 0.72rem;
       color: #94a3b8;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 5px;
     }
-    .metric-val {
-      font-size: 1.15rem;
+    .footer-metric-val {
       font-weight: 700;
       color: #f8fafc;
-      margin-top: 2px;
+      font-size: 0.85rem;
+      margin-left: 6px;
     }
     .pulse-dot {
-      width: 8px;
-      height: 8px;
+      width: 6px;
+      height: 6px;
       background-color: #10b981;
       border-radius: 50%;
       display: inline-block;
       box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
       animation: pulse 1.6s infinite;
+      margin-right: 4px;
     }
     @keyframes pulse {
       0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      70% { transform: scale(1); box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
       100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
     }
 
@@ -143,8 +147,8 @@
     }
 
     .svg-icon {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       stroke: currentColor;
       stroke-width: 2;
       stroke-linecap: round;
@@ -394,7 +398,6 @@
       border: 1px solid #334155;
     }
 
-    /* Action Buttons in Card */
     .doc-actions-row {
       display: flex;
       gap: 8px;
@@ -425,7 +428,6 @@
       color: #60a5fa;
     }
 
-    /* Preview Box */
     .preview-box {
       background: #ffffff;
       border-radius: 12px;
@@ -469,7 +471,7 @@
       z-index: 999;
     }
 
-    /* ================= PHOTO 2 FLASHCARD DESIGN ================= */
+    /* Black Flashcard QR Model */
     .qr-flashcard-outer {
       background: #05070c;
       border: 2px solid #2a3449;
@@ -482,7 +484,6 @@
       align-items: center;
       text-align: center;
       box-shadow: 0 25px 35px -5px rgba(0, 0, 0, 0.7);
-      position: relative;
     }
     .qr-flashcard-header {
       display: flex;
@@ -496,9 +497,7 @@
       font-weight: 800;
       letter-spacing: 0.5px;
       color: #f8fafc;
-      font-family: system-ui, sans-serif;
     }
-    /* White Card Slot inside Flashcard */
     .qr-inner-white-card {
       background: #ffffff;
       width: 100%;
@@ -509,14 +508,6 @@
       align-items: center;
       justify-content: center;
       box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-    }
-    .qr-render-box {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .qr-render-box img, .qr-render-box canvas {
-      display: block;
     }
     .qr-card-username {
       margin-top: 10px;
@@ -531,7 +522,6 @@
       margin-top: 14px;
       font-size: 0.74rem;
       color: #64748b;
-      line-height: 1.3;
     }
     .qr-actions-row {
       width: 100%;
@@ -540,49 +530,7 @@
       margin-top: 16px;
     }
 
-    /* Document Viewer */
-    .modal-viewer-card {
-      background: #111827;
-      border: 1px solid #334155;
-      width: 100%;
-      max-width: 440px;
-      height: 82vh;
-      border-radius: 20px;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    .modal-viewer-header {
-      padding: 14px 18px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid #1f2937;
-    }
-    .modal-viewer-body {
-      flex: 1;
-      background: #030712;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: auto;
-      padding: 10px;
-    }
-    .modal-viewer-body img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-      border-radius: 8px;
-    }
-    .modal-viewer-body iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      background: #fff;
-      border-radius: 8px;
-    }
-
-    /* Flashcard UI Frame for Aadhaar */
+    /* Flashcard UI Frame */
     .family-tab-option {
       background: #1e293b;
       border: 1px solid #334155;
@@ -645,24 +593,6 @@
 <body>
 
   <div class="app-container">
-
-    <!-- Metrics Bar -->
-    <div class="metrics-bar">
-      <div class="metric-badge">
-        <div class="metric-info">
-          <span class="metric-label"><span class="pulse-dot"></span> Active Users</span>
-          <span class="metric-val" id="activeUsersCount">1</span>
-        </div>
-        <svg class="svg-icon" style="color:#10b981;" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-      </div>
-      <div class="metric-badge">
-        <div class="metric-info">
-          <span class="metric-label">Total Vaults</span>
-          <span class="metric-val" id="totalUsersCount">0</span>
-        </div>
-        <svg class="svg-icon" style="color:#38bdf8;" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
-      </div>
-    </div>
 
     <!-- Auth Screen -->
     <div id="authScreen" class="auth-card">
@@ -744,7 +674,7 @@
           <div>
             <div class="name-title"><span id="userNameDisplay">User</span> <span class="unlocked-tag">Decrypted</span></div>
             <div class="meta-details">Roll / Course: <span id="userCourseDisplay">FYBA</span></div>
-            <div class="meta-details">🛡 AES-256 Encrypted · <span id="docCount">18 Documents</span></div>
+            <div class="meta-details">🛡 AES-256 Encrypted · <span id="docCount">23 Documents</span></div>
           </div>
         </div>
 
@@ -810,18 +740,28 @@
 
   </div>
 
+  <!-- ================= FIXED FOOTER FOR ACTIVE USERS & VAULTS ================= -->
+  <div class="fixed-footer-bar">
+    <div class="footer-metrics-container">
+      <div class="footer-metric-pill">
+        <span><span class="pulse-dot"></span> Active Users</span>
+        <span class="footer-metric-val" id="activeUsersCount">1</span>
+      </div>
+      <div class="footer-metric-pill">
+        <span>Total Vaults</span>
+        <span class="footer-metric-val" id="totalUsersCount">...</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Hidden Inputs -->
   <input type="file" id="universalFileInput" class="hidden" accept="image/*,application/pdf" onchange="handleUniversalFileUpload(event)">
   <input type="file" id="sideFileInput" class="hidden" accept="image/*" onchange="handleSideFileUpload(event)">
 
-  <!-- ================= PHOTO 2 FLASHCARD MODAL ================= -->
+  <!-- ================= BLACK FLASHCARD QR MODAL ================= -->
   <div id="qrModal" class="modal-overlay hidden" onclick="closeQrOnBackdrop(event)">
     <div style="display:flex; flex-direction:column; align-items:center; width:100%; max-width:320px;">
-      
-      <!-- Printable Flashcard Element -->
       <div class="qr-flashcard-outer" id="printableQrFlashcard" onclick="event.stopPropagation()">
-        
-        <!-- Header: DocVault with Logo (Replacing Thai Ming) -->
         <div class="qr-flashcard-header">
           <svg class="svg-icon" style="width:24px; height:24px; color:#38bdf8;" viewBox="0 0 24 24">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -830,27 +770,18 @@
           <span class="qr-flashcard-brand">DocVault</span>
         </div>
 
-        <!-- Middle: Pure White Card Slot with QR & User ID -->
         <div class="qr-inner-white-card">
-          <div class="qr-render-box" id="qrcodeBox"></div>
+          <div id="qrcodeBox" style="display:flex; align-items:center; justify-content:center;"></div>
           <div class="qr-card-username" id="qrCardUsernameDisplay">USER</div>
         </div>
 
-        <!-- Subtext -->
-        <div class="qr-flashcard-subtext">
-          Instant Scan & Secure Key Decrypt Access
-        </div>
+        <div class="qr-flashcard-subtext">Instant Scan & Secure Key Decrypt Access</div>
       </div>
 
-      <!-- Action Buttons -->
       <div class="qr-actions-row" onclick="event.stopPropagation()">
-        <button class="btn-primary" onclick="downloadQrFlashcard()">
-          <svg class="svg-icon" style="width:16px; height:16px;" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-          Download Card
-        </button>
+        <button class="btn-primary" onclick="downloadQrFlashcard()">Download Card</button>
         <button class="btn-secondary" style="flex:0.6;" onclick="closeQrModal()">Close</button>
       </div>
-
     </div>
   </div>
 
@@ -869,16 +800,16 @@
     </div>
   </div>
 
-  <!-- Family Selector Modal -->
-  <div id="aadhaarFamilyModal" class="modal-overlay hidden" onclick="closeFamilySelectorOnBackdrop(event)">
-    <div class="modal-qr-card" style="max-width:380px; text-align:left; align-items:stretch;" onclick="event.stopPropagation()">
+  <!-- ================= AADHAAR FAMILY SELECTOR MODAL ================= -->
+  <div id="aadhaarFamilyModal" class="modal-overlay hidden" onclick="closeAadhaarModalOnBackdrop(event)">
+    <div class="modal-qr-card" style="max-width:380px; text-align:left; background:#111827; border-radius:22px; padding:20px; border:1px solid #334155;" onclick="event.stopPropagation()">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <div style="font-weight:700; font-size:1.15rem; color:#f8fafc;">Aadhaar Vault</div>
         <button class="icon-btn" style="width:32px; height:32px;" onclick="closeAadhaarFamilyModal()">✕</button>
       </div>
-      <p style="font-size:0.8rem; color:#94a3b8; margin-top:-6px;">Select which card you want to manage:</p>
+      <p style="font-size:0.8rem; color:#94a3b8; margin: 4px 0 12px 0;">Select which card you want to manage:</p>
 
-      <div style="display:flex; flex-direction:column; gap:10px; margin-top:4px;">
+      <div style="display:flex; flex-direction:column; gap:10px;">
         <div class="family-tab-option" onclick="openFlashcardManager('my_aadhaar', 'My Aadhaar Card')">
           <div>
             <div style="font-weight:600; color:#f1f5f9;">My Aadhaar Card</div>
@@ -904,19 +835,58 @@
         </div>
       </div>
 
-      <button class="modal-close-btn" style="margin-top:6px;" onclick="closeAadhaarFamilyModal()">Close</button>
+      <button class="btn-secondary" style="width:100%; margin-top:14px;" onclick="closeAadhaarFamilyModal()">Close</button>
     </div>
   </div>
 
-  <!-- Flashcard Dedicated Modal -->
+  <!-- ================= SECONDARY ID (VOTER / PAN / DL) SELECTOR MODAL ================= -->
+  <div id="secondaryIdModal" class="modal-overlay hidden" onclick="closeSecondaryIdModalOnBackdrop(event)">
+    <div class="modal-qr-card" style="max-width:380px; text-align:left; background:#111827; border-radius:22px; padding:20px; border:1px solid #334155;" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-weight:700; font-size:1.15rem; color:#f8fafc;">Identity Documents</div>
+        <button class="icon-btn" style="width:32px; height:32px;" onclick="closeSecondaryIdModal()">✕</button>
+      </div>
+      <p style="font-size:0.8rem; color:#94a3b8; margin: 4px 0 12px 0;">Select document to upload or preview:</p>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div class="family-tab-option" onclick="openFlashcardManager('doc_voter_card', 'Voter ID Card')">
+          <div>
+            <div style="font-weight:600; color:#f1f5f9;">Voter ID Card</div>
+            <div style="font-size:0.75rem; color:#94a3b8;" id="statusText_doc_voter_card">Checking...</div>
+          </div>
+          <span style="color:#60a5fa;">›</span>
+        </div>
+
+        <div class="family-tab-option" onclick="openFlashcardManager('doc_pan_card', 'PAN Card')">
+          <div>
+            <div style="font-weight:600; color:#f1f5f9;">PAN Card</div>
+            <div style="font-size:0.75rem; color:#94a3b8;" id="statusText_doc_pan_card">Checking...</div>
+          </div>
+          <span style="color:#60a5fa;">›</span>
+        </div>
+
+        <div class="family-tab-option" onclick="openFlashcardManager('doc_dl_card', 'Driving License')">
+          <div>
+            <div style="font-weight:600; color:#f1f5f9;">Driving License</div>
+            <div style="font-size:0.75rem; color:#94a3b8;" id="statusText_doc_dl_card">Checking...</div>
+          </div>
+          <span style="color:#60a5fa;">›</span>
+        </div>
+      </div>
+
+      <button class="btn-secondary" style="width:100%; margin-top:14px;" onclick="closeSecondaryIdModal()">Close</button>
+    </div>
+  </div>
+
+  <!-- ================= 2-SIDED FLASHCARD DEDICATED MODAL ================= -->
   <div id="flashcardModal" class="modal-overlay hidden" onclick="closeFlashcardOnBackdrop(event)">
-    <div class="modal-viewer-card" style="height:auto; max-height:92vh;" onclick="event.stopPropagation()">
-      <div class="modal-viewer-header">
-        <div id="flashcardModalTitle" style="font-weight:600; font-size:1rem; color:#f1f5f9;">Aadhaar Card</div>
+    <div style="width:100%; max-width:420px; background:#111827; border:1px solid #334155; border-radius:20px; overflow:hidden;" onclick="event.stopPropagation()">
+      <div style="padding:14px 18px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1f2937;">
+        <div id="flashcardModalTitle" style="font-weight:600; font-size:1rem; color:#f1f5f9;">Identity Card</div>
         <button class="icon-btn" style="width:32px; height:32px;" onclick="closeFlashcardModal()">✕</button>
       </div>
 
-      <div class="modal-viewer-body" style="padding:16px; background:#0b1120;">
+      <div style="padding:16px; background:#0b1120; display:flex; justify-content:center;">
         <div class="flashcard-document-frame" id="printableFlashcardArea">
           <div class="flashcard-side-slot" id="frontSlotArea">
             <span class="flashcard-side-label">FRONT</span>
@@ -1003,6 +973,7 @@
 
     // ================= REALTIME LIVE METRICS =================
     function initLiveMetrics() {
+      // 1. Online Active Users (Presence)
       const presenceRef = db.ref('active_presence');
       const myConnectionRef = presenceRef.push();
       const connectedRef = db.ref('.info/connected');
@@ -1019,15 +990,28 @@
         document.getElementById('activeUsersCount').innerText = count > 0 ? count : 1;
       });
 
+      // 2. Total Vaults Registered Count
       db.ref('vaults').on('value', (snap) => {
-        document.getElementById('totalUsersCount').innerText = snap.numChildren();
+        if (snap.exists()) {
+          const total = snap.numChildren();
+          document.getElementById('totalUsersCount').innerText = total;
+          db.ref('public_meta/vault_count').set(total);
+        } else {
+          db.ref('public_meta/vault_count').once('value', (s) => {
+            document.getElementById('totalUsersCount').innerText = s.val() || 0;
+          });
+        }
+      }, () => {
+        db.ref('public_meta/vault_count').on('value', (s) => {
+          document.getElementById('totalUsersCount').innerText = s.val() || 0;
+        });
       });
     }
 
     // ================= MASTER DOCUMENTS =================
     const masterCollegeDocuments = [
       { id: 'doc_aadhaar', title: 'Aadhaar Card', desc: 'Forms, verification aur biometric ke liye.', category: 'Identity', isAadhaarCustom: true },
-      { id: 'doc_voter_pan', title: 'Voter ID / PAN Card / Driving License', desc: 'Secondary identity proof aur bank verification.', category: 'Identity' },
+      { id: 'doc_voter_pan', title: 'Voter ID / PAN Card / Driving License', desc: 'Secondary identity proof aur bank verification.', category: 'Identity', isSecondaryIdCustom: true },
       { id: 'doc_birth_cert', title: 'Birth Certificate', desc: 'Date of birth verify karne ke liye.', category: 'Identity' },
       { id: 'doc_10th', title: '10th (SSC) Marksheet & Passing Certificate', desc: 'Date of birth aur primary schooling proof.', category: 'Academic' },
       { id: 'doc_12th', title: '12th (HSC) Marksheet & Passing Certificate', desc: 'College admission eligibility proof.', category: 'Academic' },
@@ -1110,22 +1094,10 @@
       const pin = document.getElementById('regPin').value.trim();
       const pinConfirm = document.getElementById('regPinConfirm').value.trim();
 
-      if (!name) {
-        alert("Please choose a username.");
-        return;
-      }
-      if (!pin) {
-        alert("Please set a Master Passphrase / PIN.");
-        return;
-      }
-      if (pin.length < 6) {
-        alert("For security, Passphrase must be at least 6 characters.");
-        return;
-      }
-      if (pin !== pinConfirm) {
-        alert("Passphrase and Confirm Passphrase do not match!");
-        return;
-      }
+      if (!name) { alert("Please choose a username."); return; }
+      if (!pin) { alert("Please set a Master Passphrase / PIN."); return; }
+      if (pin.length < 6) { alert("Passphrase must be at least 6 characters."); return; }
+      if (pin !== pinConfirm) { alert("Passphrase and Confirm Passphrase do not match!"); return; }
 
       btn.innerText = "Creating Vault...";
       btn.disabled = true;
@@ -1133,7 +1105,7 @@
       try {
         const snapshot = await db.ref(`vaults/${name}/profile`).once('value');
         if (snapshot.exists()) {
-          alert("This username already exists! Please choose another name or click Access Data.");
+          alert("This username already exists! Click 'Access Data' to login.");
           btn.innerText = "Create Encrypted Vault";
           btn.disabled = false;
           return;
@@ -1151,11 +1123,14 @@
         await db.ref(`vaults/${name}/profile`).set(profileData);
         sessionDerivedKey = deriveCryptKey(pin, name);
 
+        // Update public total counter
+        db.ref('public_meta/vault_count').transaction((cur) => (cur || 0) + 1);
+
         alert("Encrypted Vault created successfully!");
         await loadUserVault(profileData);
       } catch (err) {
         console.error("Vault Creation Error:", err);
-        alert("Database error: " + (err.message || "Could not write to Firebase"));
+        alert("Database error: " + (err.message || "Failed to create account"));
       } finally {
         btn.innerText = "Create Encrypted Vault";
         btn.disabled = false;
@@ -1180,7 +1155,7 @@
         const user = snapshot.val();
 
         if (!user) {
-          alert("No vault found for this username on the cloud.");
+          alert("No vault found for this username on cloud.");
           btn.innerText = "Unlock & Decrypt";
           btn.disabled = false;
           return;
@@ -1230,6 +1205,7 @@
       document.getElementById('userCourseDisplay').innerText = user.course || 'Student';
       document.getElementById('avatarInitial').innerText = user.name.charAt(0).toUpperCase();
 
+      // Realtime listener with fast asynchronous lazy decryption
       db.ref(`vaults/${user.name}/documents`).on('value', (snap) => {
         const encryptedDataTree = snap.val() || {};
         userVaultData = {};
@@ -1238,10 +1214,6 @@
           const item = encryptedDataTree[docKey];
           if (item && item.enc) {
             let decrypted = decryptPayload(item.enc, sessionDerivedKey);
-            if (!decrypted) {
-              const enteredSecret = document.getElementById('loginPin').value.trim() || document.getElementById('regPin').value.trim();
-              if (enteredSecret) decrypted = decryptPayload(item.enc, enteredSecret);
-            }
             if (decrypted) userVaultData[docKey] = decrypted;
           } else {
             userVaultData[docKey] = item;
@@ -1250,7 +1222,7 @@
 
         renderDocuments('All');
         restoreSignatureAndPhoto();
-        updateAadhaarFamilyStatusIndicators();
+        updateAllCustomCardStatusIndicators();
       });
     }
 
@@ -1295,6 +1267,7 @@
       filtered.forEach(doc => {
         const item = document.createElement('div');
 
+        // 1. Aadhaar Card Special Clickable
         if (doc.isAadhaarCustom) {
           item.className = 'item-card clickable-card';
           item.onclick = openAadhaarFamilyModal;
@@ -1321,7 +1294,37 @@
               <span>›</span>
             </div>
           `;
-        } else {
+        }
+        // 2. Secondary ID (Voter / PAN / DL) Special Clickable
+        else if (doc.isSecondaryIdCustom) {
+          item.className = 'item-card clickable-card';
+          item.onclick = openSecondaryIdModal;
+
+          const vDoc = userVaultData['doc_voter_card'];
+          const pDoc = userVaultData['doc_pan_card'];
+          const dlDoc = userVaultData['doc_dl_card'];
+          const hasAny = (vDoc && (vDoc.front || vDoc.back)) || (pDoc && (pDoc.front || pDoc.back)) || (dlDoc && (dlDoc.front || dlDoc.back));
+
+          item.innerHTML = `
+            <div class="item-card-header">
+              <div class="item-card-title">
+                <div>
+                  <div>${doc.title}</div>
+                  <div class="item-card-desc">${doc.desc}</div>
+                </div>
+              </div>
+              <span class="doc-status-badge" style="${hasAny ? 'color:#34d399; border-color:#059669;' : ''}">
+                ${hasAny ? 'Available' : 'Pending'}
+              </span>
+            </div>
+            <div style="font-size:0.75rem; color:#60a5fa; display:flex; align-items:center; justify-content:space-between; margin-top:4px;">
+              <span>Manage: Voter ID, PAN Card & Driving License</span>
+              <span>›</span>
+            </div>
+          `;
+        } 
+        // 3. Regular College Documents
+        else {
           const fileMeta = userVaultData[doc.id];
           const hasFile = !!fileMeta;
 
@@ -1362,41 +1365,53 @@
       renderDocuments(cat);
     }
 
-    // ================= FLASHCARD SYSTEM FOR AADHAAR =================
-    let activeAadhaarTarget = 'my_aadhaar';
-    let activeAadhaarLabel = 'My Aadhaar Card';
+    // ================= DEDICATED FLASHCARD SYSTEM (2-SIDED) =================
+    let activeCardTarget = 'my_aadhaar';
+    let activeCardLabel = 'Identity Card';
     let currentSideTarget = 'front';
 
+    // Aadhaar Modal Handlers
     function openAadhaarFamilyModal() {
-      updateAadhaarFamilyStatusIndicators();
+      updateAllCustomCardStatusIndicators();
       document.getElementById('aadhaarFamilyModal').classList.remove('hidden');
     }
-
     function closeAadhaarFamilyModal() {
       document.getElementById('aadhaarFamilyModal').classList.add('hidden');
     }
-
-    function closeFamilySelectorOnBackdrop(e) {
+    function closeAadhaarModalOnBackdrop(e) {
       if (e.target.id === 'aadhaarFamilyModal') closeAadhaarFamilyModal();
     }
 
-    function updateAadhaarFamilyStatusIndicators() {
-      const keys = ['my_aadhaar', 'father_aadhaar', 'mother_aadhaar'];
+    // Secondary ID Modal Handlers
+    function openSecondaryIdModal() {
+      updateAllCustomCardStatusIndicators();
+      document.getElementById('secondaryIdModal').classList.remove('hidden');
+    }
+    function closeSecondaryIdModal() {
+      document.getElementById('secondaryIdModal').classList.add('hidden');
+    }
+    function closeSecondaryIdModalOnBackdrop(e) {
+      if (e.target.id === 'secondaryIdModal') closeSecondaryIdModal();
+    }
+
+    function updateAllCustomCardStatusIndicators() {
+      const keys = ['my_aadhaar', 'father_aadhaar', 'mother_aadhaar', 'doc_voter_card', 'doc_pan_card', 'doc_dl_card'];
       keys.forEach(k => {
         const el = document.getElementById(`statusText_${k}`);
         if (el) {
           const rec = userVaultData[k];
           if (rec && rec.front && rec.back) el.innerText = "✓ Front & Back Available";
-          else if (rec && (rec.front || rec.back)) el.innerText = "⚠ Incomplete (1 side)";
+          else if (rec && (rec.front || rec.back)) el.innerText = "⚠ 1 Side Available";
           else el.innerText = "Not Uploaded";
         }
       });
     }
 
     function openFlashcardManager(key, label) {
-      activeAadhaarTarget = key;
-      activeAadhaarLabel = label;
+      activeCardTarget = key;
+      activeCardLabel = label;
       closeAadhaarFamilyModal();
+      closeSecondaryIdModal();
 
       document.getElementById('flashcardModalTitle').innerText = label;
       renderFlashcardView();
@@ -1414,7 +1429,7 @@
     }
 
     function renderFlashcardView() {
-      const record = userVaultData[activeAadhaarTarget] || {};
+      const record = userVaultData[activeCardTarget] || {};
 
       const frontImg = document.getElementById('frontSideImg');
       const frontPlaceholder = document.getElementById('frontSidePlaceholder');
@@ -1464,17 +1479,17 @@
       reader.onload = async function(e) {
         const base64Data = e.target.result;
 
-        const cur = userVaultData[activeAadhaarTarget] || {};
+        const cur = userVaultData[activeCardTarget] || {};
         cur[currentSideTarget] = base64Data;
         cur.updatedAt = new Date().toLocaleDateString();
 
         const encryptedBlob = encryptPayload(cur, sessionDerivedKey);
-        await db.ref(`vaults/${currentSessionUser.name}/documents/${activeAadhaarTarget}`).set({
+        await db.ref(`vaults/${currentSessionUser.name}/documents/${activeCardTarget}`).set({
           enc: encryptedBlob,
           updatedAt: new Date().toLocaleDateString()
         });
 
-        userVaultData[activeAadhaarTarget] = cur;
+        userVaultData[activeCardTarget] = cur;
         renderFlashcardView();
         event.target.value = '';
       };
@@ -1492,7 +1507,7 @@
     }
 
     async function downloadFlashcardPDF() {
-      const record = userVaultData[activeAadhaarTarget] || {};
+      const record = userVaultData[activeCardTarget] || {};
 
       if (!record.front && !record.back) {
         alert("Please upload at least one side (Front or Back) before downloading!");
@@ -1507,7 +1522,7 @@
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
 
-      const targetWidth = 145;
+      const targetWidth = 145; // mm width
       const gap = 10;
       const borderPadding = 6;
 
@@ -1549,7 +1564,7 @@
         pdf.rect(imgX, currentY, targetWidth, backHeight);
       }
 
-      pdf.save(`${activeAadhaarTarget}_Card.pdf`);
+      pdf.save(`${activeCardTarget}_Card.pdf`);
     }
 
     // ================= GENERAL DOCUMENT UPLOADS =================
@@ -1665,21 +1680,20 @@
     }
     function closeViewerOnBackdrop(e) { if(e.target.id === 'viewerModal') closeViewerModal(); }
 
-    // ================= PHOTO 2 FLASHCARD QR ENGINE & DOWNLOAD =================
+    // ================= FLASHCARD QR ENGINE & DOWNLOAD =================
     function openQrModal() {
       if (!currentSessionUser) return;
       const qrBox = document.getElementById('qrcodeBox');
       qrBox.innerHTML = '';
 
-      // Set Username in Flashcard
       document.getElementById('qrCardUsernameDisplay').innerText = currentSessionUser.name;
 
       const vaultUrl = `${window.location.origin}${window.location.pathname}?vault=${currentSessionUser.name}`;
 
       new QRCode(qrBox, {
         text: vaultUrl,
-        width: 160,
-        height: 160,
+        width: 155,
+        height: 155,
         colorDark: "#000000",
         colorLight: "#ffffff",
         correctLevel: QRCode.CorrectLevel.H
@@ -1695,14 +1709,13 @@
       if(e.target.id === 'qrModal') closeQrModal(); 
     }
 
-    // Direct High-Resolution Flashcard Download (Photo 2 Replica)
     async function downloadQrFlashcard() {
       const flashcardEl = document.getElementById('printableQrFlashcard');
       if (!flashcardEl || !currentSessionUser) return;
 
       try {
         const canvas = await html2canvas(flashcardEl, {
-          scale: 3, // Crisp resolution
+          scale: 3,
           useCORS: true,
           backgroundColor: '#05070c'
         });
@@ -1716,7 +1729,7 @@
         document.body.removeChild(link);
       } catch (err) {
         console.error("Card download failed:", err);
-        alert("Could not download flashcard image. Please try again.");
+        alert("Could not download flashcard image.");
       }
     }
   </script>
