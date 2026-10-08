@@ -9,7 +9,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
-  <!-- CryptoJS (AES-256 Encryption & SHA-256 Hashing) -->
+  <!-- CryptoJS (AES-256, PBKDF2 & SHA-256) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
   <!-- Lucide Icons -->
@@ -625,7 +625,7 @@
         <div class="brand-icon" style="width:48px; height:48px;"><i data-lucide="shield-check" style="width:26px; height:26px;"></i></div>
       </div>
       <h2 style="font-size:1.35rem; font-weight:700;">DocVault</h2>
-      <p id="authSubtitle" style="font-size:0.8rem; color:#94a3b8; margin-top:-8px;">AES-256 Zero-Knowledge Encrypted Vault</p>
+      <p id="authSubtitle" style="font-size:0.8rem; color:#94a3b8; margin-top:-8px;">PBKDF2 + AES-256 Zero-Knowledge Vault</p>
 
       <div class="auth-toggle-row" id="authToggleGroup">
         <button id="tabNewUser" class="auth-tab-btn" onclick="switchAuthMode('register')">New User</button>
@@ -672,7 +672,7 @@
         <div class="brand-group">
           <div class="brand-icon"><i data-lucide="shield-check"></i></div>
           <div>
-            <div class="brand-title">DocVault <span class="secure-badge"><i data-lucide="lock" style="width:10px; height:10px;"></i> AES-256</span></div>
+            <div class="brand-title">DocVault <span class="secure-badge"><i data-lucide="shield" style="width:10px; height:10px;"></i> PBKDF2/AES</span></div>
             <div class="brand-sub">End-to-End Encrypted Session</div>
           </div>
         </div>
@@ -690,7 +690,7 @@
           <div>
             <div class="name-title"><span id="userNameDisplay">User</span> <span class="unlocked-tag"><i data-lucide="lock-open" style="width:12px; height:12px;"></i> Decrypted</span></div>
             <div class="meta-details">Roll / Course: <span id="userCourseDisplay">FYBA</span></div>
-            <div class="meta-details">🛡 AES Encrypted · <span id="docCount">18 Documents</span></div>
+            <div class="meta-details">🛡 AES-256 Encrypted · <span id="docCount">18 Documents</span></div>
           </div>
         </div>
 
@@ -896,17 +896,28 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // ================= CRYPTOGRAPHIC HELPERS (AES-256) =================
-    let sessionEncryptionKey = null; // Stored only in volatile RAM
+    // ================= PBKDF2 & AES-256 CRYPTOGRAPHIC ENGINE =================
+    let sessionDerivedKey = null; // Stored exclusively in RAM
 
-    function encryptPayload(dataObj, secretKey) {
-      const jsonStr = JSON.stringify(dataObj);
-      return CryptoJS.AES.encrypt(jsonStr, secretKey).toString();
+    // Derive a strong 256-bit key using PBKDF2 (100,000 rounds)
+    function deriveCryptKey(pin, username) {
+      const salt = CryptoJS.enc.Utf8.parse("docvault_salt_" + username);
+      const key = CryptoJS.PBKDF2(pin, salt, {
+        keySize: 256 / 32,
+        iterations: 100000,
+        hasher: CryptoJS.algo.SHA256
+      });
+      return key.toString(CryptoJS.enc.Hex);
     }
 
-    function decryptPayload(ciphertext, secretKey) {
+    function encryptPayload(dataObj, derivedKey) {
+      const jsonStr = JSON.stringify(dataObj);
+      return CryptoJS.AES.encrypt(jsonStr, derivedKey).toString();
+    }
+
+    function decryptPayload(ciphertext, derivedKey) {
       try {
-        const bytes = CryptoJS.AES.decrypt(ciphertext, secretKey);
+        const bytes = CryptoJS.AES.decrypt(ciphertext, derivedKey);
         const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
         if (!decryptedStr) return null;
         return JSON.parse(decryptedStr);
@@ -915,8 +926,9 @@
       }
     }
 
-    function hashSecret(secret) {
-      return CryptoJS.SHA256(secret).toString();
+    // Salted verification hash for PIN
+    function hashSecretWithSalt(secret, username) {
+      return CryptoJS.SHA256(secret + "_salt_" + username).toString();
     }
 
     // ================= LIVE METRICS =================
@@ -1047,8 +1059,8 @@
         return;
       }
 
-      // SHA-256 Hashing: Original PIN is never sent or stored in plaintext
-      const hashedPin = hashSecret(pin);
+      // Salted SHA-256 for verification
+      const hashedPin = hashSecretWithSalt(pin, name);
 
       const profileData = {
         name: name,
@@ -1058,8 +1070,10 @@
       };
 
       await db.ref(`vaults/${name}/profile`).set(profileData);
-      sessionEncryptionKey = pin; // Secret key for AES encryption
-      alert("Zero-Knowledge Encrypted Vault created successfully!");
+      
+      // Derive 256-bit AES key via PBKDF2 (100,000 rounds)
+      sessionDerivedKey = deriveCryptKey(pin, name);
+      alert("Zero-Knowledge Encrypted Vault created with PBKDF2-AES256!");
       await loadUserVault(profileData);
     }
 
@@ -1080,11 +1094,12 @@
         return;
       }
 
-      const hashedInputPin = hashSecret(pin);
+      const hashedInputPin = hashSecretWithSalt(pin, name);
+      const legacyHashed = CryptoJS.SHA256(pin).toString();
 
-      // Support old plain PIN or new secure pinHash
+      // Check salted hash, legacy hash, or plaintext legacy
       if (user.pinHash) {
-        if (user.pinHash !== hashedInputPin) {
+        if (user.pinHash !== hashedInputPin && user.pinHash !== legacyHashed) {
           alert("Incorrect Master PIN. Decryption failed.");
           return;
         }
@@ -1095,7 +1110,8 @@
         }
       }
 
-      sessionEncryptionKey = pin; // Master PIN acts as AES Decryption Key
+      // Derive key via PBKDF2
+      sessionDerivedKey = deriveCryptKey(pin, name);
       await loadUserVault(user);
     }
 
@@ -1119,14 +1135,18 @@
         const encryptedDataTree = snap.val() || {};
         userVaultData = {};
 
-        // Decrypt each record in-memory
+        // Decrypt each record in-memory using PBKDF2 derived key
         Object.keys(encryptedDataTree).forEach(docKey => {
           const item = encryptedDataTree[docKey];
           if (item && item.enc) {
-            const decrypted = decryptPayload(item.enc, sessionEncryptionKey);
+            let decrypted = decryptPayload(item.enc, sessionDerivedKey);
+            // Fallback for legacy items encrypted directly with pin
+            if (!decrypted && currentSessionUser) {
+              const legacyPin = document.getElementById('loginPin').value.trim() || document.getElementById('regPin').value.trim();
+              if (legacyPin) decrypted = decryptPayload(item.enc, legacyPin);
+            }
             if (decrypted) userVaultData[docKey] = decrypted;
           } else {
-            // Fallback for unencrypted legacy uploads
             userVaultData[docKey] = item;
           }
         });
@@ -1145,7 +1165,7 @@
         db.ref(`vaults/${currentSessionUser.name}/documents`).off();
       }
       currentSessionUser = null;
-      sessionEncryptionKey = null; // Flush key from RAM
+      sessionDerivedKey = null; // Purge key from RAM
       userVaultData = {};
       
       document.getElementById('loginPin').value = '';
@@ -1153,7 +1173,7 @@
       document.getElementById('authScreen').classList.remove('hidden');
       document.getElementById('loginNameFieldContainer').style.display = 'block';
       document.getElementById('authToggleGroup').style.display = 'flex';
-      document.getElementById('authSubtitle').innerText = "AES-256 Zero-Knowledge Encrypted Vault";
+      document.getElementById('authSubtitle').innerText = "PBKDF2 + AES-256 Zero-Knowledge Vault";
     }
 
     // ================= RENDER DOCUMENTS =================
@@ -1336,7 +1356,7 @@
       resetInactivityTimer();
 
       const file = event.target.files[0];
-      if (!file || !currentSessionUser || !sessionEncryptionKey) return;
+      if (!file || !currentSessionUser || !sessionDerivedKey) return;
 
       const reader = new FileReader();
       reader.onload = async function(e) {
@@ -1346,8 +1366,8 @@
         cur[currentSideTarget] = base64Data;
         cur.updatedAt = new Date().toLocaleDateString();
 
-        // Encrypt using AES-256 before transmitting to Firebase
-        const encryptedBlob = encryptPayload(cur, sessionEncryptionKey);
+        // Encrypt with PBKDF2-derived 256-bit AES key
+        const encryptedBlob = encryptPayload(cur, sessionDerivedKey);
         await db.ref(`vaults/${currentSessionUser.name}/documents/${activeAadhaarTarget}`).set({
           enc: encryptedBlob,
           updatedAt: new Date().toLocaleDateString()
@@ -1437,7 +1457,7 @@
       pdf.save(`${activeAadhaarTarget}_Card.pdf`);
     }
 
-    // ================= FILE UPLOADS (GENERAL WITH AES-256) =================
+    // ================= GENERAL DOCUMENT UPLOADS WITH PBKDF2/AES-256 =================
     let currentUploadTargetId = null;
 
     function triggerDocUpload(docId) {
@@ -1459,7 +1479,7 @@
       resetInactivityTimer();
 
       const file = event.target.files[0];
-      if (!file || !currentUploadTargetId || !currentSessionUser || !sessionEncryptionKey) return;
+      if (!file || !currentUploadTargetId || !currentSessionUser || !sessionDerivedKey) return;
 
       const reader = new FileReader();
       reader.onload = async function(e) {
@@ -1470,8 +1490,8 @@
           updatedAt: new Date().toLocaleDateString()
         };
 
-        // Encrypt document payload before sending to cloud
-        const encryptedBlob = encryptPayload(fileData, sessionEncryptionKey);
+        // Encrypt with 256-bit PBKDF2 derived key
+        const encryptedBlob = encryptPayload(fileData, sessionDerivedKey);
         await db.ref(`vaults/${currentSessionUser.name}/documents/${currentUploadTargetId}`).set({
           enc: encryptedBlob,
           updatedAt: new Date().toLocaleDateString()
