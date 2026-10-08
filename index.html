@@ -1,174 +1,1724 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Student Profile - Samirbhai Chavadhri</title>
-    <style>
-        @page {
-            size: A4 portrait;
-            margin: 20mm;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocVault - Secure College Vault</title>
 
-        body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            color: #2D3748;
-            margin: 0;
-            padding: 0;
-            background-color: #FFFFFF;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
+  <!-- Firebase App & Database -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
-        .container {
-            max-width: 100%;
-            margin: 0 auto;
-        }
+  <!-- CryptoJS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
-        /* Header Banner */
-        .header {
-            border-bottom: 2px solid #2B6CB0;
-            padding-bottom: 16px;
-            margin-bottom: 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-        }
+  <!-- QR Code, html2canvas & jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-        .header h1 {
-            margin: 0;
-            font-size: 2```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<style>
-  body {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    color: #2d3748;
-    margin: 40px;
-    background-color: #f7fafc;
-  }
-  .card {
-    max-width: 650px;
-    margin: auto;
-    background: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-    overflow: hidden;
-    border: 1px solid #e2e8f0;
-  }
-  .header {
-    background-color: #2b6cb0;
-    color: white;
-    padding: 24px;
-    text-align: center;
-  }
-  .header h2 {
-    margin: 0 0 6px 0;
-    font-size: 20px;
-    letter-spacing: 0.5px;
-  }
-  .header p {
-    margin: 0;
-    font-size: 14px;
-    opacity: 0.9;
-  }
-  .content {
-    padding: 24px;
-  }
-  .table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  .table th, .table td {
-    padding: 12px 14px;
-    text-align: left;
-    font-size: 14px;
-    border-bottom: 1px solid #edf2f7;
-  }
-  .table th {
-    width: 35%;
-    color: #4a5568;
-    background-color: #f8fafc;
-    font-weight: 600;
-  }
-  .table td {
-    color: #1a202c;
-    font-weight: 500;
-  }
-  .highlight {
-    font-weight: 700;
-    color: #2b6cb0;
-  }
-  @media print {
-    body {
-      background-color: white;
+  <style>
+    * {
+      box-sizing: border-box;
       margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
-    .card {
-      box-shadow: none;
-      border: 1px solid #ccc;
+
+    body {
+      background-color: #0b1120;
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 16px;
     }
-  }
-</style>
+
+    .app-container {
+      width: 100%;
+      max-width: 460px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding-bottom: 40px;
+    }
+
+    .hidden { display: none !important; }
+
+    /* Top Live Metrics */
+    .metrics-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 2px;
+    }
+    .metric-badge {
+      flex: 1;
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 14px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    }
+    .metric-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .metric-label {
+      font-size: 0.72rem;
+      color: #94a3b8;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .metric-val {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #f8fafc;
+      margin-top: 2px;
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #10b981;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: pulse 1.6s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* Auth Screens */
+    .auth-card {
+      background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
+      border: 1px solid #334155;
+      border-radius: 24px;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      text-align: center;
+      margin-top: 10px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    .auth-toggle-row {
+      display: flex;
+      background: #0b1120;
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+      padding: 4px;
+      gap: 4px;
+    }
+    .auth-tab-btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .auth-tab-btn.active {
+      background: #2563eb;
+      color: #ffffff;
+    }
+    .auth-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      text-align: left;
+    }
+    .auth-input-group label {
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+
+    .svg-icon {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      vertical-align: middle;
+      display: inline-block;
+    }
+
+    .brand-icon {
+      width: 48px;
+      height: 48px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #38bdf8;
+      margin: 0 auto;
+    }
+
+    /* Top Nav */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 2px;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .secure-badge {
+      background: #065f46;
+      color: #34d399;
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .brand-sub {
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+    .icon-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    /* Security Status Banner */
+    .security-status-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      background: rgba(6, 95, 70, 0.25);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
+    }
+
+    /* Profile Card */
+    .profile-card {
+      background: radial-gradient(circle at top left, #1e293b 0%, #0f172a 100%);
+      border: 1px solid #334155;
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    .name-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .unlocked-tag {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .meta-details {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+
+    /* Actions Grid */
+    .actions-grid {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-primary {
+      flex: 1;
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 11px 14px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .btn-primary:active { opacity: 0.85; }
+    .btn-secondary {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #f1f5f9;
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      color: #f87171;
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Tabs Slider */
+    .tabs-slider {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .tabs-slider::-webkit-scrollbar { display: none; }
+    .tab-pill {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .tab-pill.active {
+      background: #2563eb;
+      color: #fff;
+      border-color: #2563eb;
+    }
+
+    /* Cards */
+    .item-card {
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .item-card.clickable-card {
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .item-card.clickable-card:hover {
+      border-color: #38bdf8;
+      background: #131d33;
+    }
+    .item-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .item-card-title {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      line-height: 1.35;
+    }
+    .item-card-desc {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-top: 3px;
+    }
+    .doc-status-badge {
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: #1e293b;
+      color: #38bdf8;
+      white-space: nowrap;
+      border: 1px solid #334155;
+    }
+
+    /* Action Buttons in Card */
+    .doc-actions-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+      border-top: 1px solid #1f2937;
+      padding-top: 10px;
+    }
+    .card-action-btn {
+      flex: 1;
+      padding: 7px 10px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      text-decoration: none;
+    }
+    .card-action-btn:hover { background: #334155; color: #fff; }
+    .card-action-btn.primary {
+      background: rgba(37, 99, 235, 0.2);
+      border-color: #2563eb;
+      color: #60a5fa;
+    }
+
+    /* Preview Box */
+    .preview-box {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 75px;
+      color: #0f172a;
+      font-weight: 700;
+      font-size: 1.2rem;
+      font-family: cursive, sans-serif;
+    }
+    .preview-box img {
+      max-height: 85px;
+      max-width: 100%;
+      object-fit: contain;
+    }
+
+    .input-field {
+      width: 100%;
+      background: #1f2937;
+      border: 1px solid #374151;
+      padding: 12px;
+      border-radius: 10px;
+      color: #fff;
+      outline: none;
+    }
+    .input-field:focus { border-color: #3b82f6; }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.82);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 999;
+    }
+
+    /* ================= PHOTO 2 FLASHCARD DESIGN ================= */
+    .qr-flashcard-outer {
+      background: #05070c;
+      border: 2px solid #2a3449;
+      width: 100%;
+      max-width: 310px;
+      border-radius: 26px;
+      padding: 24px 20px 20px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      box-shadow: 0 25px 35px -5px rgba(0, 0, 0, 0.7);
+      position: relative;
+    }
+    .qr-flashcard-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .qr-flashcard-brand {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #f8fafc;
+      font-family: system-ui, sans-serif;
+    }
+    /* White Card Slot inside Flashcard */
+    .qr-inner-white-card {
+      background: #ffffff;
+      width: 100%;
+      border-radius: 20px;
+      padding: 18px 14px 14px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    }
+    .qr-render-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .qr-render-box img, .qr-render-box canvas {
+      display: block;
+    }
+    .qr-card-username {
+      margin-top: 10px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      color: #0b1120;
+      text-transform: uppercase;
+      font-family: monospace, sans-serif;
+    }
+    .qr-flashcard-subtext {
+      margin-top: 14px;
+      font-size: 0.74rem;
+      color: #64748b;
+      line-height: 1.3;
+    }
+    .qr-actions-row {
+      width: 100%;
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    /* Document Viewer */
+    .modal-viewer-card {
+      background: #111827;
+      border: 1px solid #334155;
+      width: 100%;
+      max-width: 440px;
+      height: 82vh;
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .modal-viewer-header {
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #1f2937;
+    }
+    .modal-viewer-body {
+      flex: 1;
+      background: #030712;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+      padding: 10px;
+    }
+    .modal-viewer-body img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+    .modal-viewer-body iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #fff;
+      border-radius: 8px;
+    }
+
+    /* Flashcard UI Frame for Aadhaar */
+    .family-tab-option {
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 14px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .family-tab-option:hover {
+      border-color: #3b82f6;
+      background: #25334d;
+    }
+    .flashcard-document-frame {
+      background: #ffffff;
+      border: 2px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 12px;
+      width: 100%;
+      max-width: 380px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .flashcard-side-slot {
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      min-height: 140px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+    .flashcard-side-slot img {
+      width: 100%;
+      height: auto;
+      max-height: 200px;
+      object-fit: contain;
+      display: block;
+    }
+    .flashcard-side-label {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      background: rgba(15, 23, 42, 0.75);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+  </style>
 </head>
 <body>
 
-<div class="card">
-  <div class="header">
-    <h2>STUDENT ADMISSION DETAILS</h2>
-    <p>F.Y. B.A. Sanskrit (Semester 1)</p>
-  </div>
-  <div class="content">
-    <table class="table">
-      <tr>
-        <th>Roll Number</th>
-        <td class="highlight">318</td>
-      </tr>
-      <tr>
-        <th>Student Name</th>
-        <td>CHAVADHRI SAMIRBHAI SUNILBHAI</td>
-      </tr>
-      <tr>
-        <th>Division</th>
-        <td>C</td>
-      </tr>
-      <tr>
-        <th>Gender</th>
-        <td>Male</td>
-      </tr>
-      <tr>
-        <th>Category</th>
-        <td>ST</td>
-      </tr>
-      <tr>
-        <th>Subject 01 (Major)</th>
-        <td>MAJOR : SANSKRIT</td>
-      </tr>
-      <tr>
-        <th>Subject 02 (Minor)</th>
-        <td>MINOR : GUJARATI</td>
-      </tr>
-      <tr>
-        <th>Subject 03 (MDC)</th>
-        <td>MDC-GUJARATI</td>
-      </tr>
-      <tr>
-        <th>Subject 04 (AEC-SEC)</th>
-        <td>AEC-SEC : GUJARATI</td>
-      </tr>
-      <tr>
-        <th>Subject 05 (VAC)</th>
-        <td>VAC- IKS</td>
-      </tr>
-    </table>
-  </div>
-</div>
+  <div class="app-container">
 
-<script>
-  window.onload = function() {
-    window.print();
-  };
-</script>
+    <!-- Metrics Bar -->
+    <div class="metrics-bar">
+      <div class="metric-badge">
+        <div class="metric-info">
+          <span class="metric-label"><span class="pulse-dot"></span> Active Users</span>
+          <span class="metric-val" id="activeUsersCount">1</span>
+        </div>
+        <svg class="svg-icon" style="color:#10b981;" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      </div>
+      <div class="metric-badge">
+        <div class="metric-info">
+          <span class="metric-label">Total Vaults</span>
+          <span class="metric-val" id="totalUsersCount">0</span>
+        </div>
+        <svg class="svg-icon" style="color:#38bdf8;" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+      </div>
+    </div>
+
+    <!-- Auth Screen -->
+    <div id="authScreen" class="auth-card">
+      <div class="brand-icon">
+        <svg class="svg-icon" style="width:28px; height:28px; color:#38bdf8;" viewBox="0 0 24 24">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+      </div>
+      <h2 style="font-size:1.35rem; font-weight:700;">DocVault</h2>
+      <p id="authSubtitle" style="font-size:0.8rem; color:#94a3b8; margin-top:-8px;">PBKDF2 + AES-256 Military Grade Security</p>
+
+      <div class="auth-toggle-row" id="authToggleGroup">
+        <button id="tabNewUser" class="auth-tab-btn active" onclick="switchAuthMode('register')">New User</button>
+        <button id="tabAccessData" class="auth-tab-btn" onclick="switchAuthMode('login')">Access Data</button>
+      </div>
+
+      <!-- Access Data Form -->
+      <div id="loginForm" class="auth-input-group hidden">
+        <div id="loginNameFieldContainer">
+          <label>Vault Username</label>
+          <input type="text" id="loginName" class="input-field" placeholder="Enter username (e.g. arc)">
+        </div>
+        <div>
+          <label>Master Passphrase / PIN</label>
+          <input type="password" id="loginPin" class="input-field" placeholder="Enter Master Passphrase (Min 6 chars)">
+        </div>
+        <button id="btnLoginAction" class="btn-primary" style="margin-top:8px;" onclick="handleLogin()">Unlock & Decrypt</button>
+      </div>
+
+      <!-- Register Form -->
+      <div id="registerForm" class="auth-input-group">
+        <div>
+          <label>Choose Username (No spaces)</label>
+          <input type="text" id="regName" class="input-field" placeholder="e.g. arc">
+        </div>
+        <div>
+          <label>Course / Year</label>
+          <input type="text" id="regCourse" class="input-field" placeholder="e.g. FYBA">
+        </div>
+        <div>
+          <label>Set Master Passphrase / PIN (Min 6 chars)</label>
+          <input type="password" id="regPin" class="input-field" placeholder="Min 6 characters (Letters/Digits)">
+        </div>
+        <div>
+          <label>Confirm Master Passphrase</label>
+          <input type="password" id="regPinConfirm" class="input-field" placeholder="Confirm Master Passphrase">
+        </div>
+        <button id="btnCreateAction" class="btn-primary" style="margin-top:8px;" onclick="handleRegister()">Create Encrypted Vault</button>
+      </div>
+    </div>
+
+    <!-- Vault Dashboard -->
+    <div id="vaultDashboard" class="hidden" style="display:flex; flex-direction:column; gap:16px;">
+      
+      <div class="header">
+        <div class="brand-group">
+          <div class="brand-icon" style="width:40px; height:40px; border-radius:12px;">
+            <svg class="svg-icon" style="color:#38bdf8;" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+          </div>
+          <div>
+            <div class="brand-title">DocVault <span class="secure-badge">AES-256</span></div>
+            <div class="brand-sub">End-to-End Encrypted Session</div>
+          </div>
+        </div>
+        <button class="icon-btn" onclick="openQrModal()">
+          <svg class="svg-icon" viewBox="0 0 24 24"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
+        </button>
+      </div>
+
+      <div class="security-status-banner">
+        <span>🛡 Zero-Knowledge Active (3 min auto-lock)</span>
+        <span style="color:#6ee7b7; text-decoration:underline; cursor:pointer;" onclick="lockVault()">Lock Now</span>
+      </div>
+
+      <div class="profile-card">
+        <div class="user-info">
+          <div class="avatar" id="avatarInitial">U</div>
+          <div>
+            <div class="name-title"><span id="userNameDisplay">User</span> <span class="unlocked-tag">Decrypted</span></div>
+            <div class="meta-details">Roll / Course: <span id="userCourseDisplay">FYBA</span></div>
+            <div class="meta-details">🛡 AES-256 Encrypted · <span id="docCount">18 Documents</span></div>
+          </div>
+        </div>
+
+        <div class="actions-grid">
+          <button class="btn-primary" onclick="openQrModal()">Instant QR Scan</button>
+          <button class="btn-secondary" onclick="renderDocuments('All', null)">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+          </button>
+          <button class="btn-danger" onclick="lockVault()">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg> Lock
+          </button>
+        </div>
+      </div>
+
+      <div class="tabs-slider">
+        <div class="tab-pill active" onclick="filterCategory('All', this)">All Records</div>
+        <div class="tab-pill" onclick="filterCategory('Identity', this)">Identity & Personal</div>
+        <div class="tab-pill" onclick="filterCategory('Academic', this)">Academic Records</div>
+        <div class="tab-pill" onclick="filterCategory('Administration', this)">Campus & Admin</div>
+        <div class="tab-pill" onclick="filterCategory('Scholarship', this)">Scholarship & Quota</div>
+        <div class="tab-pill" onclick="filterCategory('Banking', this)">Financial & Banking</div>
+      </div>
+
+      <!-- Digital Signature Section -->
+      <div class="item-card">
+        <div class="item-card-header">
+          <div class="item-card-title">Digital Signature</div>
+          <button class="card-action-btn primary" style="flex:none; padding:4px 10px;" onclick="triggerDocUpload('doc_signature')">Update</button>
+        </div>
+        <div class="preview-box" id="signatureBox">
+          <span style="font-size:1.1rem; color:#64748b;">No signature uploaded</span>
+        </div>
+        <div class="doc-actions-row">
+          <button class="card-action-btn" onclick="previewDirectDoc('doc_signature')">Preview</button>
+          <a href="#" id="downloadSignBtn" class="card-action-btn" download="Digital_Signature.png">Download</a>
+        </div>
+      </div>
+
+      <!-- Passport Photo Section -->
+      <div class="item-card">
+        <div class="item-card-header">
+          <div class="item-card-title">Passport Size Photographs</div>
+          <button class="card-action-btn primary" style="flex:none; padding:4px 10px;" onclick="triggerDocUpload('doc_photo')">Update</button>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div id="photoBox" style="width:72px; height:80px; background:#1e293b; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#38bdf8; font-weight:bold; overflow:hidden;">
+            Photo
+          </div>
+          <div>
+            <div style="font-weight:600; font-size:0.95rem;">White Background Photo</div>
+            <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Admit card aur verification ke liye (digital copy).</div>
+          </div>
+        </div>
+        <div class="doc-actions-row">
+          <button class="card-action-btn" onclick="previewDirectDoc('doc_photo')">Preview</button>
+          <a href="#" id="downloadPhotoBtn" class="card-action-btn" download="Passport_Photo.png">Download</a>
+        </div>
+      </div>
+
+      <!-- Documents List Container -->
+      <div id="documentsList" style="display:flex; flex-direction:column; gap:12px;"></div>
+    </div>
+
+  </div>
+
+  <!-- Hidden Inputs -->
+  <input type="file" id="universalFileInput" class="hidden" accept="image/*,application/pdf" onchange="handleUniversalFileUpload(event)">
+  <input type="file" id="sideFileInput" class="hidden" accept="image/*" onchange="handleSideFileUpload(event)">
+
+  <!-- ================= PHOTO 2 FLASHCARD MODAL ================= -->
+  <div id="qrModal" class="modal-overlay hidden" onclick="closeQrOnBackdrop(event)">
+    <div style="display:flex; flex-direction:column; align-items:center; width:100%; max-width:320px;">
+      
+      <!-- Printable Flashcard Element -->
+      <div class="qr-flashcard-outer" id="printableQrFlashcard" onclick="event.stopPropagation()">
+        
+        <!-- Header: DocVault with Logo (Replacing Thai Ming) -->
+        <div class="qr-flashcard-header">
+          <svg class="svg-icon" style="width:24px; height:24px; color:#38bdf8;" viewBox="0 0 24 24">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+          <span class="qr-flashcard-brand">DocVault</span>
+        </div>
+
+        <!-- Middle: Pure White Card Slot with QR & User ID -->
+        <div class="qr-inner-white-card">
+          <div class="qr-render-box" id="qrcodeBox"></div>
+          <div class="qr-card-username" id="qrCardUsernameDisplay">USER</div>
+        </div>
+
+        <!-- Subtext -->
+        <div class="qr-flashcard-subtext">
+          Instant Scan & Secure Key Decrypt Access
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="qr-actions-row" onclick="event.stopPropagation()">
+        <button class="btn-primary" onclick="downloadQrFlashcard()">
+          <svg class="svg-icon" style="width:16px; height:16px;" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+          Download Card
+        </button>
+        <button class="btn-secondary" style="flex:0.6;" onclick="closeQrModal()">Close</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Document Viewer Modal -->
+  <div id="viewerModal" class="modal-overlay hidden" onclick="closeViewerOnBackdrop(event)">
+    <div class="modal-viewer-card" onclick="event.stopPropagation()">
+      <div class="modal-viewer-header">
+        <div id="viewerTitle" style="font-weight:600; font-size:0.95rem; color:#f1f5f9; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:260px;">Document Preview</div>
+        <button class="icon-btn" style="width:32px; height:32px;" onclick="closeViewerModal()">✕</button>
+      </div>
+      <div class="modal-viewer-body" id="viewerContent"></div>
+      <div style="padding:10px 14px; background:#111827; border-top:1px solid #1f2937; display:flex; gap:8px;">
+        <a id="viewerDownloadBtn" href="#" download class="btn-primary" style="text-decoration:none;">Download File</a>
+        <button class="btn-secondary" style="flex:1;" onclick="closeViewerModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Family Selector Modal -->
+  <div id="aadhaarFamilyModal" class="modal-overlay hidden" onclick="closeFamilySelectorOnBackdrop(event)">
+    <div class="modal-qr-card" style="max-width:380px; text-align:left; align-items:stretch;" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-weight:700; font-size:1.15rem; color:#f8fafc;">Aadhaar Vault</div>
+        <button class="icon-btn" style="width:32px; height:32px;" onclick="closeAadhaarFamilyModal()">✕</button>
+      </div>
+      <p style="font-size:0.8rem; color:#94a3b8; margin-top:-6px;">Select which card you want to manage:</p>
+
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:4px;">
+        <div class="family-tab-option" onclick="openFlashcardManager('my_aadhaar', 'My Aadhaar Card')">
+          <div>
+            <div style="font-weight:600; color:#f1f5f9;">My Aadhaar Card</div>
+            <div style="font-size:0.75rem; color:#94a3b8;" id="statusText_my_aadhaar">Checking...</div>
+          </div>
+          <span style="color:#60a5fa;">›</span>
+        </div>
+
+        <div class="family-tab-option" onclick="openFlashcardManager('father_aadhaar', 'Father\'s Aadhaar Card')">
+          <div>
+            <div style="font-weight:600; color:#f1f5f9;">Father's Aadhaar Card</div>
+            <div style="font-size:0.75rem; color:#94a3b8;" id="statusText_father_aadhaar">Checking...</div>
+          </div>
+          <span style="color:#60a5fa;">›</span>
+        </div>
+
+        <div class="family-tab-option" onclick="openFlashcardManager('mother_aadhaar', 'Mother\'s Aadhaar Card')">
+          <div>
+            <div style="font-weight:600; color:#f1f5f9;">Mother's Aadhaar Card</div>
+            <div style="font-size:0.75rem; color:#94a3b8;" id="statusText_mother_aadhaar">Checking...</div>
+          </div>
+          <span style="color:#60a5fa;">›</span>
+        </div>
+      </div>
+
+      <button class="modal-close-btn" style="margin-top:6px;" onclick="closeAadhaarFamilyModal()">Close</button>
+    </div>
+  </div>
+
+  <!-- Flashcard Dedicated Modal -->
+  <div id="flashcardModal" class="modal-overlay hidden" onclick="closeFlashcardOnBackdrop(event)">
+    <div class="modal-viewer-card" style="height:auto; max-height:92vh;" onclick="event.stopPropagation()">
+      <div class="modal-viewer-header">
+        <div id="flashcardModalTitle" style="font-weight:600; font-size:1rem; color:#f1f5f9;">Aadhaar Card</div>
+        <button class="icon-btn" style="width:32px; height:32px;" onclick="closeFlashcardModal()">✕</button>
+      </div>
+
+      <div class="modal-viewer-body" style="padding:16px; background:#0b1120;">
+        <div class="flashcard-document-frame" id="printableFlashcardArea">
+          <div class="flashcard-side-slot" id="frontSlotArea">
+            <span class="flashcard-side-label">FRONT</span>
+            <img id="frontSideImg" src="" class="hidden" alt="Front Side">
+            <div id="frontSidePlaceholder" style="text-align:center; padding:16px; color:#64748b;">
+              <div style="font-size:0.8rem; font-weight:600;">No Front Photo</div>
+              <button class="card-action-btn primary" style="margin-top:8px; padding:4px 12px;" onclick="triggerSideUpload('front')">Upload Front</button>
+            </div>
+          </div>
+
+          <div class="flashcard-side-slot" id="backSlotArea">
+            <span class="flashcard-side-label">BACK</span>
+            <img id="backSideImg" src="" class="hidden" alt="Back Side">
+            <div id="backSidePlaceholder" style="text-align:center; padding:16px; color:#64748b;">
+              <div style="font-size:0.8rem; font-weight:600;">No Back Photo</div>
+              <button class="card-action-btn primary" style="margin-top:8px; padding:4px 12px;" onclick="triggerSideUpload('back')">Upload Back</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:12px 14px; background:#111827; border-top:1px solid #1f2937; display:flex; flex-direction:column; gap:8px;">
+        <div style="display:flex; gap:8px;">
+          <button id="flashcardUploadBtn" class="card-action-btn primary" onclick="triggerSideUpload('front')">
+            <span id="flashcardUploadLabel">Change Front</span>
+          </button>
+          <button class="card-action-btn primary" onclick="triggerSideUpload('back')">Change Back</button>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-primary" style="flex:1;" onclick="downloadFlashcardPDF()">Download Flashcard PDF</button>
+          <button class="btn-secondary" style="flex:0.6;" onclick="closeFlashcardModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ================= FIREBASE SETUP =================
+    const firebaseConfig = {
+      apiKey: "AIzaSyCbvlAXsngeRNMYUium80rJlf06VSSPmFM",
+      authDomain: "docvault-d9ded.firebaseapp.com",
+      databaseURL: "https://docvault-d9ded-default-rtdb.firebaseio.com",
+      projectId: "docvault-d9ded",
+      storageBucket: "docvault-d9ded.firebasestorage.app",
+      messagingSenderId: "18053064593",
+      appId: "1:18053064593:web:283d71fbf570a5f0105c30"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // ================= SECURE KEY DERIVATION & CRYPTO =================
+    let sessionDerivedKey = null;
+
+    function deriveCryptKey(secret, username) {
+      const salt = CryptoJS.enc.Utf8.parse("docvault_salt_" + username.toLowerCase());
+      const key = CryptoJS.PBKDF2(secret, salt, {
+        keySize: 256 / 32,
+        iterations: 15000,
+        hasher: CryptoJS.algo.SHA256
+      });
+      return key.toString(CryptoJS.enc.Hex);
+    }
+
+    function encryptPayload(dataObj, derivedKey) {
+      const jsonStr = JSON.stringify(dataObj);
+      return CryptoJS.AES.encrypt(jsonStr, derivedKey).toString();
+    }
+
+    function decryptPayload(ciphertext, derivedKey) {
+      try {
+        const bytes = CryptoJS.AES.decrypt(ciphertext, derivedKey);
+        const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
+        if (!decryptedStr) return null;
+        return JSON.parse(decryptedStr);
+      } catch (err) {
+        return null;
+      }
+    }
+
+    function hashSecretWithSalt(secret, username) {
+      return CryptoJS.SHA256(secret + "_salt_" + username.toLowerCase()).toString();
+    }
+
+    // ================= REALTIME LIVE METRICS =================
+    function initLiveMetrics() {
+      const presenceRef = db.ref('active_presence');
+      const myConnectionRef = presenceRef.push();
+      const connectedRef = db.ref('.info/connected');
+
+      connectedRef.on('value', (snap) => {
+        if (snap.val() === true) {
+          myConnectionRef.onDisconnect().remove();
+          myConnectionRef.set({ online: true, ts: firebase.database.ServerValue.TIMESTAMP });
+        }
+      });
+
+      presenceRef.on('value', (snap) => {
+        const count = snap.numChildren();
+        document.getElementById('activeUsersCount').innerText = count > 0 ? count : 1;
+      });
+
+      db.ref('vaults').on('value', (snap) => {
+        document.getElementById('totalUsersCount').innerText = snap.numChildren();
+      });
+    }
+
+    // ================= MASTER DOCUMENTS =================
+    const masterCollegeDocuments = [
+      { id: 'doc_aadhaar', title: 'Aadhaar Card', desc: 'Forms, verification aur biometric ke liye.', category: 'Identity', isAadhaarCustom: true },
+      { id: 'doc_voter_pan', title: 'Voter ID / PAN Card / Driving License', desc: 'Secondary identity proof aur bank verification.', category: 'Identity' },
+      { id: 'doc_birth_cert', title: 'Birth Certificate', desc: 'Date of birth verify karne ke liye.', category: 'Identity' },
+      { id: 'doc_10th', title: '10th (SSC) Marksheet & Passing Certificate', desc: 'Date of birth aur primary schooling proof.', category: 'Academic' },
+      { id: 'doc_12th', title: '12th (HSC) Marksheet & Passing Certificate', desc: 'College admission eligibility proof.', category: 'Academic' },
+      { id: 'doc_sem_marksheets', title: 'Semester-wise Marksheets (FY / SY / TY)', desc: 'Regular aur ATKT semester records.', category: 'Academic' },
+      { id: 'doc_tc_lc', title: 'School / College Leaving Certificate (LC / TC)', desc: 'Admission ke waqt submit karne ke liye.', category: 'Academic' },
+      { id: 'doc_migration', title: 'Migration Certificate', desc: 'Board ya university change karne par pramaan.', category: 'Academic' },
+      { id: 'doc_provisional_degree', title: 'Provisional / Degree Certificate', desc: 'Course pura hone ke baad final documentation.', category: 'Academic' },
+      { id: 'doc_college_id', title: 'College Identity Card (Digital / Physical)', desc: 'Campus entry aur library access ke liye.', category: 'Administration' },
+      { id: 'doc_fee_receipt', title: 'Admission Confirmation Slip & Fee Receipts', desc: 'Har semester ki tuition aur exam fee receipts.', category: 'Administration' },
+      { id: 'doc_admit_card', title: 'Exam Hall Ticket / Admit Card', desc: 'Semester examination me appear hone ke liye.', category: 'Administration' },
+      { id: 'doc_library_card', title: 'Library Card / Book Issue Passbook', desc: 'Library issue transactions ke liye.', category: 'Administration' },
+      { id: 'doc_anti_ragging', title: 'Anti-Ragging Undertaking / Affidavit', desc: 'UGC norms ke hisab se mandatory declaration.', category: 'Administration' },
+      { id: 'doc_abc_apaar', title: 'ABC ID / APAAR ID', desc: 'University credit repository digital ID.', category: 'Administration' },
+      { id: 'doc_caste_cert', title: 'Caste Certificate', desc: 'Reserved category quota aur verification.', category: 'Scholarship' },
+      { id: 'doc_ncl_cert', title: 'Non-Creamy Layer (NCL) Certificate', desc: 'OBC category students ke liye valid proof.', category: 'Scholarship' },
+      { id: 'doc_caste_validity', title: 'Caste Validity Certificate', desc: 'Course verification confirmation ke liye.', category: 'Scholarship' },
+      { id: 'doc_income_cert', title: 'Income Certificate (Tahsil / Collectorate)', desc: 'Scholarship form approval ke liye.', category: 'Scholarship' },
+      { id: 'doc_domicile_cert', title: 'Domicile Certificate', desc: 'State quota seats aur state scholarships.', category: 'Scholarship' },
+      { id: 'doc_ews_cert', title: 'EWS Certificate', desc: 'Economically Weaker Section eligibility.', category: 'Scholarship' },
+      { id: 'doc_gap_affidavit', title: 'Gap Certificate / Affidavit', desc: 'Academic gap justification ke liye.', category: 'Scholarship' },
+      { id: 'doc_bank_passbook', title: 'Bank Passbook / Cancelled Cheque', desc: 'Aadhaar linked account & DBT verification.', category: 'Banking' }
+    ];
+
+    let currentSessionUser = null;
+    let userVaultData = {};
+    let inactivityTimer = null;
+    let isFilePickerOpen = false;
+
+    function resetInactivityTimer() {
+      clearTimeout(inactivityTimer);
+      if (currentSessionUser && !isFilePickerOpen) {
+        inactivityTimer = setTimeout(() => {
+          lockVault();
+        }, 3 * 60 * 1000);
+      }
+    }
+
+    ['touchstart', 'mousemove', 'keydown', 'click', 'scroll'].forEach(evt => {
+      window.addEventListener(evt, resetInactivityTimer, { passive: true });
+    });
+
+    window.addEventListener('load', () => {
+      initLiveMetrics();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const scannedVault = urlParams.get('vault');
+
+      if (scannedVault) {
+        document.getElementById('loginName').value = scannedVault;
+        document.getElementById('loginNameFieldContainer').style.display = 'none';
+        document.getElementById('authToggleGroup').style.display = 'none';
+        document.getElementById('authSubtitle').innerText = `Encrypted Vault for "${scannedVault}" - Enter Passphrase`;
+        switchAuthMode('login');
+      }
+    });
+
+    function switchAuthMode(mode) {
+      const tabNewUser = document.getElementById('tabNewUser');
+      const tabAccessData = document.getElementById('tabAccessData');
+      const loginForm = document.getElementById('loginForm');
+      const registerForm = document.getElementById('registerForm');
+
+      if (mode === 'register') {
+        tabNewUser.classList.add('active');
+        tabAccessData.classList.remove('active');
+        registerForm.classList.remove('hidden');
+        loginForm.classList.add('hidden');
+      } else {
+        tabAccessData.classList.add('active');
+        tabNewUser.classList.remove('active');
+        loginForm.classList.remove('hidden');
+        registerForm.classList.add('hidden');
+      }
+    }
+
+    async function handleRegister() {
+      const btn = document.getElementById('btnCreateAction');
+      const name = document.getElementById('regName').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+      const course = document.getElementById('regCourse').value.trim() || 'Student';
+      const pin = document.getElementById('regPin').value.trim();
+      const pinConfirm = document.getElementById('regPinConfirm').value.trim();
+
+      if (!name) {
+        alert("Please choose a username.");
+        return;
+      }
+      if (!pin) {
+        alert("Please set a Master Passphrase / PIN.");
+        return;
+      }
+      if (pin.length < 6) {
+        alert("For security, Passphrase must be at least 6 characters.");
+        return;
+      }
+      if (pin !== pinConfirm) {
+        alert("Passphrase and Confirm Passphrase do not match!");
+        return;
+      }
+
+      btn.innerText = "Creating Vault...";
+      btn.disabled = true;
+
+      try {
+        const snapshot = await db.ref(`vaults/${name}/profile`).once('value');
+        if (snapshot.exists()) {
+          alert("This username already exists! Please choose another name or click Access Data.");
+          btn.innerText = "Create Encrypted Vault";
+          btn.disabled = false;
+          return;
+        }
+
+        const hashedPin = hashSecretWithSalt(pin, name);
+
+        const profileData = {
+          name: name,
+          course: course,
+          pinHash: hashedPin,
+          createdAt: new Date().toISOString()
+        };
+
+        await db.ref(`vaults/${name}/profile`).set(profileData);
+        sessionDerivedKey = deriveCryptKey(pin, name);
+
+        alert("Encrypted Vault created successfully!");
+        await loadUserVault(profileData);
+      } catch (err) {
+        console.error("Vault Creation Error:", err);
+        alert("Database error: " + (err.message || "Could not write to Firebase"));
+      } finally {
+        btn.innerText = "Create Encrypted Vault";
+        btn.disabled = false;
+      }
+    }
+
+    async function handleLogin() {
+      const btn = document.getElementById('btnLoginAction');
+      const name = document.getElementById('loginName').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+      const pin = document.getElementById('loginPin').value.trim();
+
+      if (!name || !pin) {
+        alert("Please enter Username and Master Passphrase.");
+        return;
+      }
+
+      btn.innerText = "Decrypting...";
+      btn.disabled = true;
+
+      try {
+        const snapshot = await db.ref(`vaults/${name}/profile`).once('value');
+        const user = snapshot.val();
+
+        if (!user) {
+          alert("No vault found for this username on the cloud.");
+          btn.innerText = "Unlock & Decrypt";
+          btn.disabled = false;
+          return;
+        }
+
+        const hashedInputPin = hashSecretWithSalt(pin, name);
+        const legacyHash1 = CryptoJS.SHA256(pin).toString();
+        const legacyHash2 = CryptoJS.SHA256(pin + "_pepper_salt_" + name).toString();
+
+        if (user.pinHash) {
+          if (user.pinHash !== hashedInputPin && user.pinHash !== legacyHash1 && user.pinHash !== legacyHash2) {
+            alert("Incorrect Master Passphrase. Decryption failed.");
+            btn.innerText = "Unlock & Decrypt";
+            btn.disabled = false;
+            return;
+          }
+        } else if (user.pin && user.pin !== pin) {
+          alert("Incorrect Master Passphrase.");
+          btn.innerText = "Unlock & Decrypt";
+          btn.disabled = false;
+          return;
+        }
+
+        sessionDerivedKey = deriveCryptKey(pin, name);
+        await loadUserVault(user);
+      } catch (err) {
+        console.error("Login Error:", err);
+        alert("Connection error: " + (err.message || "Failed to reach Firebase"));
+      } finally {
+        btn.innerText = "Unlock & Decrypt";
+        btn.disabled = false;
+      }
+    }
+
+    async function loadUserVault(user) {
+      currentSessionUser = user;
+      resetInactivityTimer();
+
+      if (window.history.replaceState) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('vaultDashboard').classList.remove('hidden');
+
+      document.getElementById('userNameDisplay').innerText = user.name.toUpperCase();
+      document.getElementById('userCourseDisplay').innerText = user.course || 'Student';
+      document.getElementById('avatarInitial').innerText = user.name.charAt(0).toUpperCase();
+
+      db.ref(`vaults/${user.name}/documents`).on('value', (snap) => {
+        const encryptedDataTree = snap.val() || {};
+        userVaultData = {};
+
+        Object.keys(encryptedDataTree).forEach(docKey => {
+          const item = encryptedDataTree[docKey];
+          if (item && item.enc) {
+            let decrypted = decryptPayload(item.enc, sessionDerivedKey);
+            if (!decrypted) {
+              const enteredSecret = document.getElementById('loginPin').value.trim() || document.getElementById('regPin').value.trim();
+              if (enteredSecret) decrypted = decryptPayload(item.enc, enteredSecret);
+            }
+            if (decrypted) userVaultData[docKey] = decrypted;
+          } else {
+            userVaultData[docKey] = item;
+          }
+        });
+
+        renderDocuments('All');
+        restoreSignatureAndPhoto();
+        updateAadhaarFamilyStatusIndicators();
+      });
+    }
+
+    function lockVault() {
+      clearTimeout(inactivityTimer);
+      if (currentSessionUser) {
+        db.ref(`vaults/${currentSessionUser.name}/documents`).off();
+      }
+      currentSessionUser = null;
+      sessionDerivedKey = null;
+      userVaultData = {};
+
+      sanitizeDOMPreviews();
+
+      document.getElementById('loginPin').value = '';
+      document.getElementById('vaultDashboard').classList.add('hidden');
+      document.getElementById('authScreen').classList.remove('hidden');
+      document.getElementById('loginNameFieldContainer').style.display = 'block';
+      document.getElementById('authToggleGroup').style.display = 'flex';
+      document.getElementById('authSubtitle').innerText = "PBKDF2 + AES-256 Military Grade Security";
+    }
+
+    function sanitizeDOMPreviews() {
+      document.getElementById('viewerContent').innerHTML = '';
+      document.getElementById('frontSideImg').src = '';
+      document.getElementById('backSideImg').src = '';
+      document.getElementById('signatureBox').innerHTML = '<span style="font-size:1.1rem; color:#64748b;">No signature uploaded</span>';
+      document.getElementById('photoBox').innerHTML = 'Photo';
+    }
+
+    // ================= RENDER DOCUMENTS =================
+    function renderDocuments(category = 'All', activeBtn = null) {
+      const list = document.getElementById('documentsList');
+      list.innerHTML = '';
+
+      const filtered = category === 'All' 
+        ? masterCollegeDocuments 
+        : masterCollegeDocuments.filter(d => d.category === category);
+
+      document.getElementById('docCount').innerText = `${masterCollegeDocuments.length} Documents`;
+
+      filtered.forEach(doc => {
+        const item = document.createElement('div');
+
+        if (doc.isAadhaarCustom) {
+          item.className = 'item-card clickable-card';
+          item.onclick = openAadhaarFamilyModal;
+
+          const myDoc = userVaultData['my_aadhaar'];
+          const fatDoc = userVaultData['father_aadhaar'];
+          const motDoc = userVaultData['mother_aadhaar'];
+          const hasAny = (myDoc && (myDoc.front || myDoc.back)) || (fatDoc && (fatDoc.front || fatDoc.back)) || (motDoc && (motDoc.front || motDoc.back));
+
+          item.innerHTML = `
+            <div class="item-card-header">
+              <div class="item-card-title">
+                <div>
+                  <div>${doc.title}</div>
+                  <div class="item-card-desc">${doc.desc}</div>
+                </div>
+              </div>
+              <span class="doc-status-badge" style="${hasAny ? 'color:#34d399; border-color:#059669;' : ''}">
+                ${hasAny ? 'Available' : 'Pending'}
+              </span>
+            </div>
+            <div style="font-size:0.75rem; color:#60a5fa; display:flex; align-items:center; justify-content:space-between; margin-top:4px;">
+              <span>Manage: My, Father's & Mother's Cards</span>
+              <span>›</span>
+            </div>
+          `;
+        } else {
+          const fileMeta = userVaultData[doc.id];
+          const hasFile = !!fileMeta;
+
+          item.className = 'item-card';
+          item.innerHTML = `
+            <div class="item-card-header">
+              <div class="item-card-title">
+                <div>
+                  <div>${doc.title}</div>
+                  <div class="item-card-desc">${doc.desc}</div>
+                </div>
+              </div>
+              <span class="doc-status-badge" style="${hasFile ? 'color:#34d399; border-color:#059669;' : ''}">
+                ${hasFile ? 'Available' : 'Pending'}
+              </span>
+            </div>
+
+            <div class="doc-actions-row">
+              <button class="card-action-btn primary" onclick="triggerDocUpload('${doc.id}')">
+                ${hasFile ? 'Change' : 'Upload'}
+              </button>
+              <button class="card-action-btn" onclick="previewDocument('${doc.id}', '${doc.title}')" ${!hasFile ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''}>
+                Preview
+              </button>
+              <button class="card-action-btn" onclick="downloadDocument('${doc.id}', '${doc.title}')" ${!hasFile ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''}>
+                Download
+              </button>
+            </div>
+          `;
+        }
+        list.appendChild(item);
+      });
+    }
+
+    function filterCategory(cat, btn) {
+      document.querySelectorAll('.tab-pill').forEach(el => el.classList.remove('active'));
+      if(btn) btn.classList.add('active');
+      renderDocuments(cat);
+    }
+
+    // ================= FLASHCARD SYSTEM FOR AADHAAR =================
+    let activeAadhaarTarget = 'my_aadhaar';
+    let activeAadhaarLabel = 'My Aadhaar Card';
+    let currentSideTarget = 'front';
+
+    function openAadhaarFamilyModal() {
+      updateAadhaarFamilyStatusIndicators();
+      document.getElementById('aadhaarFamilyModal').classList.remove('hidden');
+    }
+
+    function closeAadhaarFamilyModal() {
+      document.getElementById('aadhaarFamilyModal').classList.add('hidden');
+    }
+
+    function closeFamilySelectorOnBackdrop(e) {
+      if (e.target.id === 'aadhaarFamilyModal') closeAadhaarFamilyModal();
+    }
+
+    function updateAadhaarFamilyStatusIndicators() {
+      const keys = ['my_aadhaar', 'father_aadhaar', 'mother_aadhaar'];
+      keys.forEach(k => {
+        const el = document.getElementById(`statusText_${k}`);
+        if (el) {
+          const rec = userVaultData[k];
+          if (rec && rec.front && rec.back) el.innerText = "✓ Front & Back Available";
+          else if (rec && (rec.front || rec.back)) el.innerText = "⚠ Incomplete (1 side)";
+          else el.innerText = "Not Uploaded";
+        }
+      });
+    }
+
+    function openFlashcardManager(key, label) {
+      activeAadhaarTarget = key;
+      activeAadhaarLabel = label;
+      closeAadhaarFamilyModal();
+
+      document.getElementById('flashcardModalTitle').innerText = label;
+      renderFlashcardView();
+      document.getElementById('flashcardModal').classList.remove('hidden');
+    }
+
+    function closeFlashcardModal() {
+      document.getElementById('flashcardModal').classList.add('hidden');
+      document.getElementById('frontSideImg').src = '';
+      document.getElementById('backSideImg').src = '';
+    }
+
+    function closeFlashcardOnBackdrop(e) {
+      if (e.target.id === 'flashcardModal') closeFlashcardModal();
+    }
+
+    function renderFlashcardView() {
+      const record = userVaultData[activeAadhaarTarget] || {};
+
+      const frontImg = document.getElementById('frontSideImg');
+      const frontPlaceholder = document.getElementById('frontSidePlaceholder');
+      if (record.front) {
+        frontImg.src = record.front;
+        frontImg.classList.remove('hidden');
+        frontPlaceholder.classList.add('hidden');
+      } else {
+        frontImg.src = '';
+        frontImg.classList.add('hidden');
+        frontPlaceholder.classList.remove('hidden');
+      }
+
+      const backImg = document.getElementById('backSideImg');
+      const backPlaceholder = document.getElementById('backSidePlaceholder');
+      if (record.back) {
+        backImg.src = record.back;
+        backImg.classList.remove('hidden');
+        backPlaceholder.classList.add('hidden');
+      } else {
+        backImg.src = '';
+        backImg.classList.add('hidden');
+        backPlaceholder.classList.remove('hidden');
+      }
+
+      const upLabel = document.getElementById('flashcardUploadLabel');
+      if (upLabel) {
+        upLabel.innerText = record.front ? "Change Front" : "Upload Front";
+      }
+    }
+
+    function triggerSideUpload(side) {
+      currentSideTarget = side;
+      isFilePickerOpen = true;
+      clearTimeout(inactivityTimer);
+      document.getElementById('sideFileInput').click();
+    }
+
+    async function handleSideFileUpload(event) {
+      isFilePickerOpen = false;
+      resetInactivityTimer();
+
+      const file = event.target.files[0];
+      if (!file || !currentSessionUser || !sessionDerivedKey) return;
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const base64Data = e.target.result;
+
+        const cur = userVaultData[activeAadhaarTarget] || {};
+        cur[currentSideTarget] = base64Data;
+        cur.updatedAt = new Date().toLocaleDateString();
+
+        const encryptedBlob = encryptPayload(cur, sessionDerivedKey);
+        await db.ref(`vaults/${currentSessionUser.name}/documents/${activeAadhaarTarget}`).set({
+          enc: encryptedBlob,
+          updatedAt: new Date().toLocaleDateString()
+        });
+
+        userVaultData[activeAadhaarTarget] = cur;
+        renderFlashcardView();
+        event.target.value = '';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function loadImageElement(src) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+    }
+
+    async function downloadFlashcardPDF() {
+      const record = userVaultData[activeAadhaarTarget] || {};
+
+      if (!record.front && !record.back) {
+        alert("Please upload at least one side (Front or Back) before downloading!");
+        return;
+      }
+
+      const frontImg = record.front ? await loadImageElement(record.front) : null;
+      const backImg = record.back ? await loadImageElement(record.back) : null;
+
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('portrait', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      const targetWidth = 145;
+      const gap = 10;
+      const borderPadding = 6;
+
+      let frontHeight = 0;
+      let backHeight = 0;
+
+      if (frontImg) frontHeight = (frontImg.height * targetWidth) / frontImg.width;
+      if (backImg) backHeight = (backImg.height * targetWidth) / backImg.width;
+
+      const totalItemsHeight = (frontHeight > 0 && backHeight > 0)
+        ? (frontHeight + backHeight + gap)
+        : (frontHeight || backHeight);
+
+      const frameWidth = targetWidth + (borderPadding * 2);
+      const frameHeight = totalItemsHeight + (borderPadding * 2);
+
+      const frameX = (pdfWidth - frameWidth) / 2;
+      const frameY = (pdfHeight - frameHeight) / 2;
+
+      pdf.setDrawColor(180, 185, 195);
+      pdf.setLineWidth(0.8);
+      pdf.roundedRect(frameX, frameY, frameWidth, frameHeight, 4, 4);
+
+      let currentY = frameY + borderPadding;
+      const imgX = (pdfWidth - targetWidth) / 2;
+
+      if (frontImg) {
+        pdf.addImage(frontImg, 'PNG', imgX, currentY, targetWidth, frontHeight);
+        pdf.setDrawColor(210, 215, 225);
+        pdf.setLineWidth(0.4);
+        pdf.rect(imgX, currentY, targetWidth, frontHeight);
+        currentY += frontHeight + gap;
+      }
+
+      if (backImg) {
+        pdf.addImage(backImg, 'PNG', imgX, currentY, targetWidth, backHeight);
+        pdf.setDrawColor(210, 215, 225);
+        pdf.setLineWidth(0.4);
+        pdf.rect(imgX, currentY, targetWidth, backHeight);
+      }
+
+      pdf.save(`${activeAadhaarTarget}_Card.pdf`);
+    }
+
+    // ================= GENERAL DOCUMENT UPLOADS =================
+    let currentUploadTargetId = null;
+
+    function triggerDocUpload(docId) {
+      currentUploadTargetId = docId;
+      isFilePickerOpen = true;
+      clearTimeout(inactivityTimer);
+      document.getElementById('universalFileInput').click();
+    }
+
+    window.addEventListener('focus', () => {
+      setTimeout(() => {
+        isFilePickerOpen = false;
+        resetInactivityTimer();
+      }, 1000);
+    });
+
+    async function handleUniversalFileUpload(event) {
+      isFilePickerOpen = false;
+      resetInactivityTimer();
+
+      const file = event.target.files[0];
+      if (!file || !currentUploadTargetId || !currentSessionUser || !sessionDerivedKey) return;
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const fileData = {
+          name: file.name,
+          type: file.type,
+          dataUrl: e.target.result,
+          updatedAt: new Date().toLocaleDateString()
+        };
+
+        const encryptedBlob = encryptPayload(fileData, sessionDerivedKey);
+        await db.ref(`vaults/${currentSessionUser.name}/documents/${currentUploadTargetId}`).set({
+          enc: encryptedBlob,
+          updatedAt: new Date().toLocaleDateString()
+        });
+
+        userVaultData[currentUploadTargetId] = fileData;
+        event.target.value = '';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function previewDocument(docId, title) {
+      const fileData = userVaultData[docId];
+      if (!fileData) return;
+
+      document.getElementById('viewerTitle').innerText = title || fileData.name;
+      const container = document.getElementById('viewerContent');
+      container.innerHTML = '';
+
+      if (fileData.type.startsWith('image/')) {
+        container.innerHTML = `<img src="${fileData.dataUrl}" alt="Preview">`;
+      } else if (fileData.type === 'application/pdf') {
+        container.innerHTML = `<iframe src="${fileData.dataUrl}"></iframe>`;
+      } else {
+        container.innerHTML = `<div style="color:#94a3b8; text-align:center;">Preview not supported.<br>Click download.</div>`;
+      }
+
+      const dlBtn = document.getElementById('viewerDownloadBtn');
+      dlBtn.href = fileData.dataUrl;
+      dlBtn.download = fileData.name || `${title}.pdf`;
+
+      document.getElementById('viewerModal').classList.remove('hidden');
+    }
+
+    function previewDirectDoc(docId) {
+      const fileData = userVaultData[docId];
+      if (!fileData) {
+        alert("No scanned photo or signature uploaded yet.");
+        return;
+      }
+      previewDocument(docId, docId === 'doc_signature' ? "Digital Signature" : "Passport Photo");
+    }
+
+    function downloadDocument(docId, title) {
+      const fileData = userVaultData[docId];
+      if (!fileData) return;
+
+      const a = document.createElement('a');
+      a.href = fileData.dataUrl;
+      a.download = fileData.name || `${title}.${fileData.type === 'application/pdf' ? 'pdf' : 'png'}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function restoreSignatureAndPhoto() {
+      const sign = userVaultData['doc_signature'];
+      if (sign) {
+        document.getElementById('signatureBox').innerHTML = `<img src="${sign.dataUrl}">`;
+        document.getElementById('downloadSignBtn').href = sign.dataUrl;
+      } else {
+        document.getElementById('signatureBox').innerHTML = `<span style="font-size:1.1rem; color:#64748b;">No signature uploaded</span>`;
+      }
+
+      const photo = userVaultData['doc_photo'];
+      if (photo) {
+        document.getElementById('photoBox').innerHTML = `<img src="${photo.dataUrl}" style="width:100%; height:100%; object-fit:cover;">`;
+        document.getElementById('downloadPhotoBtn').href = photo.dataUrl;
+      } else {
+        document.getElementById('photoBox').innerHTML = `Photo`;
+      }
+    }
+
+    function closeViewerModal() { 
+      document.getElementById('viewerModal').classList.add('hidden');
+      document.getElementById('viewerContent').innerHTML = '';
+    }
+    function closeViewerOnBackdrop(e) { if(e.target.id === 'viewerModal') closeViewerModal(); }
+
+    // ================= PHOTO 2 FLASHCARD QR ENGINE & DOWNLOAD =================
+    function openQrModal() {
+      if (!currentSessionUser) return;
+      const qrBox = document.getElementById('qrcodeBox');
+      qrBox.innerHTML = '';
+
+      // Set Username in Flashcard
+      document.getElementById('qrCardUsernameDisplay').innerText = currentSessionUser.name;
+
+      const vaultUrl = `${window.location.origin}${window.location.pathname}?vault=${currentSessionUser.name}`;
+
+      new QRCode(qrBox, {
+        text: vaultUrl,
+        width: 160,
+        height: 160,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      document.getElementById('qrModal').classList.remove('hidden');
+    }
+
+    function closeQrModal() { 
+      document.getElementById('qrModal').classList.add('hidden'); 
+    }
+    function closeQrOnBackdrop(e) { 
+      if(e.target.id === 'qrModal') closeQrModal(); 
+    }
+
+    // Direct High-Resolution Flashcard Download (Photo 2 Replica)
+    async function downloadQrFlashcard() {
+      const flashcardEl = document.getElementById('printableQrFlashcard');
+      if (!flashcardEl || !currentSessionUser) return;
+
+      try {
+        const canvas = await html2canvas(flashcardEl, {
+          scale: 3, // Crisp resolution
+          useCORS: true,
+          backgroundColor: '#05070c'
+        });
+
+        const imageUri = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = `${currentSessionUser.name}_DocVault_QR_Card.png`;
+        link.href = imageUri;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (err) {
+        console.error("Card download failed:", err);
+        alert("Could not download flashcard image. Please try again.");
+      }
+    }
+  </script>
 </body>
 </html>
