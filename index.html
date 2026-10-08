@@ -1015,14 +1015,14 @@
 
     // ================= ENCRYPTION ENGINE =================
     let sessionDerivedKey = null;
-    let localKeysCache = {}; // Tracks which keys exist on cloud without downloading heavy payloads
-    let itemDecryptedMemory = {};
+    let localIndexCache = {};       // Tracks which documents exist on cloud (size: < 1KB)
+    let memoryDecryptedCache = {};  // Decrypts single items on demand
 
     function deriveCryptKey(secret, username) {
       const salt = CryptoJS.enc.Utf8.parse("docvault_salt_" + username.toLowerCase());
       const key = CryptoJS.PBKDF2(secret, salt, {
         keySize: 256 / 32,
-        iterations: 1500, // Balanced for zero-wait UI on mobile
+        iterations: 1000,
         hasher: CryptoJS.algo.SHA256
       });
       return key.toString(CryptoJS.enc.Hex);
@@ -1048,7 +1048,7 @@
       return CryptoJS.SHA256(secret + "_salt_" + username.toLowerCase()).toString();
     }
 
-    // ================= REALTIME METRICS =================
+    // ================= REALTIME LIVE METRICS =================
     function initLiveMetrics() {
       const presenceRef = db.ref('active_presence');
       const myConnectionRef = presenceRef.push();
@@ -1083,7 +1083,7 @@
       });
     }
 
-    // ================= MASTER DOCUMENTS =================
+    // ================= MASTER DOCUMENTS DEFINITION =================
     const masterCollegeDocuments = [
       { id: 'doc_aadhaar', title: 'Aadhaar Card', desc: 'Forms, verification aur biometric ke liye.', category: 'Identity', isAadhaarCustom: true },
       { id: 'doc_voter_pan', title: 'Voter ID / PAN Card / Driving License', desc: 'Secondary identity proof aur bank verification.', category: 'Identity', isSecondaryIdCustom: true },
@@ -1271,7 +1271,7 @@
         window.history.replaceState({}, document.title, window.location.pathname);
       }
 
-      // Switch screens immediately
+      // Switch screens immediately (Zero Wait)
       document.getElementById('authScreen').classList.add('hidden');
       document.getElementById('vaultDashboard').classList.remove('hidden');
 
@@ -1279,32 +1279,33 @@
       document.getElementById('userCourseDisplay').innerText = user.course || 'Student';
       document.getElementById('avatarInitial').innerText = user.name.charAt(0).toUpperCase();
 
-      // Zero-wait Instant UI rendering from static array
+      // Instantly render all cards from master memory
       renderDocuments('All');
 
-      // Fetch lightweight presence keys only
+      // Fetch lightweight presence keys only (Payload < 1KB)
       db.ref(`vaults/${user.name}/documents`).on('value', (snap) => {
-        const val = snap.val() || {};
-        localKeysCache = {};
-        Object.keys(val).forEach(k => {
-          localKeysCache[k] = true;
+        localIndexCache = {};
+        const data = snap.val() || {};
+        Object.keys(data).forEach(k => {
+          localIndexCache[k] = true;
         });
 
+        // Instant lightweight UI update
         renderDocuments('All');
         updateAllCustomCardStatusIndicators();
 
-        // Load Signature & Photo in background without UI freezing
-        if (localKeysCache['doc_signature'] && !itemDecryptedMemory['doc_signature']) {
-          fetchAndDecryptSingleDoc('doc_signature').then(restoreSignatureAndPhoto);
+        // Background load light items (Signature & Photo)
+        if (localIndexCache['doc_signature'] && !memoryDecryptedCache['doc_signature']) {
+          fetchSingleDoc('doc_signature').then(restoreSignatureAndPhoto);
         }
-        if (localKeysCache['doc_photo'] && !itemDecryptedMemory['doc_photo']) {
-          fetchAndDecryptSingleDoc('doc_photo').then(restoreSignatureAndPhoto);
+        if (localIndexCache['doc_photo'] && !memoryDecryptedCache['doc_photo']) {
+          fetchSingleDoc('doc_photo').then(restoreSignatureAndPhoto);
         }
       });
     }
 
-    async function fetchAndDecryptSingleDoc(docId) {
-      if (itemDecryptedMemory[docId]) return itemDecryptedMemory[docId];
+    async function fetchSingleDoc(docId) {
+      if (memoryDecryptedCache[docId]) return memoryDecryptedCache[docId];
 
       const snap = await db.ref(`vaults/${currentSessionUser.name}/documents/${docId}`).once('value');
       const item = snap.val();
@@ -1313,11 +1314,11 @@
       if (item.enc) {
         const decrypted = decryptPayload(item.enc, sessionDerivedKey);
         if (decrypted) {
-          itemDecryptedMemory[docId] = decrypted;
+          memoryDecryptedCache[docId] = decrypted;
           return decrypted;
         }
       } else {
-        itemDecryptedMemory[docId] = item;
+        memoryDecryptedCache[docId] = item;
         return item;
       }
       return null;
@@ -1330,8 +1331,8 @@
       }
       currentSessionUser = null;
       sessionDerivedKey = null;
-      localKeysCache = {};
-      itemDecryptedMemory = {};
+      localIndexCache = {};
+      memoryDecryptedCache = {};
 
       sanitizeDOMPreviews();
 
@@ -1369,7 +1370,7 @@
           item.className = 'item-card clickable-card';
           item.onclick = openAadhaarFamilyModal;
 
-          const hasAny = !!(localKeysCache['my_aadhaar'] || localKeysCache['father_aadhaar'] || localKeysCache['mother_aadhaar']);
+          const hasAny = !!(localIndexCache['my_aadhaar'] || localIndexCache['father_aadhaar'] || localIndexCache['mother_aadhaar']);
 
           item.innerHTML = `
             <div class="item-card-header">
@@ -1393,7 +1394,7 @@
           item.className = 'item-card clickable-card';
           item.onclick = openSecondaryIdModal;
 
-          const hasAny = !!(localKeysCache['doc_voter_card'] || localKeysCache['doc_pan_card'] || localKeysCache['doc_dl_card']);
+          const hasAny = !!(localIndexCache['doc_voter_card'] || localIndexCache['doc_pan_card'] || localIndexCache['doc_dl_card']);
 
           item.innerHTML = `
             <div class="item-card-header">
@@ -1414,7 +1415,7 @@
           `;
         } 
         else {
-          const hasFile = !!localKeysCache[doc.id];
+          const hasFile = !!localIndexCache[doc.id];
 
           item.className = 'item-card';
           item.innerHTML = `
@@ -1485,7 +1486,7 @@
       keys.forEach(k => {
         const el = document.getElementById(`statusText_${k}`);
         if (el) {
-          if (localKeysCache[k]) {
+          if (localIndexCache[k]) {
             el.innerText = "✓ Record Available";
           } else {
             el.innerText = "Not Uploaded";
@@ -1504,7 +1505,7 @@
       document.getElementById('flashcardModal').classList.remove('hidden');
 
       // Fetch target flashcard lazy
-      await fetchAndDecryptSingleDoc(activeCardTarget);
+      await fetchSingleDoc(activeCardTarget);
       renderFlashcardView();
     }
 
@@ -1519,7 +1520,7 @@
     }
 
     function renderFlashcardView() {
-      const record = itemDecryptedMemory[activeCardTarget] || {};
+      const record = memoryDecryptedCache[activeCardTarget] || {};
 
       const frontImg = document.getElementById('frontSideImg');
       const frontPlaceholder = document.getElementById('frontSidePlaceholder');
@@ -1569,7 +1570,7 @@
       reader.onload = async function(e) {
         const base64Data = e.target.result;
 
-        const cur = itemDecryptedMemory[activeCardTarget] || {};
+        const cur = memoryDecryptedCache[activeCardTarget] || {};
         cur[currentSideTarget] = base64Data;
         cur.updatedAt = new Date().toLocaleDateString();
 
@@ -1579,8 +1580,8 @@
           updatedAt: new Date().toLocaleDateString()
         });
 
-        itemDecryptedMemory[activeCardTarget] = cur;
-        localKeysCache[activeCardTarget] = true;
+        memoryDecryptedCache[activeCardTarget] = cur;
+        localIndexCache[activeCardTarget] = true;
         renderFlashcardView();
         event.target.value = '';
       };
@@ -1598,7 +1599,7 @@
     }
 
     async function downloadFlashcardPDF() {
-      const record = itemDecryptedMemory[activeCardTarget] || {};
+      const record = memoryDecryptedCache[activeCardTarget] || {};
 
       if (!record.front && !record.back) {
         alert("Please upload at least one side (Front or Back) before downloading!");
@@ -1697,8 +1698,8 @@
           updatedAt: new Date().toLocaleDateString()
         });
 
-        itemDecryptedMemory[currentUploadTargetId] = fileData;
-        localKeysCache[currentUploadTargetId] = true;
+        memoryDecryptedCache[currentUploadTargetId] = fileData;
+        localIndexCache[currentUploadTargetId] = true;
         renderDocuments('All');
         event.target.value = '';
       };
@@ -1706,9 +1707,9 @@
     }
 
     async function previewDocument(docId, title) {
-      let fileData = itemDecryptedMemory[docId];
+      let fileData = memoryDecryptedCache[docId];
       if (!fileData) {
-        fileData = await fetchAndDecryptSingleDoc(docId);
+        fileData = await fetchSingleDoc(docId);
       }
       if (!fileData) {
         alert("Document data could not be decrypted.");
@@ -1735,9 +1736,9 @@
     }
 
     async function previewDirectDoc(docId) {
-      let fileData = itemDecryptedMemory[docId];
+      let fileData = memoryDecryptedCache[docId];
       if (!fileData) {
-        fileData = await fetchAndDecryptSingleDoc(docId);
+        fileData = await fetchSingleDoc(docId);
       }
       if (!fileData) {
         alert("No photo or signature uploaded yet.");
@@ -1747,9 +1748,9 @@
     }
 
     async function downloadDocument(docId, title) {
-      let fileData = itemDecryptedMemory[docId];
+      let fileData = memoryDecryptedCache[docId];
       if (!fileData) {
-        fileData = await fetchAndDecryptSingleDoc(docId);
+        fileData = await fetchSingleDoc(docId);
       }
       if (!fileData) return;
 
@@ -1762,7 +1763,7 @@
     }
 
     function restoreSignatureAndPhoto() {
-      const sign = itemDecryptedMemory['doc_signature'];
+      const sign = memoryDecryptedCache['doc_signature'];
       if (sign) {
         document.getElementById('signatureBox').innerHTML = `<img src="${sign.dataUrl}">`;
         document.getElementById('downloadSignBtn').href = sign.dataUrl;
@@ -1770,7 +1771,7 @@
         document.getElementById('signatureBox').innerHTML = `<span style="font-size:1.1rem; color:#64748b;">No signature uploaded</span>`;
       }
 
-      const photo = itemDecryptedMemory['doc_photo'];
+      const photo = memoryDecryptedCache['doc_photo'];
       if (photo) {
         document.getElementById('photoBox').innerHTML = `<img src="${photo.dataUrl}" style="width:100%; height:100%; object-fit:cover;">`;
         document.getElementById('downloadPhotoBtn').href = photo.dataUrl;
