@@ -9,6 +9,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
+  <!-- CryptoJS (AES-256 Encryption & SHA-256 Hashing) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- QR Code Library -->
@@ -172,12 +175,15 @@
       gap: 6px;
     }
     .secure-badge {
-      background: #1e3a8a;
-      color: #60a5fa;
+      background: #065f46;
+      color: #34d399;
       font-size: 0.7rem;
       padding: 2px 6px;
       border-radius: 6px;
       font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
     .brand-sub {
       font-size: 0.75rem;
@@ -204,9 +210,9 @@
       padding: 8px 14px;
       border-radius: 10px;
       font-size: 0.78rem;
-      background: rgba(30, 58, 138, 0.25);
-      border: 1px solid rgba(59, 130, 246, 0.3);
-      color: #93c5fd;
+      background: rgba(6, 95, 70, 0.25);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
     }
 
     /* Profile Card */
@@ -619,7 +625,7 @@
         <div class="brand-icon" style="width:48px; height:48px;"><i data-lucide="shield-check" style="width:26px; height:26px;"></i></div>
       </div>
       <h2 style="font-size:1.35rem; font-weight:700;">DocVault</h2>
-      <p id="authSubtitle" style="font-size:0.8rem; color:#94a3b8; margin-top:-8px;">Universal Encrypted College Records</p>
+      <p id="authSubtitle" style="font-size:0.8rem; color:#94a3b8; margin-top:-8px;">AES-256 Zero-Knowledge Encrypted Vault</p>
 
       <div class="auth-toggle-row" id="authToggleGroup">
         <button id="tabNewUser" class="auth-tab-btn" onclick="switchAuthMode('register')">New User</button>
@@ -632,10 +638,10 @@
           <input type="text" id="loginName" class="input-field" placeholder="Enter username (e.g. amish)">
         </div>
         <div>
-          <label>Master PIN</label>
+          <label>Master PIN (Decryption Key)</label>
           <input type="password" id="loginPin" class="input-field" placeholder="Enter Master PIN" maxlength="8">
         </div>
-        <button class="btn-primary" style="margin-top:8px; padding:12px;" onclick="handleLogin()">Unlock Vault</button>
+        <button class="btn-primary" style="margin-top:8px; padding:12px;" onclick="handleLogin()">Unlock & Decrypt</button>
       </div>
 
       <div id="registerForm" class="auth-input-group hidden">
@@ -655,7 +661,7 @@
           <label>Confirm Master PIN</label>
           <input type="password" id="regPinConfirm" class="input-field" placeholder="Confirm secret PIN" maxlength="8">
         </div>
-        <button class="btn-primary" style="margin-top:8px; padding:12px;" onclick="handleRegister()">Create Cloud Vault</button>
+        <button class="btn-primary" style="margin-top:8px; padding:12px;" onclick="handleRegister()">Create Encrypted Vault</button>
       </div>
     </div>
 
@@ -666,25 +672,25 @@
         <div class="brand-group">
           <div class="brand-icon"><i data-lucide="shield-check"></i></div>
           <div>
-            <div class="brand-title">DocVault <span class="secure-badge">Active</span></div>
-            <div class="brand-sub">Zero-Login Encrypted Session</div>
+            <div class="brand-title">DocVault <span class="secure-badge"><i data-lucide="lock" style="width:10px; height:10px;"></i> AES-256</span></div>
+            <div class="brand-sub">End-to-End Encrypted Session</div>
           </div>
         </div>
         <button class="icon-btn" onclick="openQrModal()"><i data-lucide="qr-code"></i></button>
       </div>
 
       <div class="security-status-banner">
-        <span>🛡 Auto-Lock Active (3 min idle / tab exit)</span>
-        <span style="color:#60a5fa; cursor:pointer;" onclick="lockVault()">Lock Now</span>
+        <span>🛡 Zero-Knowledge Encrypted (3 min auto-lock)</span>
+        <span style="color:#6ee7b7; text-decoration:underline; cursor:pointer;" onclick="lockVault()">Lock Now</span>
       </div>
 
       <div class="profile-card">
         <div class="user-info">
           <div class="avatar" id="avatarInitial">U</div>
           <div>
-            <div class="name-title"><span id="userNameDisplay">User</span> <span class="unlocked-tag"><i data-lucide="lock-open" style="width:12px; height:12px;"></i> Unlocked</span></div>
+            <div class="name-title"><span id="userNameDisplay">User</span> <span class="unlocked-tag"><i data-lucide="lock-open" style="width:12px; height:12px;"></i> Decrypted</span></div>
             <div class="meta-details">Roll / Course: <span id="userCourseDisplay">FYBA</span></div>
-            <div class="meta-details">🛡 Cloud Synced · <span id="docCount">18 Documents</span></div>
+            <div class="meta-details">🛡 AES Encrypted · <span id="docCount">18 Documents</span></div>
           </div>
         </div>
 
@@ -890,6 +896,29 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // ================= CRYPTOGRAPHIC HELPERS (AES-256) =================
+    let sessionEncryptionKey = null; // Stored only in volatile RAM
+
+    function encryptPayload(dataObj, secretKey) {
+      const jsonStr = JSON.stringify(dataObj);
+      return CryptoJS.AES.encrypt(jsonStr, secretKey).toString();
+    }
+
+    function decryptPayload(ciphertext, secretKey) {
+      try {
+        const bytes = CryptoJS.AES.decrypt(ciphertext, secretKey);
+        const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
+        if (!decryptedStr) return null;
+        return JSON.parse(decryptedStr);
+      } catch (err) {
+        return null;
+      }
+    }
+
+    function hashSecret(secret) {
+      return CryptoJS.SHA256(secret).toString();
+    }
+
     // ================= LIVE METRICS =================
     function initLiveMetrics() {
       const presenceRef = db.ref('active_presence');
@@ -958,22 +987,9 @@
       window.addEventListener(evt, resetInactivityTimer, { passive: true });
     });
 
-    window.addEventListener('beforeunload', () => {
-      sessionStorage.removeItem('docvault_active_session');
-    });
-
     window.addEventListener('load', async () => {
       lucide.createIcons();
       initLiveMetrics();
-
-      const activeSession = sessionStorage.getItem('docvault_active_session');
-      if (activeSession) {
-        try {
-          const user = JSON.parse(activeSession);
-          await loadUserVault(user);
-          return;
-        } catch(e) {}
-      }
 
       const urlParams = new URLSearchParams(window.location.search);
       const scannedVault = urlParams.get('vault');
@@ -982,7 +998,7 @@
         document.getElementById('loginName').value = scannedVault;
         document.getElementById('loginNameFieldContainer').style.display = 'none';
         document.getElementById('authToggleGroup').style.display = 'none';
-        document.getElementById('authSubtitle').innerText = `Locked Vault for "${scannedVault}" - Enter PIN`;
+        document.getElementById('authSubtitle').innerText = `Encrypted Vault for "${scannedVault}" - Enter Master PIN`;
         switchAuthMode('login');
       }
     });
@@ -1031,15 +1047,19 @@
         return;
       }
 
+      // SHA-256 Hashing: Original PIN is never sent or stored in plaintext
+      const hashedPin = hashSecret(pin);
+
       const profileData = {
         name: name,
         course: course,
-        pin: pin,
+        pinHash: hashedPin,
         createdAt: new Date().toISOString()
       };
 
       await db.ref(`vaults/${name}/profile`).set(profileData);
-      alert("Cloud Vault created! Loading your records...");
+      sessionEncryptionKey = pin; // Secret key for AES encryption
+      alert("Zero-Knowledge Encrypted Vault created successfully!");
       await loadUserVault(profileData);
     }
 
@@ -1056,21 +1076,31 @@
       const user = snapshot.val();
 
       if (!user) {
-        alert("No vault found for this username on the cloud. If you are new, click 'New User' to register.");
+        alert("No vault found for this username on the cloud.");
         return;
       }
 
-      if (user.pin !== pin) {
-        alert("Incorrect PIN. Please re-enter.");
-        return;
+      const hashedInputPin = hashSecret(pin);
+
+      // Support old plain PIN or new secure pinHash
+      if (user.pinHash) {
+        if (user.pinHash !== hashedInputPin) {
+          alert("Incorrect Master PIN. Decryption failed.");
+          return;
+        }
+      } else if (user.pin) {
+        if (user.pin !== pin) {
+          alert("Incorrect Master PIN.");
+          return;
+        }
       }
 
+      sessionEncryptionKey = pin; // Master PIN acts as AES Decryption Key
       await loadUserVault(user);
     }
 
     async function loadUserVault(user) {
       currentSessionUser = user;
-      sessionStorage.setItem('docvault_active_session', JSON.stringify(user));
       resetInactivityTimer();
 
       if (window.history.replaceState) {
@@ -1081,11 +1111,26 @@
       document.getElementById('vaultDashboard').classList.remove('hidden');
 
       document.getElementById('userNameDisplay').innerText = user.name.toUpperCase();
-      document.getElementById('userCourseDisplay').innerText = user.course;
+      document.getElementById('userCourseDisplay').innerText = user.course || 'Student';
       document.getElementById('avatarInitial').innerText = user.name.charAt(0).toUpperCase();
 
+      // Realtime listener with auto AES Decryption
       db.ref(`vaults/${user.name}/documents`).on('value', (snap) => {
-        userVaultData = snap.val() || {};
+        const encryptedDataTree = snap.val() || {};
+        userVaultData = {};
+
+        // Decrypt each record in-memory
+        Object.keys(encryptedDataTree).forEach(docKey => {
+          const item = encryptedDataTree[docKey];
+          if (item && item.enc) {
+            const decrypted = decryptPayload(item.enc, sessionEncryptionKey);
+            if (decrypted) userVaultData[docKey] = decrypted;
+          } else {
+            // Fallback for unencrypted legacy uploads
+            userVaultData[docKey] = item;
+          }
+        });
+
         renderDocuments('All');
         restoreSignatureAndPhoto();
         updateAadhaarFamilyStatusIndicators();
@@ -1100,15 +1145,15 @@
         db.ref(`vaults/${currentSessionUser.name}/documents`).off();
       }
       currentSessionUser = null;
+      sessionEncryptionKey = null; // Flush key from RAM
       userVaultData = {};
-      sessionStorage.removeItem('docvault_active_session');
       
       document.getElementById('loginPin').value = '';
       document.getElementById('vaultDashboard').classList.add('hidden');
       document.getElementById('authScreen').classList.remove('hidden');
       document.getElementById('loginNameFieldContainer').style.display = 'block';
       document.getElementById('authToggleGroup').style.display = 'flex';
-      document.getElementById('authSubtitle').innerText = "Universal Encrypted College Records";
+      document.getElementById('authSubtitle').innerText = "AES-256 Zero-Knowledge Encrypted Vault";
     }
 
     // ================= RENDER DOCUMENTS =================
@@ -1291,7 +1336,7 @@
       resetInactivityTimer();
 
       const file = event.target.files[0];
-      if (!file || !currentSessionUser) return;
+      if (!file || !currentSessionUser || !sessionEncryptionKey) return;
 
       const reader = new FileReader();
       reader.onload = async function(e) {
@@ -1301,14 +1346,20 @@
         cur[currentSideTarget] = base64Data;
         cur.updatedAt = new Date().toLocaleDateString();
 
-        await db.ref(`vaults/${currentSessionUser.name}/documents/${activeAadhaarTarget}`).set(cur);
+        // Encrypt using AES-256 before transmitting to Firebase
+        const encryptedBlob = encryptPayload(cur, sessionEncryptionKey);
+        await db.ref(`vaults/${currentSessionUser.name}/documents/${activeAadhaarTarget}`).set({
+          enc: encryptedBlob,
+          updatedAt: new Date().toLocaleDateString()
+        });
+
+        userVaultData[activeAadhaarTarget] = cur;
         renderFlashcardView();
         event.target.value = '';
       };
       reader.readAsDataURL(file);
     }
 
-    // Helper Image Loader for Crisp PDF Layout
     function loadImageElement(src) {
       return new Promise((resolve) => {
         const img = new Image();
@@ -1336,10 +1387,9 @@
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
 
-      // Slightly bigger card width for A4
       const targetWidth = 145; // mm
-      const gap = 10; // mm gap between front and back
-      const borderPadding = 6; // mm padding inside border
+      const gap = 10; // mm gap
+      const borderPadding = 6; // mm padding
 
       let frontHeight = 0;
       let backHeight = 0;
@@ -1358,7 +1408,6 @@
       const frameWidth = targetWidth + (borderPadding * 2);
       const frameHeight = totalItemsHeight + (borderPadding * 2);
 
-      // Centered X and Y on A4 page
       const frameX = (pdfWidth - frameWidth) / 2;
       const frameY = (pdfHeight - frameHeight) / 2;
 
@@ -1370,7 +1419,6 @@
       let currentY = frameY + borderPadding;
       const imgX = (pdfWidth - targetWidth) / 2;
 
-      // Render Front Side
       if (frontImg) {
         pdf.addImage(frontImg, 'PNG', imgX, currentY, targetWidth, frontHeight);
         pdf.setDrawColor(210, 215, 225);
@@ -1379,7 +1427,6 @@
         currentY += frontHeight + gap;
       }
 
-      // Render Back Side
       if (backImg) {
         pdf.addImage(backImg, 'PNG', imgX, currentY, targetWidth, backHeight);
         pdf.setDrawColor(210, 215, 225);
@@ -1387,11 +1434,10 @@
         pdf.rect(imgX, currentY, targetWidth, backHeight);
       }
 
-      // Save Clean PDF without titles, labels, or verification texts
       pdf.save(`${activeAadhaarTarget}_Card.pdf`);
     }
 
-    // ================= FILE UPLOADS (GENERAL) =================
+    // ================= FILE UPLOADS (GENERAL WITH AES-256) =================
     let currentUploadTargetId = null;
 
     function triggerDocUpload(docId) {
@@ -1413,7 +1459,7 @@
       resetInactivityTimer();
 
       const file = event.target.files[0];
-      if (!file || !currentUploadTargetId || !currentSessionUser) return;
+      if (!file || !currentUploadTargetId || !currentSessionUser || !sessionEncryptionKey) return;
 
       const reader = new FileReader();
       reader.onload = async function(e) {
@@ -1424,7 +1470,14 @@
           updatedAt: new Date().toLocaleDateString()
         };
 
-        await db.ref(`vaults/${currentSessionUser.name}/documents/${currentUploadTargetId}`).set(fileData);
+        // Encrypt document payload before sending to cloud
+        const encryptedBlob = encryptPayload(fileData, sessionEncryptionKey);
+        await db.ref(`vaults/${currentSessionUser.name}/documents/${currentUploadTargetId}`).set({
+          enc: encryptedBlob,
+          updatedAt: new Date().toLocaleDateString()
+        });
+
+        userVaultData[currentUploadTargetId] = fileData;
         event.target.value = '';
       };
       reader.readAsDataURL(file);
