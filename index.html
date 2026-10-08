@@ -12,8 +12,9 @@
   <!-- CryptoJS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
-  <!-- QR Code & jsPDF -->
+  <!-- QR Code, html2canvas & jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
@@ -141,7 +142,6 @@
       color: #94a3b8;
     }
 
-    /* Inline Reliable SVG Icons */
     .svg-icon {
       width: 20px;
       height: 20px;
@@ -460,7 +460,7 @@
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.78);
+      background: rgba(0, 0, 0, 0.82);
       backdrop-filter: blur(8px);
       display: flex;
       align-items: center;
@@ -468,41 +468,76 @@
       padding: 16px;
       z-index: 999;
     }
-    .modal-qr-card {
-      background: #111827;
-      border: 1px solid #1f2937;
+
+    /* ================= PHOTO 2 FLASHCARD DESIGN ================= */
+    .qr-flashcard-outer {
+      background: #05070c;
+      border: 2px solid #2a3449;
       width: 100%;
-      max-width: 340px;
-      border-radius: 24px;
-      padding: 24px 20px;
+      max-width: 310px;
+      border-radius: 26px;
+      padding: 24px 20px 20px 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
-      gap: 14px;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 25px 35px -5px rgba(0, 0, 0, 0.7);
+      position: relative;
     }
-    .modal-qr-title { font-size: 1.25rem; font-weight: 700; color: #f8fafc; }
-    .modal-qr-sub { font-size: 0.85rem; color: #94a3b8; line-height: 1.4; margin-top: -6px; max-width: 260px; }
-    .qr-code-wrapper {
-      background: #ffffff;
-      padding: 14px;
-      border-radius: 16px;
+    .qr-flashcard-header {
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 6px 0;
+      gap: 8px;
+      margin-bottom: 18px;
     }
-    .modal-close-btn {
+    .qr-flashcard-brand {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #f8fafc;
+      font-family: system-ui, sans-serif;
+    }
+    /* White Card Slot inside Flashcard */
+    .qr-inner-white-card {
+      background: #ffffff;
       width: 100%;
-      background: #1e293b;
-      border: 1px solid #334155;
-      color: #f1f5f9;
-      padding: 12px;
-      border-radius: 12px;
+      border-radius: 20px;
+      padding: 18px 14px 14px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    }
+    .qr-render-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .qr-render-box img, .qr-render-box canvas {
+      display: block;
+    }
+    .qr-card-username {
+      margin-top: 10px;
       font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      color: #0b1120;
+      text-transform: uppercase;
+      font-family: monospace, sans-serif;
+    }
+    .qr-flashcard-subtext {
+      margin-top: 14px;
+      font-size: 0.74rem;
+      color: #64748b;
+      line-height: 1.3;
+    }
+    .qr-actions-row {
+      width: 100%;
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
     }
 
     /* Document Viewer */
@@ -547,7 +582,7 @@
       border-radius: 8px;
     }
 
-    /* Flashcard UI Frame */
+    /* Flashcard UI Frame for Aadhaar */
     .family-tab-option {
       background: #1e293b;
       border: 1px solid #334155;
@@ -632,7 +667,6 @@
     <!-- Auth Screen -->
     <div id="authScreen" class="auth-card">
       <div class="brand-icon">
-        <!-- SVG Shield Check Logo (100% Reliable, No Missing Issue) -->
         <svg class="svg-icon" style="width:28px; height:28px; color:#38bdf8;" viewBox="0 0 24 24">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           <path d="m9 12 2 2 4-4"/>
@@ -780,15 +814,43 @@
   <input type="file" id="universalFileInput" class="hidden" accept="image/*,application/pdf" onchange="handleUniversalFileUpload(event)">
   <input type="file" id="sideFileInput" class="hidden" accept="image/*" onchange="handleSideFileUpload(event)">
 
-  <!-- QR Modal -->
+  <!-- ================= PHOTO 2 FLASHCARD MODAL ================= -->
   <div id="qrModal" class="modal-overlay hidden" onclick="closeQrOnBackdrop(event)">
-    <div class="modal-qr-card" onclick="event.stopPropagation()">
-      <div class="modal-qr-title">Instant Vault Scan</div>
-      <div class="modal-qr-sub">Scan with any phone to open this vault directly (Only Passphrase needed)</div>
-      <div class="qr-code-wrapper">
-        <div id="qrcodeBox"></div>
+    <div style="display:flex; flex-direction:column; align-items:center; width:100%; max-width:320px;">
+      
+      <!-- Printable Flashcard Element -->
+      <div class="qr-flashcard-outer" id="printableQrFlashcard" onclick="event.stopPropagation()">
+        
+        <!-- Header: DocVault with Logo (Replacing Thai Ming) -->
+        <div class="qr-flashcard-header">
+          <svg class="svg-icon" style="width:24px; height:24px; color:#38bdf8;" viewBox="0 0 24 24">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+          <span class="qr-flashcard-brand">DocVault</span>
+        </div>
+
+        <!-- Middle: Pure White Card Slot with QR & User ID -->
+        <div class="qr-inner-white-card">
+          <div class="qr-render-box" id="qrcodeBox"></div>
+          <div class="qr-card-username" id="qrCardUsernameDisplay">USER</div>
+        </div>
+
+        <!-- Subtext -->
+        <div class="qr-flashcard-subtext">
+          Instant Scan & Secure Key Decrypt Access
+        </div>
       </div>
-      <button class="modal-close-btn" onclick="closeQrModal()">Close</button>
+
+      <!-- Action Buttons -->
+      <div class="qr-actions-row" onclick="event.stopPropagation()">
+        <button class="btn-primary" onclick="downloadQrFlashcard()">
+          <svg class="svg-icon" style="width:16px; height:16px;" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+          Download Card
+        </button>
+        <button class="btn-secondary" style="flex:0.6;" onclick="closeQrModal()">Close</button>
+      </div>
+
     </div>
   </div>
 
@@ -909,7 +971,6 @@
     // ================= SECURE KEY DERIVATION & CRYPTO =================
     let sessionDerivedKey = null;
 
-    // Mobile-optimized PBKDF2 (15,000 iterations for sub-second responsive unlock)
     function deriveCryptKey(secret, username) {
       const salt = CryptoJS.enc.Utf8.parse("docvault_salt_" + username.toLowerCase());
       const key = CryptoJS.PBKDF2(secret, salt, {
@@ -1301,7 +1362,7 @@
       renderDocuments(cat);
     }
 
-    // ================= FLASHCARD SYSTEM =================
+    // ================= FLASHCARD SYSTEM FOR AADHAAR =================
     let activeAadhaarTarget = 'my_aadhaar';
     let activeAadhaarLabel = 'My Aadhaar Card';
     let currentSideTarget = 'front';
@@ -1604,17 +1665,21 @@
     }
     function closeViewerOnBackdrop(e) { if(e.target.id === 'viewerModal') closeViewerModal(); }
 
+    // ================= PHOTO 2 FLASHCARD QR ENGINE & DOWNLOAD =================
     function openQrModal() {
       if (!currentSessionUser) return;
       const qrBox = document.getElementById('qrcodeBox');
       qrBox.innerHTML = '';
 
+      // Set Username in Flashcard
+      document.getElementById('qrCardUsernameDisplay').innerText = currentSessionUser.name;
+
       const vaultUrl = `${window.location.origin}${window.location.pathname}?vault=${currentSessionUser.name}`;
 
       new QRCode(qrBox, {
         text: vaultUrl,
-        width: 175,
-        height: 175,
+        width: 160,
+        height: 160,
         colorDark: "#000000",
         colorLight: "#ffffff",
         correctLevel: QRCode.CorrectLevel.H
@@ -1622,8 +1687,38 @@
 
       document.getElementById('qrModal').classList.remove('hidden');
     }
-    function closeQrModal() { document.getElementById('qrModal').classList.add('hidden'); }
-    function closeQrOnBackdrop(e) { if(e.target.id === 'qrModal') closeQrModal(); }
+
+    function closeQrModal() { 
+      document.getElementById('qrModal').classList.add('hidden'); 
+    }
+    function closeQrOnBackdrop(e) { 
+      if(e.target.id === 'qrModal') closeQrModal(); 
+    }
+
+    // Direct High-Resolution Flashcard Download (Photo 2 Replica)
+    async function downloadQrFlashcard() {
+      const flashcardEl = document.getElementById('printableQrFlashcard');
+      if (!flashcardEl || !currentSessionUser) return;
+
+      try {
+        const canvas = await html2canvas(flashcardEl, {
+          scale: 3, // Crisp resolution
+          useCORS: true,
+          backgroundColor: '#05070c'
+        });
+
+        const imageUri = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = `${currentSessionUser.name}_DocVault_QR_Card.png`;
+        link.href = imageUri;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (err) {
+        console.error("Card download failed:", err);
+        alert("Could not download flashcard image. Please try again.");
+      }
+    }
   </script>
 </body>
 </html>
