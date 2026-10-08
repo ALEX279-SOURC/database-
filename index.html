@@ -390,7 +390,7 @@
       padding: 3px 8px;
       border-radius: 6px;
       background: #1e293b;
-      color: #38bdf8;
+      color: #94a3b8;
       white-space: nowrap;
       border: 1px solid #334155;
     }
@@ -432,14 +432,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 75px;
+      min-height: 80px;
       color: #0f172a;
       font-weight: 700;
       font-size: 1.2rem;
-      font-family: cursive, sans-serif;
     }
     .preview-box img {
-      max-height: 85px;
+      max-height: 90px;
       max-width: 100%;
       object-fit: contain;
     }
@@ -494,7 +493,6 @@
       font-weight: 800;
       letter-spacing: 1px;
       color: #f87171;
-      font-family: system-ui, -apple-system, sans-serif;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -780,7 +778,7 @@
           <button class="card-action-btn primary" style="flex:none; padding:4px 10px;" onclick="triggerDocUpload('doc_signature')">Update</button>
         </div>
         <div class="preview-box" id="signatureBox">
-          <span style="font-size:1.1rem; color:#64748b;">No signature uploaded</span>
+          <span style="font-size:1.05rem; color:#64748b;">No signature uploaded</span>
         </div>
         <div class="doc-actions-row">
           <button class="card-action-btn" onclick="previewDirectDoc('doc_signature')">Preview</button>
@@ -821,7 +819,7 @@
       </div>
       <div class="footer-metric-pill">
         <span>Total Vaults</span>
-        <span class="footer-metric-val" id="totalUsersCount">...</span>
+        <span class="footer-metric-val" id="totalUsersCount">1</span>
       </div>
     </div>
   </div>
@@ -999,7 +997,7 @@
   </div>
 
   <script>
-    // ================= FIREBASE SETUP =================
+    // ================= FIREBASE INITIALIZATION =================
     const firebaseConfig = {
       apiKey: "AIzaSyCbvlAXsngeRNMYUium80rJlf06VSSPmFM",
       authDomain: "docvault-d9ded.firebaseapp.com",
@@ -1013,39 +1011,51 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // ================= ENCRYPTION ENGINE =================
-    let sessionDerivedKey = null;
-    let localIndexCache = {};       // Tracks which documents exist on cloud (size: < 1KB)
-    let memoryDecryptedCache = {};  // Decrypts single items on demand
+    // ================= UNIVERSAL RESILIENT DECRYPTION ENGINE =================
+    let userRawPin = "";
+    let activeKeysList = [];
+    let decryptedStore = {};
 
-    function deriveCryptKey(secret, username) {
-      const salt = CryptoJS.enc.Utf8.parse("docvault_salt_" + username.toLowerCase());
-      const key = CryptoJS.PBKDF2(secret, salt, {
-        keySize: 256 / 32,
-        iterations: 1000,
-        hasher: CryptoJS.algo.SHA256
-      });
-      return key.toString(CryptoJS.enc.Hex);
-    }
+    // Auto-try all derivations (Plain PIN, Salted Hash, PBKDF2) so no data ever says "Not uploaded"
+    function universalDecrypt(cipherText) {
+      if (!cipherText || typeof cipherText !== 'string') return null;
+      if (!cipherText.startsWith("U2FsdGVkX1")) return cipherText; // In case already raw
 
-    function encryptPayload(dataObj, derivedKey) {
-      const jsonStr = JSON.stringify(dataObj);
-      return CryptoJS.AES.encrypt(jsonStr, derivedKey).toString();
-    }
+      const keysToTry = [
+        userRawPin,
+        CryptoJS.SHA256(userRawPin).toString(),
+        CryptoJS.SHA256(userRawPin + "_salt_" + (currentSessionUser?.name || "").toLowerCase()).toString(),
+        CryptoJS.SHA256(userRawPin + "_pepper_salt_" + (currentSessionUser?.name || "").toLowerCase()).toString()
+      ];
 
-    function decryptPayload(ciphertext, derivedKey) {
+      // Add PBKDF2 derivations
       try {
-        const bytes = CryptoJS.AES.decrypt(ciphertext, derivedKey);
-        const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
-        if (!decryptedStr) return null;
-        return JSON.parse(decryptedStr);
-      } catch (err) {
-        return null;
+        const salt = CryptoJS.enc.Utf8.parse("docvault_salt_" + (currentSessionUser?.name || "").toLowerCase());
+        const k1 = CryptoJS.PBKDF2(userRawPin, salt, { keySize: 256/32, iterations: 15000, hasher: CryptoJS.algo.SHA256 }).toString(CryptoJS.enc.Hex);
+        const k2 = CryptoJS.PBKDF2(userRawPin, salt, { keySize: 256/32, iterations: 1000, hasher: CryptoJS.algo.SHA256 }).toString(CryptoJS.enc.Hex);
+        keysToTry.push(k1, k2);
+      } catch(e){}
+
+      for (let key of keysToTry) {
+        if (!key) continue;
+        try {
+          const bytes = CryptoJS.AES.decrypt(cipherText, key);
+          const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
+          if (decryptedStr && decryptedStr.length > 0) {
+            try {
+              return JSON.parse(decryptedStr);
+            } catch(jsonErr) {
+              return decryptedStr;
+            }
+          }
+        } catch(e){}
       }
+      return null;
     }
 
-    function hashSecretWithSalt(secret, username) {
-      return CryptoJS.SHA256(secret + "_salt_" + username.toLowerCase()).toString();
+    function encryptData(obj) {
+      const jsonStr = typeof obj === 'string' ? obj : JSON.stringify(obj);
+      return CryptoJS.AES.encrypt(jsonStr, userRawPin).toString();
     }
 
     // ================= REALTIME LIVE METRICS =================
@@ -1073,12 +1083,12 @@
           db.ref('public_meta/vault_count').set(total);
         } else {
           db.ref('public_meta/vault_count').once('value', (s) => {
-            document.getElementById('totalUsersCount').innerText = s.val() || 0;
+            document.getElementById('totalUsersCount').innerText = s.val() || 1;
           });
         }
       }, () => {
         db.ref('public_meta/vault_count').on('value', (s) => {
-          document.getElementById('totalUsersCount').innerText = s.val() || 0;
+          document.getElementById('totalUsersCount').innerText = s.val() || 1;
         });
       });
     }
@@ -1185,7 +1195,7 @@
           return;
         }
 
-        const hashedPin = hashSecretWithSalt(pin, name);
+        const hashedPin = CryptoJS.SHA256(pin + "_salt_" + name).toString();
 
         const profileData = {
           name: name,
@@ -1195,7 +1205,7 @@
         };
 
         await db.ref(`vaults/${name}/profile`).set(profileData);
-        sessionDerivedKey = deriveCryptKey(pin, name);
+        userRawPin = pin;
 
         db.ref('public_meta/vault_count').transaction((cur) => (cur || 0) + 1);
 
@@ -1234,25 +1244,7 @@
           return;
         }
 
-        const hashedInputPin = hashSecretWithSalt(pin, name);
-        const legacyHash1 = CryptoJS.SHA256(pin).toString();
-        const legacyHash2 = CryptoJS.SHA256(pin + "_pepper_salt_" + name).toString();
-
-        if (user.pinHash) {
-          if (user.pinHash !== hashedInputPin && user.pinHash !== legacyHash1 && user.pinHash !== legacyHash2) {
-            alert("Incorrect Master Passphrase. Decryption failed.");
-            btn.innerText = "Unlock & Decrypt";
-            btn.disabled = false;
-            return;
-          }
-        } else if (user.pin && user.pin !== pin) {
-          alert("Incorrect Master Passphrase.");
-          btn.innerText = "Unlock & Decrypt";
-          btn.disabled = false;
-          return;
-        }
-
-        sessionDerivedKey = deriveCryptKey(pin, name);
+        userRawPin = pin;
         await loadUserVault(user);
       } catch (err) {
         console.error("Login Error:", err);
@@ -1271,7 +1263,7 @@
         window.history.replaceState({}, document.title, window.location.pathname);
       }
 
-      // Switch screens immediately (Zero Wait)
+      // Switch screens immediately
       document.getElementById('authScreen').classList.add('hidden');
       document.getElementById('vaultDashboard').classList.remove('hidden');
 
@@ -1279,47 +1271,43 @@
       document.getElementById('userCourseDisplay').innerText = user.course || 'Student';
       document.getElementById('avatarInitial').innerText = user.name.charAt(0).toUpperCase();
 
-      // Instantly render all cards from master memory
+      // Instantly render all cards
       renderDocuments('All');
 
-      // Fetch lightweight presence keys only (Payload < 1KB)
+      // Direct, fast listener on documents tree
       db.ref(`vaults/${user.name}/documents`).on('value', (snap) => {
-        localIndexCache = {};
-        const data = snap.val() || {};
-        Object.keys(data).forEach(k => {
-          localIndexCache[k] = true;
-        });
+        const allDocs = snap.val() || {};
+        activeKeysList = Object.keys(allDocs);
 
-        // Instant lightweight UI update
+        // Immediate background decrypt of photo & signature
+        if (allDocs['doc_signature']) {
+          const rawSig = allDocs['doc_signature'].enc || allDocs['doc_signature'];
+          decryptedStore['doc_signature'] = universalDecrypt(rawSig);
+          restoreSignatureAndPhoto();
+        }
+        if (allDocs['doc_photo']) {
+          const rawPhoto = allDocs['doc_photo'].enc || allDocs['doc_photo'];
+          decryptedStore['doc_photo'] = universalDecrypt(rawPhoto);
+          restoreSignatureAndPhoto();
+        }
+
         renderDocuments('All');
         updateAllCustomCardStatusIndicators();
-
-        // Background load light items (Signature & Photo)
-        if (localIndexCache['doc_signature'] && !memoryDecryptedCache['doc_signature']) {
-          fetchSingleDoc('doc_signature').then(restoreSignatureAndPhoto);
-        }
-        if (localIndexCache['doc_photo'] && !memoryDecryptedCache['doc_photo']) {
-          fetchSingleDoc('doc_photo').then(restoreSignatureAndPhoto);
-        }
       });
     }
 
-    async function fetchSingleDoc(docId) {
-      if (memoryDecryptedCache[docId]) return memoryDecryptedCache[docId];
+    async function fetchSpecificDoc(docId) {
+      if (decryptedStore[docId]) return decryptedStore[docId];
 
       const snap = await db.ref(`vaults/${currentSessionUser.name}/documents/${docId}`).once('value');
       const item = snap.val();
       if (!item) return null;
 
-      if (item.enc) {
-        const decrypted = decryptPayload(item.enc, sessionDerivedKey);
-        if (decrypted) {
-          memoryDecryptedCache[docId] = decrypted;
-          return decrypted;
-        }
-      } else {
-        memoryDecryptedCache[docId] = item;
-        return item;
+      const raw = item.enc || item;
+      const dec = universalDecrypt(raw);
+      if (dec) {
+        decryptedStore[docId] = dec;
+        return dec;
       }
       return null;
     }
@@ -1330,9 +1318,9 @@
         db.ref(`vaults/${currentSessionUser.name}/documents`).off();
       }
       currentSessionUser = null;
-      sessionDerivedKey = null;
-      localIndexCache = {};
-      memoryDecryptedCache = {};
+      userRawPin = "";
+      activeKeysList = [];
+      decryptedStore = {};
 
       sanitizeDOMPreviews();
 
@@ -1348,7 +1336,7 @@
       document.getElementById('viewerContent').innerHTML = '';
       document.getElementById('frontSideImg').src = '';
       document.getElementById('backSideImg').src = '';
-      document.getElementById('signatureBox').innerHTML = '<span style="font-size:1.1rem; color:#64748b;">No signature uploaded</span>';
+      document.getElementById('signatureBox').innerHTML = '<span style="font-size:1.05rem; color:#64748b;">No signature uploaded</span>';
       document.getElementById('photoBox').innerHTML = 'Photo';
     }
 
@@ -1370,7 +1358,7 @@
           item.className = 'item-card clickable-card';
           item.onclick = openAadhaarFamilyModal;
 
-          const hasAny = !!(localIndexCache['my_aadhaar'] || localIndexCache['father_aadhaar'] || localIndexCache['mother_aadhaar']);
+          const hasAny = activeKeysList.includes('my_aadhaar') || activeKeysList.includes('father_aadhaar') || activeKeysList.includes('mother_aadhaar');
 
           item.innerHTML = `
             <div class="item-card-header">
@@ -1394,7 +1382,7 @@
           item.className = 'item-card clickable-card';
           item.onclick = openSecondaryIdModal;
 
-          const hasAny = !!(localIndexCache['doc_voter_card'] || localIndexCache['doc_pan_card'] || localIndexCache['doc_dl_card']);
+          const hasAny = activeKeysList.includes('doc_voter_card') || activeKeysList.includes('doc_pan_card') || activeKeysList.includes('doc_dl_card');
 
           item.innerHTML = `
             <div class="item-card-header">
@@ -1415,7 +1403,7 @@
           `;
         } 
         else {
-          const hasFile = !!localIndexCache[doc.id];
+          const hasFile = activeKeysList.includes(doc.id);
 
           item.className = 'item-card';
           item.innerHTML = `
@@ -1486,7 +1474,7 @@
       keys.forEach(k => {
         const el = document.getElementById(`statusText_${k}`);
         if (el) {
-          if (localIndexCache[k]) {
+          if (activeKeysList.includes(k)) {
             el.innerText = "✓ Record Available";
           } else {
             el.innerText = "Not Uploaded";
@@ -1504,8 +1492,7 @@
       document.getElementById('flashcardModalTitle').innerText = label;
       document.getElementById('flashcardModal').classList.remove('hidden');
 
-      // Fetch target flashcard lazy
-      await fetchSingleDoc(activeCardTarget);
+      await fetchSpecificDoc(activeCardTarget);
       renderFlashcardView();
     }
 
@@ -1520,7 +1507,7 @@
     }
 
     function renderFlashcardView() {
-      const record = memoryDecryptedCache[activeCardTarget] || {};
+      const record = decryptedStore[activeCardTarget] || {};
 
       const frontImg = document.getElementById('frontSideImg');
       const frontPlaceholder = document.getElementById('frontSidePlaceholder');
@@ -1564,25 +1551,26 @@
       resetInactivityTimer();
 
       const file = event.target.files[0];
-      if (!file || !currentSessionUser || !sessionDerivedKey) return;
+      if (!file || !currentSessionUser || !userRawPin) return;
 
       const reader = new FileReader();
       reader.onload = async function(e) {
         const base64Data = e.target.result;
 
-        const cur = memoryDecryptedCache[activeCardTarget] || {};
+        const cur = decryptedStore[activeCardTarget] || {};
         cur[currentSideTarget] = base64Data;
         cur.updatedAt = new Date().toLocaleDateString();
 
-        const encryptedBlob = encryptPayload(cur, sessionDerivedKey);
+        const encryptedBlob = encryptData(cur);
         await db.ref(`vaults/${currentSessionUser.name}/documents/${activeCardTarget}`).set({
           enc: encryptedBlob,
           updatedAt: new Date().toLocaleDateString()
         });
 
-        memoryDecryptedCache[activeCardTarget] = cur;
-        localIndexCache[activeCardTarget] = true;
+        decryptedStore[activeCardTarget] = cur;
+        if (!activeKeysList.includes(activeCardTarget)) activeKeysList.push(activeCardTarget);
         renderFlashcardView();
+        updateAllCustomCardStatusIndicators();
         event.target.value = '';
       };
       reader.readAsDataURL(file);
@@ -1599,7 +1587,7 @@
     }
 
     async function downloadFlashcardPDF() {
-      const record = memoryDecryptedCache[activeCardTarget] || {};
+      const record = decryptedStore[activeCardTarget] || {};
 
       if (!record.front && !record.back) {
         alert("Please upload at least one side (Front or Back) before downloading!");
@@ -1681,7 +1669,7 @@
       resetInactivityTimer();
 
       const file = event.target.files[0];
-      if (!file || !currentUploadTargetId || !currentSessionUser || !sessionDerivedKey) return;
+      if (!file || !currentUploadTargetId || !currentSessionUser || !userRawPin) return;
 
       const reader = new FileReader();
       reader.onload = async function(e) {
@@ -1692,24 +1680,28 @@
           updatedAt: new Date().toLocaleDateString()
         };
 
-        const encryptedBlob = encryptPayload(fileData, sessionDerivedKey);
+        const encryptedBlob = encryptData(fileData);
         await db.ref(`vaults/${currentSessionUser.name}/documents/${currentUploadTargetId}`).set({
           enc: encryptedBlob,
           updatedAt: new Date().toLocaleDateString()
         });
 
-        memoryDecryptedCache[currentUploadTargetId] = fileData;
-        localIndexCache[currentUploadTargetId] = true;
+        decryptedStore[currentUploadTargetId] = fileData;
+        if (!activeKeysList.includes(currentUploadTargetId)) activeKeysList.push(currentUploadTargetId);
+        
         renderDocuments('All');
+        if (currentUploadTargetId === 'doc_signature' || currentUploadTargetId === 'doc_photo') {
+          restoreSignatureAndPhoto();
+        }
         event.target.value = '';
       };
       reader.readAsDataURL(file);
     }
 
     async function previewDocument(docId, title) {
-      let fileData = memoryDecryptedCache[docId];
+      let fileData = decryptedStore[docId];
       if (!fileData) {
-        fileData = await fetchSingleDoc(docId);
+        fileData = await fetchSpecificDoc(docId);
       }
       if (!fileData) {
         alert("Document data could not be decrypted.");
@@ -1736,9 +1728,9 @@
     }
 
     async function previewDirectDoc(docId) {
-      let fileData = memoryDecryptedCache[docId];
+      let fileData = decryptedStore[docId];
       if (!fileData) {
-        fileData = await fetchSingleDoc(docId);
+        fileData = await fetchSpecificDoc(docId);
       }
       if (!fileData) {
         alert("No photo or signature uploaded yet.");
@@ -1748,9 +1740,9 @@
     }
 
     async function downloadDocument(docId, title) {
-      let fileData = memoryDecryptedCache[docId];
+      let fileData = decryptedStore[docId];
       if (!fileData) {
-        fileData = await fetchSingleDoc(docId);
+        fileData = await fetchSpecificDoc(docId);
       }
       if (!fileData) return;
 
@@ -1763,18 +1755,20 @@
     }
 
     function restoreSignatureAndPhoto() {
-      const sign = memoryDecryptedCache['doc_signature'];
+      const sign = decryptedStore['doc_signature'];
       if (sign) {
-        document.getElementById('signatureBox').innerHTML = `<img src="${sign.dataUrl}">`;
-        document.getElementById('downloadSignBtn').href = sign.dataUrl;
+        const signUrl = typeof sign === 'string' ? sign : sign.dataUrl;
+        document.getElementById('signatureBox').innerHTML = `<img src="${signUrl}">`;
+        document.getElementById('downloadSignBtn').href = signUrl;
       } else {
-        document.getElementById('signatureBox').innerHTML = `<span style="font-size:1.1rem; color:#64748b;">No signature uploaded</span>`;
+        document.getElementById('signatureBox').innerHTML = `<span style="font-size:1.05rem; color:#64748b;">No signature uploaded</span>`;
       }
 
-      const photo = memoryDecryptedCache['doc_photo'];
+      const photo = decryptedStore['doc_photo'];
       if (photo) {
-        document.getElementById('photoBox').innerHTML = `<img src="${photo.dataUrl}" style="width:100%; height:100%; object-fit:cover;">`;
-        document.getElementById('downloadPhotoBtn').href = photo.dataUrl;
+        const photoUrl = typeof photo === 'string' ? photo : photo.dataUrl;
+        document.getElementById('photoBox').innerHTML = `<img src="${photoUrl}" style="width:100%; height:100%; object-fit:cover;">`;
+        document.getElementById('downloadPhotoBtn').href = photoUrl;
       } else {
         document.getElementById('photoBox').innerHTML = `Photo`;
       }
