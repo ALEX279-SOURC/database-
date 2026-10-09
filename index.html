@@ -1446,7 +1446,7 @@
     }
 
     // ================= MIGRATION PIPELINE FOR OLD USERS =================
-    async function executePinMigration() {
+      async function executePinMigration() {
       const newPin = document.getElementById("newMigrationPin").value.trim();
       const btn = document.getElementById("btnExecuteMigration");
       const rules = evaluatePinRules(newPin);
@@ -1460,17 +1460,18 @@
       btn.disabled = true;
 
       try {
-        const snap = await db.ref(`vaults/${currentSessionUser.name}/documents`).once('value');
+        const vaultRef = db.ref(`vaults/${currentSessionUser.name}`);
+        const snap = await vaultRef.child('documents').once('value');
         const docsTree = snap.val() || {};
-        const updates = {};
 
-        // 1. Re-encrypt all existing documents with new 8+ char PIN
+        // 1. Re-encrypt all existing documents with new PIN
+        const reEncryptedDocs = {};
         for (const docKey of Object.keys(docsTree)) {
           const rawPayload = docsTree[docKey].enc || docsTree[docKey];
           const decryptedObject = universalDecrypt(rawPayload);
           if (decryptedObject) {
             const freshEncryptedBlob = encryptData(decryptedObject, newPin);
-            updates[`vaults/${currentSessionUser.name}/documents/${docKey}`] = {
+            reEncryptedDocs[docKey] = {
               enc: freshEncryptedBlob,
               updatedAt: new Date().toLocaleDateString()
             };
@@ -1478,15 +1479,19 @@
           }
         }
 
-        // 2. Compute new PIN Hash
-        const newPinHash = CryptoJS.SHA256(newPin + "_salt_" + currentSessionUser.name).toString();
-        updates[`vaults/${currentSessionUser.name}/profile/pinHash`] = newPinHash;
+        // 2. Documents update karein
+        if (Object.keys(reEncryptedDocs).length > 0) {
+          await vaultRef.child('documents').update(reEncryptedDocs);
+        }
 
-        // 3. Atomically write to Firebase
-        await db.ref().update(updates);
+        // 3. Compute and update new PIN Hash
+        const newPinHash = CryptoJS.SHA256(newPin + "_salt_" + currentSessionUser.name).toString();
+        await vaultRef.child('profile').update({
+          pinHash: newPinHash
+        });
 
         userRawPin = newPin;
-        alert("🎉 Security Upgrade Successful! All your documents are now hardened with your new 8+ char PIN.");
+        alert("Security Upgrade Successful! Aapke documents naye PIN se secure ho chuke hain.");
         document.getElementById('pinUpgradeModal').classList.add('hidden');
       } catch (err) {
         console.error("Migration failed:", err);
