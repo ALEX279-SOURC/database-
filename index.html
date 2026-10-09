@@ -5,11 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DocVault - Secure College Vault</title>
 
+  <!-- Firebase App & Database -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
+  <!-- CryptoJS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
+  <!-- QR Code, html2canvas & jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -704,6 +707,7 @@
 
   <div class="app-container">
 
+    <!-- Auth Screen -->
     <div id="authScreen" class="auth-card">
       <div class="brand-icon">
         <svg class="svg-icon" style="width:28px; height:28px; color:#38bdf8;" viewBox="0 0 24 24">
@@ -719,6 +723,7 @@
         <button id="tabAccessData" class="auth-tab-btn active" onclick="switchAuthMode('login')">Access Data</button>
       </div>
 
+      <!-- Access Data Form -->
       <div id="loginForm" class="auth-input-group">
         <div id="loginNameFieldContainer">
           <label>Vault Username</label>
@@ -731,6 +736,7 @@
         <button id="btnLoginAction" class="btn-primary" style="margin-top:8px;" onclick="handleLogin()">Unlock & Decrypt</button>
       </div>
 
+      <!-- Register Form -->
       <div id="registerForm" class="auth-input-group hidden">
         <div>
           <label>Choose Username (No spaces)</label>
@@ -744,6 +750,7 @@
           <label>Set Master Passphrase / PIN (8+ Characters)</label>
           <input type="password" id="regPin" class="input-field" placeholder="e.g. Vault@2026" oninput="checkRegisterPinStrength(this.value)">
           
+          <!-- Live Validation Hints -->
           <div style="margin-top:6px; background:#0b1120; padding:8px 10px; border-radius:8px; border:1px solid #1f2937;">
             <div id="regRuleLen" class="rule-item">✖ Minimum 8 characters lamba hona chahiye</div>
             <div id="regRuleNum" class="rule-item">✖ Kam se kam 1 Number (0-9) zaroori hai</div>
@@ -758,6 +765,7 @@
       </div>
     </div>
 
+    <!-- Vault Dashboard -->
     <div id="vaultDashboard" class="hidden" style="display:flex; flex-direction:column; gap:16px;">
       
       <div class="header">
@@ -810,6 +818,7 @@
         <div class="tab-pill" onclick="filterCategory('Banking', this)">Financial & Banking</div>
       </div>
 
+      <!-- Digital Signature Section -->
       <div class="item-card">
         <div class="item-card-header">
           <div class="item-card-title">Digital Signature</div>
@@ -824,6 +833,7 @@
         </div>
       </div>
 
+      <!-- Passport Photo Section -->
       <div class="item-card">
         <div class="item-card-header">
           <div class="item-card-title">Passport Size Photographs</div>
@@ -844,11 +854,13 @@
         </div>
       </div>
 
+      <!-- Documents List Container -->
       <div id="documentsList" style="display:flex; flex-direction:column; gap:12px;"></div>
     </div>
 
   </div>
 
+  <!-- FIXED FOOTER -->
   <div class="fixed-footer-bar">
     <div class="footer-metrics-container">
       <div class="footer-metric-pill">
@@ -862,9 +874,11 @@
     </div>
   </div>
 
+  <!-- Hidden File Pickers -->
   <input type="file" id="universalFileInput" class="hidden" accept="image/*,application/pdf" onchange="handleUniversalFileUpload(event)">
   <input type="file" id="sideFileInput" class="hidden" accept="image/*" onchange="handleSideFileUpload(event)">
 
+  <!-- ================= MANDATORY SECURITY UPGRADE MODAL (FOR OLD USERS) ================= -->
   <div id="pinUpgradeModal" class="modal-overlay hidden" style="z-index:99999;">
     <div class="modal-viewer-card" style="height:auto; max-width:390px; padding:22px; background:#111827; border:1px solid #38bdf8;" onclick="event.stopPropagation()">
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
@@ -879,6 +893,7 @@
       <label style="font-size:0.75rem; color:#cbd5e1; font-weight:600; margin-bottom:4px; display:block;">Naya 8+ Character PIN Set Karein:</label>
       <input type="password" id="newMigrationPin" class="input-field" placeholder="e.g. Vault@2026" oninput="checkMigrationPinStrength(this.value)">
 
+      <!-- Live Dynamic Rules Box -->
       <div style="margin-top:8px; background:#0b1120; padding:10px; border-radius:10px; border:1px solid #1f2937;">
         <div id="migRuleLen" class="rule-item">✖ Minimum 8 characters lamba hona chahiye</div>
         <div id="migRuleNum" class="rule-item">✖ Kam se kam 1 Number (0-9) hona chahiye</div>
@@ -891,6 +906,7 @@
     </div>
   </div>
 
+  <!-- TALL/LONG FLASHCARD QR MODAL -->
   <div id="qrModal" class="modal-overlay hidden" onclick="closeQrOnBackdrop(event)">
     <div style="display:flex; flex-direction:column; align-items:center; width:100%; max-width:320px;">
       
@@ -926,6 +942,7 @@
     </div>
   </div>
 
+  <!-- Document Viewer Modal -->
   <div id="viewerModal" class="modal-overlay hidden" onclick="closeViewerOnBackdrop(event)">
     <div class="modal-viewer-card" onclick="event.stopPropagation()">
       <div class="modal-viewer-header">
@@ -940,34 +957,35 @@
     </div>
   </div>
 
+  <!-- Identity Documents Selection Modal -->
   <div id="aadhaarFamilyModal" class="modal-overlay hidden" onclick="closeAadhaarModalOnBackdrop(event)">
     <div class="modal-qr-card" style="max-width:380px; text-align:left; background:#111827; border-radius:22px; padding:20px; border:1px solid #334155;" onclick="event.stopPropagation()">
       <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div style="font-weight:700; font-size:1.15rem; color:#f8fafc;">Aadhaar Vault</div>
+        <div style="font-weight:700; font-size:1.15rem; color:#f8fafc;">Family Identity Vault</div>
         <button class="icon-btn" style="width:32px; height:32px;" onclick="closeAadhaarFamilyModal()">✕</button>
       </div>
       <p style="font-size:0.8rem; color:#94a3b8; margin: 4px 0 12px 0;">Select which card you want to manage:</p>
 
       <div style="display:flex; flex-direction:column; gap:10px;">
-        <div class="family-tab-option" onclick="openFlashcardManager('my_aadhaar', 'My Aadhaar Card')">
+        <div class="family-tab-option" onclick="openFlashcardManager('my_aadhaar', 'My Identity Card')">
           <div>
-            <div style="font-weight:600; color:#f1f5f9;">My Aadhaar Card</div>
+            <div style="font-weight:600; color:#f1f5f9;">My Identity Card</div>
             <div style="font-size:0.75rem; color:#94a3b8;" id="statusText_my_aadhaar">Checking...</div>
           </div>
           <span style="color:#60a5fa;">›</span>
         </div>
 
-        <div class="family-tab-option" onclick="openFlashcardManager('father_aadhaar', 'Father\'s Aadhaar Card')">
+        <div class="family-tab-option" onclick="openFlashcardManager('father_aadhaar', 'Father\'s Identity Card')">
           <div>
-            <div style="font-weight:600; color:#f1f5f9;">Father's Aadhaar Card</div>
+            <div style="font-weight:600; color:#f1f5f9;">Father's Identity Card</div>
             <div style="font-size:0.75rem; color:#94a3b8;" id="statusText_father_aadhaar">Checking...</div>
           </div>
           <span style="color:#60a5fa;">›</span>
         </div>
 
-        <div class="family-tab-option" onclick="openFlashcardManager('mother_aadhaar', 'Mother\'s Aadhaar Card')">
+        <div class="family-tab-option" onclick="openFlashcardManager('mother_aadhaar', 'Mother\'s Identity Card')">
           <div>
-            <div style="font-weight:600; color:#f1f5f9;">Mother's Aadhaar Card</div>
+            <div style="font-weight:600; color:#f1f5f9;">Mother's Identity Card</div>
             <div style="font-size:0.75rem; color:#94a3b8;" id="statusText_mother_aadhaar">Checking...</div>
           </div>
           <span style="color:#60a5fa;">›</span>
@@ -978,6 +996,7 @@
     </div>
   </div>
 
+  <!-- Secondary ID Modal -->
   <div id="secondaryIdModal" class="modal-overlay hidden" onclick="closeSecondaryIdModalOnBackdrop(event)">
     <div class="modal-qr-card" style="max-width:380px; text-align:left; background:#111827; border-radius:22px; padding:20px; border:1px solid #334155;" onclick="event.stopPropagation()">
       <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -1016,6 +1035,7 @@
     </div>
   </div>
 
+  <!-- Dedicated 2-Sided Flashcard Modal -->
   <div id="flashcardModal" class="modal-overlay hidden" onclick="closeFlashcardOnBackdrop(event)">
     <div style="width:100%; max-width:420px; background:#111827; border:1px solid #334155; border-radius:20px; overflow:hidden;" onclick="event.stopPropagation()">
       <div style="padding:14px 18px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1f2937;">
@@ -1228,7 +1248,7 @@
 
     // ================= MASTER DOCUMENTS DEFINITION =================
     const masterCollegeDocuments = [
-      { id: 'doc_aadhaar', title: 'Aadhaar Card', desc: 'Forms, verification aur biometric ke liye.', category: 'Identity', isAadhaarCustom: true },
+      { id: 'doc_aadhaar', title: 'Identity Card', desc: 'Forms, verification aur biometric verification ke liye.', category: 'Identity', isAadhaarCustom: true },
       { id: 'doc_voter_pan', title: 'Voter ID / PAN Card / Driving License', desc: 'Secondary identity proof aur bank verification.', category: 'Identity', isSecondaryIdCustom: true },
       { id: 'doc_birth_cert', title: 'Birth Certificate', desc: 'Date of birth verify karne ke liye.', category: 'Identity' },
       { id: 'doc_10th', title: '10th (SSC) Marksheet & Passing Certificate', desc: 'Date of birth aur primary schooling proof.', category: 'Academic' },
@@ -1250,7 +1270,7 @@
       { id: 'doc_domicile_cert', title: 'Domicile Certificate', desc: 'State quota seats aur state scholarships.', category: 'Scholarship' },
       { id: 'doc_ews_cert', title: 'EWS Certificate', desc: 'Economically Weaker Section eligibility.', category: 'Scholarship' },
       { id: 'doc_gap_affidavit', title: 'Gap Certificate / Affidavit', desc: 'Academic gap justification ke liye.', category: 'Scholarship' },
-      { id: 'doc_bank_passbook', title: 'Bank Passbook / Cancelled Cheque', desc: 'Aadhaar linked account & DBT verification.', category: 'Banking' }
+      { id: 'doc_bank_passbook', title: 'Bank Passbook / Cancelled Cheque', desc: 'Bank account & DBT verification proof.', category: 'Banking' }
     ];
 
     let currentSessionUser = null;
@@ -1358,6 +1378,7 @@
       }
     }
 
+    // ================= STRICT AUTHENTICATION LOGIN =================
     async function handleLogin() {
       const btn = document.getElementById('btnLoginAction');
       const name = document.getElementById('loginName').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
@@ -1382,10 +1403,30 @@
           return;
         }
 
+        // Strict Hash Verification
+        const inputHash = CryptoJS.SHA256(pin + "_salt_" + name).toString();
+        const legacyHashPlain = CryptoJS.SHA256(pin).toString();
+
+        let isMatch = false;
+        if (user.pinHash) {
+          if (user.pinHash === inputHash || user.pinHash === legacyHashPlain) {
+            isMatch = true;
+          }
+        } else if (user.pin && user.pin === pin) {
+          isMatch = true;
+        }
+
+        if (!isMatch) {
+          alert("Incorrect Master Passphrase! Access denied.");
+          btn.innerText = "Unlock & Decrypt";
+          btn.disabled = false;
+          return;
+        }
+
         userRawPin = pin;
         await loadUserVault(user);
 
-        // Check if user is an Old User with <8 chars or missing complexity
+        // Sirf tab upgrade modal show ho jab pin rules meet na ho rahe hon
         const rules = evaluatePinRules(pin);
         if (!rules.len || !rules.num || !rules.special) {
           setTimeout(() => {
@@ -1445,8 +1486,8 @@
       });
     }
 
-    // ================= MIGRATION PIPELINE FOR OLD USERS =================
-      async function executePinMigration() {
+    // ================= FIXED MIGRATION PIPELINE FOR OLD USERS =================
+    async function executePinMigration() {
       const newPin = document.getElementById("newMigrationPin").value.trim();
       const btn = document.getElementById("btnExecuteMigration");
       const rules = evaluatePinRules(newPin);
@@ -1479,7 +1520,7 @@
           }
         }
 
-        // 2. Documents update karein
+        // 2. Documents update dispatch
         if (Object.keys(reEncryptedDocs).length > 0) {
           await vaultRef.child('documents').update(reEncryptedDocs);
         }
