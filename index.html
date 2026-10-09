@@ -458,13 +458,27 @@
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.82);
+      background: rgba(0, 0, 0, 0.85);
       backdrop-filter: blur(8px);
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 16px;
       z-index: 999;
+    }
+
+    /* Rules Checker Hint Items */
+    .rule-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.74rem;
+      margin-top: 2px;
+      color: #ef4444;
+      font-weight: 500;
+    }
+    .rule-item.valid {
+      color: #10b981;
     }
 
     /* Long Flashcard */
@@ -667,7 +681,6 @@
       letter-spacing: 0.5px;
     }
 
-    /* Skeleton Loading Shimmer */
     .skeleton-loader {
       display: flex;
       flex-direction: column;
@@ -684,6 +697,7 @@
       50% { opacity: 1; }
       100% { opacity: 0.5; }
     }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -712,7 +726,7 @@
         </div>
         <div>
           <label>Master Passphrase / PIN</label>
-          <input type="password" id="loginPin" class="input-field" placeholder="Enter Master Passphrase (Min 6 chars)">
+          <input type="password" id="loginPin" class="input-field" placeholder="Enter your Passphrase / PIN">
         </div>
         <button id="btnLoginAction" class="btn-primary" style="margin-top:8px;" onclick="handleLogin()">Unlock & Decrypt</button>
       </div>
@@ -727,14 +741,20 @@
           <input type="text" id="regCourse" class="input-field" placeholder="e.g. FYBA">
         </div>
         <div>
-          <label>Set Master Passphrase / PIN (Min 6 chars)</label>
-          <input type="password" id="regPin" class="input-field" placeholder="Min 6 characters (Letters/Digits)">
+          <label>Set Master Passphrase / PIN (8+ Characters)</label>
+          <input type="password" id="regPin" class="input-field" placeholder="e.g. Vault@2026" oninput="checkRegisterPinStrength(this.value)">
+          
+          <div style="margin-top:6px; background:#0b1120; padding:8px 10px; border-radius:8px; border:1px solid #1f2937;">
+            <div id="regRuleLen" class="rule-item">✖ Minimum 8 characters lamba hona chahiye</div>
+            <div id="regRuleNum" class="rule-item">✖ Kam se kam 1 Number (0-9) zaroori hai</div>
+            <div id="regRuleSpecial" class="rule-item">✖ Kam se kam 1 Special Symbol (!@#$%^&*) zaroori hai</div>
+          </div>
         </div>
         <div>
           <label>Confirm Master Passphrase</label>
           <input type="password" id="regPinConfirm" class="input-field" placeholder="Confirm Master Passphrase">
         </div>
-        <button id="btnCreateAction" class="btn-primary" style="margin-top:8px;" onclick="handleRegister()">Create Encrypted Vault</button>
+        <button id="btnCreateAction" class="btn-primary" style="margin-top:8px;" onclick="handleRegister()" disabled style="opacity:0.6;">Create Encrypted Vault</button>
       </div>
     </div>
 
@@ -844,6 +864,32 @@
 
   <input type="file" id="universalFileInput" class="hidden" accept="image/*,application/pdf" onchange="handleUniversalFileUpload(event)">
   <input type="file" id="sideFileInput" class="hidden" accept="image/*" onchange="handleSideFileUpload(event)">
+
+  <div id="pinUpgradeModal" class="modal-overlay hidden" style="z-index:99999;">
+    <div class="modal-viewer-card" style="height:auto; max-width:390px; padding:22px; background:#111827; border:1px solid #38bdf8;" onclick="event.stopPropagation()">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+        <span style="font-size:24px;">🛡️</span>
+        <h3 style="margin:0; font-size:1.15rem; color:#38bdf8;">Security Upgrade Required</h3>
+      </div>
+      
+      <p style="font-size:0.78rem; color:#94a3b8; line-height:1.45; margin-bottom:14px;">
+        Aapka account purane 6-digit PIN par configured hai. Database ko 100% hardware-grade secure banane ke liye naya 8+ characters PIN set karna zaroori hai.
+      </p>
+
+      <label style="font-size:0.75rem; color:#cbd5e1; font-weight:600; margin-bottom:4px; display:block;">Naya 8+ Character PIN Set Karein:</label>
+      <input type="password" id="newMigrationPin" class="input-field" placeholder="e.g. Vault@2026" oninput="checkMigrationPinStrength(this.value)">
+
+      <div style="margin-top:8px; background:#0b1120; padding:10px; border-radius:10px; border:1px solid #1f2937;">
+        <div id="migRuleLen" class="rule-item">✖ Minimum 8 characters lamba hona chahiye</div>
+        <div id="migRuleNum" class="rule-item">✖ Kam se kam 1 Number (0-9) hona chahiye</div>
+        <div id="migRuleSpecial" class="rule-item">✖ Kam se kam 1 Special Symbol (!@#$%^&*) hona chahiye</div>
+      </div>
+
+      <button id="btnExecuteMigration" class="btn-primary" style="width:100%; margin-top:16px; opacity:0.5; cursor:not-allowed;" onclick="executePinMigration()" disabled>
+        Data Re-Encrypt & PIN Upgrade Karein
+      </button>
+    </div>
+  </div>
 
   <div id="qrModal" class="modal-overlay hidden" onclick="closeQrOnBackdrop(event)">
     <div style="display:flex; flex-direction:column; align-items:center; width:100%; max-width:320px;">
@@ -1028,12 +1074,8 @@
     </div>
   </div>
 
-  <style>
-    @keyframes spin { 100% { transform: rotate(360deg); } }
-  </style>
-
   <script>
-    // ================= FIREBASE SETUP =================
+    // ================= FIREBASE INITIALIZATION =================
     const firebaseConfig = {
       apiKey: "AIzaSyCbvlAXsngeRNMYUium80rJlf06VSSPmFM",
       authDomain: "docvault-d9ded.firebaseapp.com",
@@ -1047,10 +1089,70 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // ================= UNIVERSAL ENCRYPTION & DECRYPTION =================
+    // ================= ENCRYPTION & VALIDATION LOGIC =================
     let userRawPin = "";
     let activeKeysList = [];
     let decryptedStore = {};
+
+    function evaluatePinRules(pin) {
+      return {
+        len: pin.length >= 8,
+        num: /[0-9]/.test(pin),
+        special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pin)
+      };
+    }
+
+    function checkRegisterPinStrength(pin) {
+      const res = evaluatePinRules(pin);
+      const rLen = document.getElementById("regRuleLen");
+      const rNum = document.getElementById("regRuleNum");
+      const rSpec = document.getElementById("regRuleSpecial");
+      const btn = document.getElementById("btnCreateAction");
+
+      rLen.className = "rule-item " + (res.len ? "valid" : "");
+      rLen.innerText = (res.len ? "✔ " : "✖ ") + "Minimum 8 characters lamba hona chahiye";
+
+      rNum.className = "rule-item " + (res.num ? "valid" : "");
+      rNum.innerText = (res.num ? "✔ " : "✖ ") + "Kam se kam 1 Number (0-9) zaroori hai";
+
+      rSpec.className = "rule-item " + (res.special ? "valid" : "");
+      rSpec.innerText = (res.special ? "✔ " : "✖ ") + "Kam se kam 1 Special Symbol (!@#$%^&*) zaroori hai";
+
+      if (res.len && res.num && res.special) {
+        btn.disabled = false;
+        btn.style.opacity = "1";
+      } else {
+        btn.disabled = true;
+        btn.style.opacity = "0.6";
+      }
+    }
+
+    function checkMigrationPinStrength(pin) {
+      const res = evaluatePinRules(pin);
+      const mLen = document.getElementById("migRuleLen");
+      const mNum = document.getElementById("migRuleNum");
+      const mSpec = document.getElementById("migRuleSpecial");
+      const btn = document.getElementById("btnExecuteMigration");
+
+      mLen.className = "rule-item " + (res.len ? "valid" : "");
+      mLen.innerText = (res.len ? "✔ " : "✖ ") + "Minimum 8 characters lamba hona chahiye";
+
+      mNum.className = "rule-item " + (res.num ? "valid" : "");
+      mNum.innerText = (res.num ? "✔ " : "✖ ") + "Kam se kam 1 Number (0-9) hona chahiye";
+
+      mSpec.className = "rule-item " + (res.special ? "valid" : "");
+      mSpec.innerText = (res.special ? "✔ " : "✖ ") + "Kam se kam 1 Special Symbol (!@#$%^&*) hona chahiye";
+
+      if (res.len && res.num && res.special) {
+        btn.disabled = false;
+        btn.style.opacity = "1";
+        btn.style.cursor = "pointer";
+      } else {
+        btn.disabled = true;
+        btn.style.opacity = "0.5";
+        btn.style.cursor = "not-allowed";
+      }
+    }
 
     function universalDecrypt(cipherText) {
       if (!cipherText || typeof cipherText !== 'string') return null;
@@ -1083,9 +1185,10 @@
       return null;
     }
 
-    function encryptData(obj) {
+    function encryptData(obj, customPin = null) {
+      const pinToUse = customPin || userRawPin;
       const jsonStr = typeof obj === 'string' ? obj : JSON.stringify(obj);
-      return CryptoJS.AES.encrypt(jsonStr, userRawPin).toString();
+      return CryptoJS.AES.encrypt(jsonStr, pinToUse).toString();
     }
 
     // ================= REALTIME LIVE METRICS =================
@@ -1208,10 +1311,15 @@
       const pin = document.getElementById('regPin').value.trim();
       const pinConfirm = document.getElementById('regPinConfirm').value.trim();
 
-      if (!name) { alert("Please choose a username."); return; }
-      if (!pin) { alert("Please set a Master Passphrase / PIN."); return; }
-      if (pin.length < 6) { alert("Passphrase must be at least 6 characters."); return; }
-      if (pin !== pinConfirm) { alert("Passphrase and Confirm Passphrase do not match!"); return; }
+      const rules = evaluatePinRules(pin);
+      if (!rules.len || !rules.num || !rules.special) {
+        alert("Passphrase must be 8+ chars and contain at least 1 number and 1 special symbol!");
+        return;
+      }
+      if (pin !== pinConfirm) {
+        alert("Passphrase and Confirm Passphrase do not match!");
+        return;
+      }
 
       btn.innerText = "Creating Vault...";
       btn.disabled = true;
@@ -1239,7 +1347,7 @@
 
         db.ref('public_meta/vault_count').transaction((cur) => (cur || 0) + 1);
 
-        alert("Encrypted Vault created successfully!");
+        alert("Encrypted Vault created successfully with 8+ chars security!");
         await loadUserVault(profileData);
       } catch (err) {
         console.error("Vault Creation Error:", err);
@@ -1276,6 +1384,14 @@
 
         userRawPin = pin;
         await loadUserVault(user);
+
+        // Check if user is an Old User with <8 chars or missing complexity
+        const rules = evaluatePinRules(pin);
+        if (!rules.len || !rules.num || !rules.special) {
+          setTimeout(() => {
+            document.getElementById('pinUpgradeModal').classList.remove('hidden');
+          }, 350);
+        }
       } catch (err) {
         console.error("Login Error:", err);
         alert("Connection error: " + (err.message || "Failed to reach Firebase"));
@@ -1302,12 +1418,10 @@
 
       renderDocuments('All');
 
-      // Database listener
       db.ref(`vaults/${user.name}/documents`).on('value', (snap) => {
         const allDocs = snap.val() || {};
         activeKeysList = Object.keys(allDocs);
 
-        // Immediate background decrypt of photo & signature
         if (allDocs['doc_signature']) {
           const rawSig = allDocs['doc_signature'].enc || allDocs['doc_signature'];
           decryptedStore['doc_signature'] = universalDecrypt(rawSig);
@@ -1322,7 +1436,6 @@
         renderDocuments('All');
         updateAllCustomCardStatusIndicators();
 
-        // Silent Background Preloading of My Aadhaar Card in idle memory
         if (allDocs['my_aadhaar'] && !decryptedStore['my_aadhaar']) {
           setTimeout(() => {
             const rawAadhaar = allDocs['my_aadhaar'].enc || allDocs['my_aadhaar'];
@@ -1330,6 +1443,58 @@
           }, 80);
         }
       });
+    }
+
+    // ================= MIGRATION PIPELINE FOR OLD USERS =================
+    async function executePinMigration() {
+      const newPin = document.getElementById("newMigrationPin").value.trim();
+      const btn = document.getElementById("btnExecuteMigration");
+      const rules = evaluatePinRules(newPin);
+
+      if (!rules.len || !rules.num || !rules.special) {
+        alert("Please satisfy all 3 password conditions!");
+        return;
+      }
+
+      btn.innerText = "Re-encrypting all records... Please wait...";
+      btn.disabled = true;
+
+      try {
+        const snap = await db.ref(`vaults/${currentSessionUser.name}/documents`).once('value');
+        const docsTree = snap.val() || {};
+        const updates = {};
+
+        // 1. Re-encrypt all existing documents with new 8+ char PIN
+        for (const docKey of Object.keys(docsTree)) {
+          const rawPayload = docsTree[docKey].enc || docsTree[docKey];
+          const decryptedObject = universalDecrypt(rawPayload);
+          if (decryptedObject) {
+            const freshEncryptedBlob = encryptData(decryptedObject, newPin);
+            updates[`vaults/${currentSessionUser.name}/documents/${docKey}`] = {
+              enc: freshEncryptedBlob,
+              updatedAt: new Date().toLocaleDateString()
+            };
+            decryptedStore[docKey] = decryptedObject;
+          }
+        }
+
+        // 2. Compute new PIN Hash
+        const newPinHash = CryptoJS.SHA256(newPin + "_salt_" + currentSessionUser.name).toString();
+        updates[`vaults/${currentSessionUser.name}/profile/pinHash`] = newPinHash;
+
+        // 3. Atomically write to Firebase
+        await db.ref().update(updates);
+
+        userRawPin = newPin;
+        alert("🎉 Security Upgrade Successful! All your documents are now hardened with your new 8+ char PIN.");
+        document.getElementById('pinUpgradeModal').classList.add('hidden');
+      } catch (err) {
+        console.error("Migration failed:", err);
+        alert("Migration failed: " + err.message);
+      } finally {
+        btn.innerText = "Data Re-Encrypt & PIN Upgrade Karein";
+        btn.disabled = false;
+      }
     }
 
     async function fetchSpecificDoc(docId) {
@@ -1528,9 +1693,7 @@
       document.getElementById('flashcardModalTitle').innerText = label;
       document.getElementById('flashcardModal').classList.remove('hidden');
 
-      // Check if already in preloaded memory
       if (!decryptedStore[activeCardTarget]) {
-        // Show smooth animated loading state
         document.getElementById('frontSideImg').classList.add('hidden');
         document.getElementById('frontSidePlaceholder').classList.add('hidden');
         document.getElementById('frontSideLoading').classList.remove('hidden');
