@@ -666,6 +666,24 @@
       border-radius: 4px;
       letter-spacing: 0.5px;
     }
+
+    /* Skeleton Loading Shimmer */
+    .skeleton-loader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #64748b;
+      font-size: 0.78rem;
+      font-weight: 600;
+      animation: shimmerPulse 1.4s infinite ease-in-out;
+    }
+    @keyframes shimmerPulse {
+      0% { opacity: 0.5; }
+      50% { opacity: 1; }
+      100% { opacity: 0.5; }
+    }
   </style>
 </head>
 <body>
@@ -961,10 +979,17 @@
 
       <div style="padding:16px; background:#0b1120; display:flex; justify-content:center;">
         <div class="flashcard-document-frame" id="printableFlashcardArea">
+          
           <div class="flashcard-side-slot" id="frontSlotArea">
             <span class="flashcard-side-label">FRONT</span>
             <img id="frontSideImg" src="" class="hidden" alt="Front Side">
-            <div id="frontSidePlaceholder" style="text-align:center; padding:16px; color:#64748b;">
+            
+            <div id="frontSideLoading" class="skeleton-loader hidden">
+              <svg class="svg-icon" style="animation:spin 1s linear infinite; width:22px; height:22px; color:#3b82f6;" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+              <span>Decrypting Front Side...</span>
+            </div>
+
+            <div id="frontSidePlaceholder" class="hidden" style="text-align:center; padding:16px; color:#64748b;">
               <div style="font-size:0.8rem; font-weight:600;">No Front Photo</div>
               <button class="card-action-btn primary" style="margin-top:8px; padding:4px 12px;" onclick="triggerSideUpload('front')">Upload Front</button>
             </div>
@@ -973,11 +998,18 @@
           <div class="flashcard-side-slot" id="backSlotArea">
             <span class="flashcard-side-label">BACK</span>
             <img id="backSideImg" src="" class="hidden" alt="Back Side">
-            <div id="backSidePlaceholder" style="text-align:center; padding:16px; color:#64748b;">
+
+            <div id="backSideLoading" class="skeleton-loader hidden">
+              <svg class="svg-icon" style="animation:spin 1s linear infinite; width:22px; height:22px; color:#3b82f6;" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+              <span>Decrypting Back Side...</span>
+            </div>
+
+            <div id="backSidePlaceholder" class="hidden" style="text-align:center; padding:16px; color:#64748b;">
               <div style="font-size:0.8rem; font-weight:600;">No Back Photo</div>
               <button class="card-action-btn primary" style="margin-top:8px; padding:4px 12px;" onclick="triggerSideUpload('back')">Upload Back</button>
             </div>
           </div>
+
         </div>
       </div>
 
@@ -996,8 +1028,12 @@
     </div>
   </div>
 
+  <style>
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+  </style>
+
   <script>
-    // ================= FIREBASE INITIALIZATION =================
+    // ================= FIREBASE SETUP =================
     const firebaseConfig = {
       apiKey: "AIzaSyCbvlAXsngeRNMYUium80rJlf06VSSPmFM",
       authDomain: "docvault-d9ded.firebaseapp.com",
@@ -1011,15 +1047,14 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // ================= UNIVERSAL RESILIENT DECRYPTION ENGINE =================
+    // ================= UNIVERSAL ENCRYPTION & DECRYPTION =================
     let userRawPin = "";
     let activeKeysList = [];
     let decryptedStore = {};
 
-    // Auto-try all derivations (Plain PIN, Salted Hash, PBKDF2) so no data ever says "Not uploaded"
     function universalDecrypt(cipherText) {
       if (!cipherText || typeof cipherText !== 'string') return null;
-      if (!cipherText.startsWith("U2FsdGVkX1")) return cipherText; // In case already raw
+      if (!cipherText.startsWith("U2FsdGVkX1")) return cipherText;
 
       const keysToTry = [
         userRawPin,
@@ -1028,7 +1063,6 @@
         CryptoJS.SHA256(userRawPin + "_pepper_salt_" + (currentSessionUser?.name || "").toLowerCase()).toString()
       ];
 
-      // Add PBKDF2 derivations
       try {
         const salt = CryptoJS.enc.Utf8.parse("docvault_salt_" + (currentSessionUser?.name || "").toLowerCase());
         const k1 = CryptoJS.PBKDF2(userRawPin, salt, { keySize: 256/32, iterations: 15000, hasher: CryptoJS.algo.SHA256 }).toString(CryptoJS.enc.Hex);
@@ -1042,11 +1076,7 @@
           const bytes = CryptoJS.AES.decrypt(cipherText, key);
           const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
           if (decryptedStr && decryptedStr.length > 0) {
-            try {
-              return JSON.parse(decryptedStr);
-            } catch(jsonErr) {
-              return decryptedStr;
-            }
+            try { return JSON.parse(decryptedStr); } catch(jsonErr) { return decryptedStr; }
           }
         } catch(e){}
       }
@@ -1263,7 +1293,6 @@
         window.history.replaceState({}, document.title, window.location.pathname);
       }
 
-      // Switch screens immediately
       document.getElementById('authScreen').classList.add('hidden');
       document.getElementById('vaultDashboard').classList.remove('hidden');
 
@@ -1271,10 +1300,9 @@
       document.getElementById('userCourseDisplay').innerText = user.course || 'Student';
       document.getElementById('avatarInitial').innerText = user.name.charAt(0).toUpperCase();
 
-      // Instantly render all cards
       renderDocuments('All');
 
-      // Direct, fast listener on documents tree
+      // Database listener
       db.ref(`vaults/${user.name}/documents`).on('value', (snap) => {
         const allDocs = snap.val() || {};
         activeKeysList = Object.keys(allDocs);
@@ -1293,6 +1321,14 @@
 
         renderDocuments('All');
         updateAllCustomCardStatusIndicators();
+
+        // Silent Background Preloading of My Aadhaar Card in idle memory
+        if (allDocs['my_aadhaar'] && !decryptedStore['my_aadhaar']) {
+          setTimeout(() => {
+            const rawAadhaar = allDocs['my_aadhaar'].enc || allDocs['my_aadhaar'];
+            decryptedStore['my_aadhaar'] = universalDecrypt(rawAadhaar);
+          }, 80);
+        }
       });
     }
 
@@ -1442,7 +1478,7 @@
       renderDocuments(cat);
     }
 
-    // ================= FLASHCARD SYSTEM =================
+    // ================= FLASHCARD SYSTEM WITH SHIMMER LOADER =================
     let activeCardTarget = 'my_aadhaar';
     let activeCardLabel = 'Identity Card';
     let currentSideTarget = 'front';
@@ -1492,7 +1528,20 @@
       document.getElementById('flashcardModalTitle').innerText = label;
       document.getElementById('flashcardModal').classList.remove('hidden');
 
-      await fetchSpecificDoc(activeCardTarget);
+      // Check if already in preloaded memory
+      if (!decryptedStore[activeCardTarget]) {
+        // Show smooth animated loading state
+        document.getElementById('frontSideImg').classList.add('hidden');
+        document.getElementById('frontSidePlaceholder').classList.add('hidden');
+        document.getElementById('frontSideLoading').classList.remove('hidden');
+
+        document.getElementById('backSideImg').classList.add('hidden');
+        document.getElementById('backSidePlaceholder').classList.add('hidden');
+        document.getElementById('backSideLoading').classList.remove('hidden');
+
+        await fetchSpecificDoc(activeCardTarget);
+      }
+
       renderFlashcardView();
     }
 
@@ -1508,6 +1557,9 @@
 
     function renderFlashcardView() {
       const record = decryptedStore[activeCardTarget] || {};
+
+      document.getElementById('frontSideLoading').classList.add('hidden');
+      document.getElementById('backSideLoading').classList.add('hidden');
 
       const frontImg = document.getElementById('frontSideImg');
       const frontPlaceholder = document.getElementById('frontSidePlaceholder');
