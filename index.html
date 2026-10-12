@@ -221,9 +221,10 @@
     /* Security Status Banner */
     .security-status-banner {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 14px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      padding: 10px 14px;
       border-radius: 10px;
       font-size: 0.78rem;
       background: rgba(6, 95, 70, 0.25);
@@ -763,6 +764,14 @@
         </div>
         <button id="btnCreateAction" class="btn-primary" style="margin-top:8px;" onclick="handleRegister()" disabled style="opacity:0.6;">Create Encrypted Vault</button>
       </div>
+
+      <!-- Security Advisory Tip (Login / Register Screen) -->
+      <div style="background: rgba(30, 41, 59, 0.6); border: 1px dashed #475569; border-radius: 12px; padding: 10px 12px; text-align: left; margin-top: 4px; display: flex; gap: 8px; align-items: flex-start;">
+        <span style="font-size: 1rem; line-height: 1.2;">⚠️</span>
+        <div style="font-size: 0.72rem; color: #94a3b8; line-height: 1.35;">
+          <strong style="color: #cbd5e1;">Zero-Knowledge Advisory:</strong> Apna Master PIN kisi ke sath share na karein. PIN bhoolne par data kabhi recover nahi kiya ja sakta. Cyber cafe par kaam hone ke baad turant <strong>Lock</strong> karein.
+        </div>
+      </div>
     </div>
 
     <!-- Vault Dashboard -->
@@ -783,9 +792,15 @@
         </button>
       </div>
 
+      <!-- Security Status Banner with Live Tip -->
       <div class="security-status-banner">
-        <span>🛡 Zero-Knowledge Active (3 min auto-lock)</span>
-        <span style="color:#6ee7b7; text-decoration:underline; cursor:pointer;" onclick="lockVault()">Lock Now</span>
+        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+          <span>🛡 Zero-Knowledge Active (3 min auto-lock)</span>
+          <span style="color:#6ee7b7; text-decoration:underline; cursor:pointer; font-weight: 600;" onclick="lockVault()">Lock Now</span>
+        </div>
+        <div style="font-size: 0.68rem; color: #a7f3d0; opacity: 0.9;">
+          ⚠️ <strong>Security Tip:</strong> Cyber cafe ya kisi dusre ke mobile par use karne ke baad turant 'Lock' button dabayein.
+        </div>
       </div>
 
       <div class="profile-card">
