@@ -841,7 +841,7 @@
           <span style="font-size:1.05rem; color:#64748b;">No signature uploaded</span>
         </div>
         <div class="doc-actions-row">
-          <button class="card-action-btn" onclick="previewDirectDoc('doc_signature')">Preview</button>
+          <button class="card-action-btn" id="sigPrevBtn" onclick="previewDirectDoc('doc_signature')">Preview</button>
           <a href="#" id="downloadSignBtn" class="card-action-btn" download="Digital_Signature.png">Download</a>
         </div>
       </div>
@@ -862,7 +862,7 @@
           </div>
         </div>
         <div class="doc-actions-row">
-          <button class="card-action-btn" onclick="previewDirectDoc('doc_photo')">Preview</button>
+          <button class="card-action-btn" id="photoPrevBtn" onclick="previewDirectDoc('doc_photo')">Preview</button>
           <a href="#" id="downloadPhotoBtn" class="card-action-btn" download="Passport_Photo.png">Download</a>
         </div>
       </div>
@@ -1121,10 +1121,10 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // ================= ENCRYPTION & DECRYPTION LOGIC =================
     let userRawPin = "";
     let activeKeysList = [];
     let decryptedStore = {};
+    let resolvedUserKey = "";
 
     function evaluatePinRules(pin) {
       return {
@@ -1186,39 +1186,52 @@
       }
     }
 
+    // ================= ROBUST OMNI-KEY DECRYPTOR =================
     function universalDecrypt(cipherPayload) {
       if (!cipherPayload) return null;
-      let textToDecrypt = typeof cipherPayload === 'object' ? (cipherPayload.enc || cipherPayload.dataUrl || '') : cipherPayload;
-      if (typeof textToDecrypt !== 'string') return textToDecrypt;
-      if (!textToDecrypt.startsWith("U2FsdGVkX1")) {
-        try { return JSON.parse(textToDecrypt); } catch(e) { return textToDecrypt; }
+
+      let str = cipherPayload;
+      if (typeof cipherPayload === 'object') {
+        if (cipherPayload.dataUrl) return cipherPayload; // Already clean
+        str = cipherPayload.enc || cipherPayload.data || '';
+      }
+      if (typeof str !== 'string' || !str) return cipherPayload;
+
+      // Agar already base64 dataUrl ya direct text hai bina CryptoJS wrapper ke:
+      if (!str.startsWith("U2FsdGVkX1")) {
+        try { return JSON.parse(str); } catch(e) { return str; }
       }
 
-      const uName = (currentSessionUser?.name || "").toLowerCase();
-      const keysToTry = [
+      const uLower = (resolvedUserKey || currentSessionUser?.name || "").toLowerCase();
+      const uExact = (resolvedUserKey || currentSessionUser?.name || "");
+
+      // Sabhi possible derivation keys check honge
+      const candidateKeys = [
         userRawPin,
         CryptoJS.SHA256(userRawPin).toString(),
-        CryptoJS.SHA256(userRawPin + "_salt_" + uName).toString(),
-        CryptoJS.SHA256(userRawPin + "_pepper_salt_" + uName).toString()
+        CryptoJS.SHA256(userRawPin + "_salt_" + uLower).toString(),
+        CryptoJS.SHA256(userRawPin + "_salt_" + uExact).toString(),
+        CryptoJS.SHA256(userRawPin + "_pepper_salt_" + uLower).toString()
       ];
 
       try {
-        const salt = CryptoJS.enc.Utf8.parse("docvault_salt_" + uName);
-        const k1 = CryptoJS.PBKDF2(userRawPin, salt, { keySize: 256/32, iterations: 15000, hasher: CryptoJS.algo.SHA256 }).toString(CryptoJS.enc.Hex);
-        const k2 = CryptoJS.PBKDF2(userRawPin, salt, { keySize: 256/32, iterations: 1000, hasher: CryptoJS.algo.SHA256 }).toString(CryptoJS.enc.Hex);
-        keysToTry.push(k1, k2);
+        const salt1 = CryptoJS.enc.Utf8.parse("docvault_salt_" + uLower);
+        candidateKeys.push(CryptoJS.PBKDF2(userRawPin, salt1, { keySize: 256/32, iterations: 15000, hasher: CryptoJS.algo.SHA256 }).toString(CryptoJS.enc.Hex));
+        candidateKeys.push(CryptoJS.PBKDF2(userRawPin, salt1, { keySize: 256/32, iterations: 1000, hasher: CryptoJS.algo.SHA256 }).toString(CryptoJS.enc.Hex));
       } catch(e){}
 
-      for (let key of keysToTry) {
-        if (!key) continue;
+      for (let k of candidateKeys) {
+        if (!k) continue;
         try {
-          const bytes = CryptoJS.AES.decrypt(textToDecrypt, key);
-          const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
-          if (decryptedStr && decryptedStr.length > 0) {
-            try { return JSON.parse(decryptedStr); } catch(jsonErr) { return decryptedStr; }
+          const bytes = CryptoJS.AES.decrypt(str, k);
+          const dec = bytes.toString(CryptoJS.enc.Utf8);
+          if (dec && dec.length > 0) {
+            try { return JSON.parse(dec); } catch(je) { return dec; }
           }
-        } catch(e){}
+        } catch(err){}
       }
+
+      // Agar format parse ho sake
       return null;
     }
 
@@ -1228,7 +1241,6 @@
       return CryptoJS.AES.encrypt(jsonStr, pinToUse).toString();
     }
 
-    // ================= REALTIME METRICS =================
     function initLiveMetrics() {
       const presenceRef = db.ref('active_presence');
       const myConnectionRef = presenceRef.push();
@@ -1251,7 +1263,6 @@
       });
     }
 
-    // ================= MASTER DOCUMENTS DEFINITION =================
     const masterCollegeDocuments = [
       { id: 'doc_aadhaar', title: 'Aadhaar Card (Family Vault)', desc: 'Forms, verification aur biometric verification ke liye.', category: 'Identity', isAadhaarCustom: true },
       { id: 'doc_voter_pan', title: 'Voter ID / PAN Card / Driving License', desc: 'Secondary identity proof aur bank verification.', category: 'Identity', isSecondaryIdCustom: true },
@@ -1370,11 +1381,12 @@
 
         await db.ref(`vaults/${name}/profile`).set(profileData);
         userRawPin = pin;
+        resolvedUserKey = name;
 
         db.ref('public_meta/vault_count').transaction((cur) => (cur || 0) + 1);
 
         alert("Encrypted Vault created successfully with 8+ chars security!");
-        await loadUserVault(profileData);
+        await loadUserVault(profileData, name);
       } catch (err) {
         console.error("Vault Creation Error:", err);
         alert("Database error: " + (err.message || "Failed to create account"));
@@ -1384,14 +1396,13 @@
       }
     }
 
-    // ================= SECURE VERIFIED LOGIN =================
+    // ================= BULLETPROOF LOGIN & PATH FINDER =================
     async function handleLogin() {
       const btn = document.getElementById('btnLoginAction');
-      const rawNameInput = document.getElementById('loginName').value.trim();
-      const name = rawNameInput.toLowerCase().replace(/[^a-z0-9_]/g, '');
+      const rawInput = document.getElementById('loginName').value.trim();
       const pin = document.getElementById('loginPin').value.trim();
 
-      if (!name || !pin) {
+      if (!rawInput || !pin) {
         alert("Please enter Username and Master Passphrase.");
         return;
       }
@@ -1400,32 +1411,38 @@
       btn.disabled = true;
 
       try {
-        // Try lowercase path first, then raw path
-        let snap = await db.ref(`vaults/${name}/profile`).once('value');
-        let user = snap.val();
+        const cleaned = rawInput.toLowerCase().replace(/[^a-z0-9_]/g, '');
+        
+        // Exact user path find karte hain (lowercase ya exact)
+        let foundPath = "";
+        let user = null;
 
-        if (!user && rawNameInput !== name) {
-          snap = await db.ref(`vaults/${rawNameInput}/profile`).once('value');
-          user = snap.val();
+        const snapLower = await db.ref(`vaults/${cleaned}/profile`).once('value');
+        if (snapLower.exists()) {
+          foundPath = cleaned;
+          user = snapLower.val();
+        } else {
+          const snapRaw = await db.ref(`vaults/${rawInput}/profile`).once('value');
+          if (snapRaw.exists()) {
+            foundPath = rawInput;
+            user = snapRaw.val();
+          }
         }
 
         if (!user) {
-          alert("No vault found for username: " + name);
+          alert("No vault found for username: " + rawInput);
           btn.innerText = "Unlock & Decrypt";
           btn.disabled = false;
           return;
         }
 
-        // Exact Pin Hash verification
-        const lookupKey = (user.name || name).toLowerCase();
-        const inputHash = CryptoJS.SHA256(pin + "_salt_" + lookupKey).toString();
-        const legacyHashPlain = CryptoJS.SHA256(pin).toString();
+        // Verify Hash
+        const testHash = CryptoJS.SHA256(pin + "_salt_" + foundPath.toLowerCase()).toString();
+        const legacyHash = CryptoJS.SHA256(pin).toString();
 
         let isMatch = false;
         if (user.pinHash) {
-          if (user.pinHash === inputHash || user.pinHash === legacyHashPlain) {
-            isMatch = true;
-          }
+          if (user.pinHash === testHash || user.pinHash === legacyHash) isMatch = true;
         } else if (user.pin && user.pin === pin) {
           isMatch = true;
         }
@@ -1438,7 +1455,9 @@
         }
 
         userRawPin = pin;
-        await loadUserVault(user);
+        resolvedUserKey = foundPath;
+
+        await loadUserVault(user, foundPath);
 
         const rules = evaluatePinRules(pin);
         if (!rules.len || !rules.num || !rules.special) {
@@ -1455,9 +1474,10 @@
       }
     }
 
-    // ================= LOAD VAULT WITH COMPLETE DATA RECOVERY =================
-    async function loadUserVault(user) {
+    // ================= INSTANT DOCUMENT RECOVERY & UI RENDER =================
+    async function loadUserVault(user, pathKey) {
       currentSessionUser = user;
+      resolvedUserKey = pathKey;
       resetInactivityTimer();
 
       if (window.history.replaceState) {
@@ -1469,56 +1489,54 @@
       dash.classList.remove('hidden');
       dash.style.display = 'block';
 
-      document.getElementById('userNameDisplay').innerText = (user.name || '').toUpperCase();
+      document.getElementById('userNameDisplay').innerText = (user.name || pathKey).toUpperCase();
       document.getElementById('userCourseDisplay').innerText = user.course || 'Student';
-      document.getElementById('avatarInitial').innerText = (user.name || 'U').charAt(0).toUpperCase();
+      document.getElementById('avatarInitial').innerText = (user.name || pathKey).charAt(0).toUpperCase();
 
+      // Pehle initial blank render
       renderDocuments('All');
 
-      const targetPath = (user.name || '').toLowerCase();
+      // Fetch documents data directly
+      const docPath = `vaults/${pathKey}/documents`;
+      
+      const applyDocs = (docsTree) => {
+        if (!docsTree) return;
+        activeKeysList = Object.keys(docsTree);
 
-      // Direct Firebase Snapshot load (Always reliable)
-      try {
-        const snap = await db.ref(`vaults/${targetPath}/documents`).once('value');
-        let docs = snap.val();
-
-        // Fallback to exact user.name case if needed
-        if (!docs && user.name !== targetPath) {
-          const snap2 = await db.ref(`vaults/${user.name}/documents`).once('value');
-          docs = snap2.val();
+        for (const k of activeKeysList) {
+          const item = docsTree[k];
+          const dec = universalDecrypt(item);
+          if (dec) {
+            decryptedStore[k] = dec;
+          } else {
+            // Agar decrypt string nahi banna, tab bhi raw payload preserve karo taaki download kaam kare
+            decryptedStore[k] = item;
+          }
         }
 
-        if (docs) {
-          applyDocumentsData(docs);
+        restoreSignatureAndPhoto();
+        renderDocuments('All');
+        updateAllCustomCardStatusIndicators();
+      };
+
+      // 1. Direct one-time fetch
+      try {
+        const snap = await db.ref(docPath).once('value');
+        if (snap.exists()) {
+          applyDocs(snap.val());
         }
       } catch(e) {
-        console.warn("Once fetch error, listening via realtime ref:", e);
+        console.error("Direct fetch error:", e);
       }
 
-      // Realtime listener
-      db.ref(`vaults/${targetPath}/documents`).on('value', (snap) => {
-        const allDocs = snap.val() || {};
-        applyDocumentsData(allDocs);
+      // 2. Realtime listener attach
+      db.ref(docPath).on('value', (snap) => {
+        if (snap.exists()) {
+          applyDocs(snap.val());
+        }
       });
     }
 
-    function applyDocumentsData(allDocs) {
-      if (!allDocs) return;
-      activeKeysList = Object.keys(allDocs);
-
-      for (let key of activeKeysList) {
-        const dec = universalDecrypt(allDocs[key]);
-        if (dec) {
-          decryptedStore[key] = dec;
-        }
-      }
-
-      restoreSignatureAndPhoto();
-      renderDocuments('All');
-      updateAllCustomCardStatusIndicators();
-    }
-
-    // ================= MIGRATION PIPELINE FOR OLD USERS =================
     async function executePinMigration() {
       const newPin = document.getElementById("newMigrationPin").value.trim();
       const btn = document.getElementById("btnExecuteMigration");
@@ -1533,8 +1551,7 @@
       btn.disabled = true;
 
       try {
-        const uPath = (currentSessionUser.name || '').toLowerCase();
-        const vaultRef = db.ref(`vaults/${uPath}`);
+        const vaultRef = db.ref(`vaults/${resolvedUserKey}`);
         const snap = await vaultRef.child('documents').once('value');
         const docsTree = snap.val() || {};
 
@@ -1555,7 +1572,7 @@
           await vaultRef.child('documents').update(reEncryptedDocs);
         }
 
-        const newPinHash = CryptoJS.SHA256(newPin + "_salt_" + uPath).toString();
+        const newPinHash = CryptoJS.SHA256(newPin + "_salt_" + resolvedUserKey.toLowerCase()).toString();
         await vaultRef.child('profile').update({
           pinHash: newPinHash
         });
@@ -1575,8 +1592,7 @@
     async function fetchSpecificDoc(docId) {
       if (decryptedStore[docId]) return decryptedStore[docId];
 
-      const uPath = (currentSessionUser?.name || '').toLowerCase();
-      const snap = await db.ref(`vaults/${uPath}/documents/${docId}`).once('value');
+      const snap = await db.ref(`vaults/${resolvedUserKey}/documents/${docId}`).once('value');
       const item = snap.val();
       if (!item) return null;
 
@@ -1585,16 +1601,16 @@
         decryptedStore[docId] = dec;
         return dec;
       }
-      return null;
+      return item;
     }
 
     function lockVault() {
       clearTimeout(inactivityTimer);
-      if (currentSessionUser) {
-        const uPath = (currentSessionUser.name || '').toLowerCase();
-        db.ref(`vaults/${uPath}/documents`).off();
+      if (resolvedUserKey) {
+        db.ref(`vaults/${resolvedUserKey}/documents`).off();
       }
       currentSessionUser = null;
+      resolvedUserKey = "";
       userRawPin = "";
       activeKeysList = [];
       decryptedStore = {};
@@ -1756,8 +1772,10 @@
         if (el) {
           if (activeKeysList.includes(k)) {
             el.innerText = "✓ Record Available";
+            el.style.color = "#34d399";
           } else {
             el.innerText = "Not Uploaded";
+            el.style.color = "#94a3b8";
           }
         }
       });
@@ -1798,7 +1816,8 @@
     }
 
     function renderFlashcardView() {
-      const record = decryptedStore[activeCardTarget] || {};
+      let record = decryptedStore[activeCardTarget] || {};
+      if (typeof record === 'string') record = universalDecrypt(record) || {};
 
       document.getElementById('frontSideLoading').classList.add('hidden');
       document.getElementById('backSideLoading').classList.add('hidden');
@@ -1845,19 +1864,20 @@
       resetInactivityTimer();
 
       const file = event.target.files[0];
-      if (!file || !currentSessionUser || !userRawPin) return;
+      if (!file || !resolvedUserKey || !userRawPin) return;
 
       const reader = new FileReader();
       reader.onload = async function(e) {
         const base64Data = e.target.result;
 
-        const cur = decryptedStore[activeCardTarget] || {};
+        let cur = decryptedStore[activeCardTarget] || {};
+        if (typeof cur === 'string') cur = universalDecrypt(cur) || {};
+
         cur[currentSideTarget] = base64Data;
         cur.updatedAt = new Date().toLocaleDateString();
 
         const encryptedBlob = encryptData(cur);
-        const uPath = (currentSessionUser.name || '').toLowerCase();
-        await db.ref(`vaults/${uPath}/documents/${activeCardTarget}`).set({
+        await db.ref(`vaults/${resolvedUserKey}/documents/${activeCardTarget}`).set({
           enc: encryptedBlob,
           updatedAt: new Date().toLocaleDateString()
         });
@@ -1882,7 +1902,8 @@
     }
 
     async function downloadFlashcardPDF() {
-      const record = decryptedStore[activeCardTarget] || {};
+      let record = decryptedStore[activeCardTarget] || {};
+      if (typeof record === 'string') record = universalDecrypt(record) || {};
 
       if (!record.front && !record.back) {
         alert("Please upload at least one side (Front or Back) before downloading!");
@@ -1964,7 +1985,7 @@
       resetInactivityTimer();
 
       const file = event.target.files[0];
-      if (!file || !currentUploadTargetId || !currentSessionUser || !userRawPin) return;
+      if (!file || !currentUploadTargetId || !resolvedUserKey || !userRawPin) return;
 
       const reader = new FileReader();
       reader.onload = async function(e) {
@@ -1976,8 +1997,7 @@
         };
 
         const encryptedBlob = encryptData(fileData);
-        const uPath = (currentSessionUser.name || '').toLowerCase();
-        await db.ref(`vaults/${uPath}/documents/${currentUploadTargetId}`).set({
+        await db.ref(`vaults/${resolvedUserKey}/documents/${currentUploadTargetId}`).set({
           enc: encryptedBlob,
           updatedAt: new Date().toLocaleDateString()
         });
@@ -2004,21 +2024,27 @@
         return;
       }
 
-      document.getElementById('viewerTitle').innerText = title || fileData.name;
+      // Handle raw payload wrapper
+      if (typeof fileData === 'string') {
+        fileData = universalDecrypt(fileData) || { dataUrl: fileData, type: 'image/png' };
+      }
+
+      document.getElementById('viewerTitle').innerText = title || fileData.name || "Preview";
       const container = document.getElementById('viewerContent');
       container.innerHTML = '';
 
-      if (fileData.type && fileData.type.startsWith('image/')) {
-        container.innerHTML = `<img src="${fileData.dataUrl}" alt="Preview">`;
-      } else if (fileData.type === 'application/pdf') {
-        container.innerHTML = `<iframe src="${fileData.dataUrl}"></iframe>`;
+      const src = fileData.dataUrl || fileData;
+      if (typeof src === 'string' && src.startsWith('data:image/')) {
+        container.innerHTML = `<img src="${src}" alt="Preview">`;
+      } else if (fileData.type === 'application/pdf' || (typeof src === 'string' && src.startsWith('data:application/pdf'))) {
+        container.innerHTML = `<iframe src="${src}"></iframe>`;
       } else {
-        container.innerHTML = `<div style="color:#94a3b8; text-align:center;">Preview not supported.<br>Click download.</div>`;
+        container.innerHTML = `<img src="${src}" alt="Preview" onerror="this.outerHTML='<div style=\'color:#94a3b8;\'>Preview unavailable. Click Download.</div>'">`;
       }
 
       const dlBtn = document.getElementById('viewerDownloadBtn');
-      dlBtn.href = fileData.dataUrl;
-      dlBtn.download = fileData.name || `${title}.pdf`;
+      dlBtn.href = src;
+      dlBtn.download = fileData.name || `${title}.png`;
 
       document.getElementById('viewerModal').classList.remove('hidden');
     }
@@ -2042,29 +2068,39 @@
       }
       if (!fileData) return;
 
+      if (typeof fileData === 'string') {
+        fileData = universalDecrypt(fileData) || { dataUrl: fileData };
+      }
+
       const a = document.createElement('a');
-      a.href = fileData.dataUrl;
-      a.download = fileData.name || `${title}.${fileData.type === 'application/pdf' ? 'pdf' : 'png'}`;
+      a.href = fileData.dataUrl || fileData;
+      a.download = fileData.name || `${title}.png`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
     }
 
     function restoreSignatureAndPhoto() {
-      const sign = decryptedStore['doc_signature'];
+      let sign = decryptedStore['doc_signature'];
       if (sign) {
+        if (typeof sign === 'string') sign = universalDecrypt(sign) || sign;
         const signUrl = typeof sign === 'string' ? sign : sign.dataUrl;
-        document.getElementById('signatureBox').innerHTML = `<img src="${signUrl}">`;
-        document.getElementById('downloadSignBtn').href = signUrl;
+        if (signUrl) {
+          document.getElementById('signatureBox').innerHTML = `<img src="${signUrl}">`;
+          document.getElementById('downloadSignBtn').href = signUrl;
+        }
       } else {
         document.getElementById('signatureBox').innerHTML = `<span style="font-size:1.05rem; color:#64748b;">No signature uploaded</span>`;
       }
 
-      const photo = decryptedStore['doc_photo'];
+      let photo = decryptedStore['doc_photo'];
       if (photo) {
+        if (typeof photo === 'string') photo = universalDecrypt(photo) || photo;
         const photoUrl = typeof photo === 'string' ? photo : photo.dataUrl;
-        document.getElementById('photoBox').innerHTML = `<img src="${photoUrl}" style="width:100%; height:100%; object-fit:cover;">`;
-        document.getElementById('downloadPhotoBtn').href = photoUrl;
+        if (photoUrl) {
+          document.getElementById('photoBox').innerHTML = `<img src="${photoUrl}" style="width:100%; height:100%; object-fit:cover;">`;
+          document.getElementById('downloadPhotoBtn').href = photoUrl;
+        }
       } else {
         document.getElementById('photoBox').innerHTML = `Photo`;
       }
@@ -2076,15 +2112,14 @@
     }
     function closeViewerOnBackdrop(e) { if(e.target.id === 'viewerModal') closeViewerModal(); }
 
-    // ================= FLASHCARD QR ENGINE & DOWNLOAD =================
     function openQrModal() {
       if (!currentSessionUser) return;
       const qrBox = document.getElementById('qrcodeBox');
       qrBox.innerHTML = '';
 
-      document.getElementById('qrCardUsernameDisplay').innerText = (currentSessionUser.name || '').toUpperCase();
+      document.getElementById('qrCardUsernameDisplay').innerText = (currentSessionUser.name || resolvedUserKey).toUpperCase();
 
-      const vaultUrl = `${window.location.origin}${window.location.pathname}?vault=${currentSessionUser.name}`;
+      const vaultUrl = `${window.location.origin}${window.location.pathname}?vault=${resolvedUserKey}`;
 
       new QRCode(qrBox, {
         text: vaultUrl,
@@ -2120,7 +2155,7 @@
 
         const imageUri = canvas.toDataURL('image/png');
         const link = document.createElement('a');
-        link.download = `${currentSessionUser.name}_DocVault_Long_Card.png`;
+        link.download = `${resolvedUserKey}_DocVault_Long_Card.png`;
         link.href = imageUri;
         document.body.appendChild(link);
         link.click();
