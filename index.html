@@ -970,35 +970,35 @@
     </div>
   </div>
 
-  <!-- Identity Documents Selection Modal -->
+  <!-- Family Aadhaar Modal (Restored Original Names) -->
   <div id="aadhaarFamilyModal" class="modal-overlay hidden" onclick="closeAadhaarModalOnBackdrop(event)">
     <div class="modal-qr-card" style="max-width:380px; text-align:left; background:#111827; border-radius:22px; padding:20px; border:1px solid #334155;" onclick="event.stopPropagation()">
       <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div style="font-weight:700; font-size:1.15rem; color:#f8fafc;">Family Identity Vault</div>
+        <div style="font-weight:700; font-size:1.15rem; color:#f8fafc;">Family Aadhaar Vault</div>
         <button class="icon-btn" style="width:32px; height:32px;" onclick="closeAadhaarFamilyModal()">✕</button>
       </div>
-      <p style="font-size:0.8rem; color:#94a3b8; margin: 4px 0 12px 0;">Select which card you want to manage:</p>
+      <p style="font-size:0.8rem; color:#94a3b8; margin: 4px 0 12px 0;">Select which Aadhaar Card you want to manage:</p>
 
       <div style="display:flex; flex-direction:column; gap:10px;">
-        <div class="family-tab-option" onclick="openFlashcardManager('my_aadhaar', 'My Identity Card')">
+        <div class="family-tab-option" onclick="openFlashcardManager('my_aadhaar', 'My Aadhaar Card')">
           <div>
-            <div style="font-weight:600; color:#f1f5f9;">My Identity Card</div>
+            <div style="font-weight:600; color:#f1f5f9;">My Aadhaar Card</div>
             <div style="font-size:0.75rem; color:#94a3b8;" id="statusText_my_aadhaar">Checking...</div>
           </div>
           <span style="color:#60a5fa;">›</span>
         </div>
 
-        <div class="family-tab-option" onclick="openFlashcardManager('father_aadhaar', 'Father\'s Identity Card')">
+        <div class="family-tab-option" onclick="openFlashcardManager('father_aadhaar', 'Father\'s Aadhaar Card')">
           <div>
-            <div style="font-weight:600; color:#f1f5f9;">Father's Identity Card</div>
+            <div style="font-weight:600; color:#f1f5f9;">Father's Aadhaar Card</div>
             <div style="font-size:0.75rem; color:#94a3b8;" id="statusText_father_aadhaar">Checking...</div>
           </div>
           <span style="color:#60a5fa;">›</span>
         </div>
 
-        <div class="family-tab-option" onclick="openFlashcardManager('mother_aadhaar', 'Mother\'s Identity Card')">
+        <div class="family-tab-option" onclick="openFlashcardManager('mother_aadhaar', 'Mother\'s Aadhaar Card')">
           <div>
-            <div style="font-weight:600; color:#f1f5f9;">Mother's Identity Card</div>
+            <div style="font-weight:600; color:#f1f5f9;">Mother's Aadhaar Card</div>
             <div style="font-size:0.75rem; color:#94a3b8;" id="statusText_mother_aadhaar">Checking...</div>
           </div>
           <span style="color:#60a5fa;">›</span>
@@ -1052,7 +1052,7 @@
   <div id="flashcardModal" class="modal-overlay hidden" onclick="closeFlashcardOnBackdrop(event)">
     <div style="width:100%; max-width:420px; background:#111827; border:1px solid #334155; border-radius:20px; overflow:hidden;" onclick="event.stopPropagation()">
       <div style="padding:14px 18px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1f2937;">
-        <div id="flashcardModalTitle" style="font-weight:600; font-size:1rem; color:#f1f5f9;">Identity Card</div>
+        <div id="flashcardModalTitle" style="font-weight:600; font-size:1rem; color:#f1f5f9;">Aadhaar Card</div>
         <button class="icon-btn" style="width:32px; height:32px;" onclick="closeFlashcardModal()">✕</button>
       </div>
 
@@ -1224,7 +1224,7 @@
       return CryptoJS.AES.encrypt(jsonStr, pinToUse).toString();
     }
 
-    // ================= REALTIME LIVE METRICS (LIGHTWEIGHT - NO CHOKE) =================
+    // ================= REALTIME LIVE METRICS =================
     function initLiveMetrics() {
       const presenceRef = db.ref('active_presence');
       const myConnectionRef = presenceRef.push();
@@ -1242,15 +1242,14 @@
         document.getElementById('activeUsersCount').innerText = count > 0 ? count : 1;
       });
 
-      // Sirf lightweight public_meta sunna hai, poora vaults nahi!
       db.ref('public_meta/vault_count').on('value', (s) => {
         document.getElementById('totalUsersCount').innerText = s.val() || 1;
       });
     }
 
-    // ================= MASTER DOCUMENTS DEFINITION =================
+    // ================= MASTER DOCUMENTS DEFINITION (ORIGINAL RESTORED) =================
     const masterCollegeDocuments = [
-      { id: 'doc_aadhaar', title: 'Identity Card', desc: 'Forms, verification aur biometric verification ke liye.', category: 'Identity', isAadhaarCustom: true },
+      { id: 'doc_aadhaar', title: 'Aadhaar Card (Family Vault)', desc: 'Forms, verification aur biometric verification ke liye.', category: 'Identity', isAadhaarCustom: true },
       { id: 'doc_voter_pan', title: 'Voter ID / PAN Card / Driving License', desc: 'Secondary identity proof aur bank verification.', category: 'Identity', isSecondaryIdCustom: true },
       { id: 'doc_birth_cert', title: 'Birth Certificate', desc: 'Date of birth verify karne ke liye.', category: 'Identity' },
       { id: 'doc_10th', title: '10th (SSC) Marksheet & Passing Certificate', desc: 'Date of birth aur primary schooling proof.', category: 'Academic' },
@@ -1347,7 +1346,6 @@
       btn.disabled = true;
 
       try {
-        // Direct REST check to prevent any freeze
         const checkRes = await fetch(`https://docvault-d9ded-default-rtdb.firebaseio.com/vaults/${name}/profile.json`);
         const existing = await checkRes.json();
         if (existing) {
@@ -1399,8 +1397,6 @@
 
       try {
         let user = null;
-
-        // Step 1: Lightning Fast Direct Fetch (Never gets blocked by Brave Shields)
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 4500);
 
@@ -1409,15 +1405,11 @@
             signal: controller.signal
           });
           clearTimeout(timeoutId);
-          if (res.ok) {
-            user = await res.json();
-          }
+          if (res.ok) user = await res.json();
         } catch (fetchErr) {
-          // If fetch aborts or fails, fallback to SDK
-          console.warn("REST fetch timeout or failed, falling back to SDK listener...");
+          console.warn("REST fetch fallback to SDK...");
         }
 
-        // Step 2: Fallback to SDK if needed
         if (!user) {
           const snapshot = await db.ref(`vaults/${name}/profile`).once('value');
           user = snapshot.val();
@@ -1451,7 +1443,7 @@
         }
 
         userRawPin = pin;
-        loadUserVault(user);
+        await loadUserVault(user);
 
         const rules = evaluatePinRules(pin);
         if (!rules.len || !rules.num || !rules.special) {
@@ -1468,7 +1460,8 @@
       }
     }
 
-    function loadUserVault(user) {
+    // ================= LOAD VAULT WITH INSTANT DOCUMENTS FETCH =================
+    async function loadUserVault(user) {
       currentSessionUser = user;
       resetInactivityTimer();
 
@@ -1476,7 +1469,6 @@
         window.history.replaceState({}, document.title, window.location.pathname);
       }
 
-      // Hide auth screen and unhide dashboard smoothly
       document.getElementById('authScreen').classList.add('hidden');
       const dash = document.getElementById('vaultDashboard');
       dash.classList.remove('hidden');
@@ -1488,31 +1480,46 @@
 
       renderDocuments('All');
 
+      // 1. Direct Instant REST Fetch for User's Documents
+      try {
+        const docRes = await fetch(`https://docvault-d9ded-default-rtdb.firebaseio.com/vaults/${user.name}/documents.json`);
+        if (docRes.ok) {
+          const docsData = await docRes.json();
+          if (docsData) {
+            applyLoadedDocuments(docsData);
+          }
+        }
+      } catch (err) {
+        console.warn("Direct doc fetch error, relying on realtime listener:", err);
+      }
+
+      // 2. Realtime listener for live updates
       db.ref(`vaults/${user.name}/documents`).on('value', (snap) => {
         const allDocs = snap.val() || {};
-        activeKeysList = Object.keys(allDocs);
-
-        if (allDocs['doc_signature']) {
-          const rawSig = allDocs['doc_signature'].enc || allDocs['doc_signature'];
-          decryptedStore['doc_signature'] = universalDecrypt(rawSig);
-          restoreSignatureAndPhoto();
-        }
-        if (allDocs['doc_photo']) {
-          const rawPhoto = allDocs['doc_photo'].enc || allDocs['doc_photo'];
-          decryptedStore['doc_photo'] = universalDecrypt(rawPhoto);
-          restoreSignatureAndPhoto();
-        }
-
-        renderDocuments('All');
-        updateAllCustomCardStatusIndicators();
-
-        if (allDocs['my_aadhaar'] && !decryptedStore['my_aadhaar']) {
-          setTimeout(() => {
-            const rawAadhaar = allDocs['my_aadhaar'].enc || allDocs['my_aadhaar'];
-            decryptedStore['my_aadhaar'] = universalDecrypt(rawAadhaar);
-          }, 80);
-        }
+        applyLoadedDocuments(allDocs);
       });
+    }
+
+    function applyLoadedDocuments(allDocs) {
+      activeKeysList = Object.keys(allDocs);
+
+      if (allDocs['doc_signature']) {
+        const rawSig = allDocs['doc_signature'].enc || allDocs['doc_signature'];
+        decryptedStore['doc_signature'] = universalDecrypt(rawSig);
+      }
+      if (allDocs['doc_photo']) {
+        const rawPhoto = allDocs['doc_photo'].enc || allDocs['doc_photo'];
+        decryptedStore['doc_photo'] = universalDecrypt(rawPhoto);
+      }
+
+      restoreSignatureAndPhoto();
+      renderDocuments('All');
+      updateAllCustomCardStatusIndicators();
+
+      if (allDocs['my_aadhaar'] && !decryptedStore['my_aadhaar']) {
+        const rawAadhaar = allDocs['my_aadhaar'].enc || allDocs['my_aadhaar'];
+        decryptedStore['my_aadhaar'] = universalDecrypt(rawAadhaar);
+      }
     }
 
     // ================= MIGRATION PIPELINE FOR OLD USERS =================
@@ -1571,6 +1578,21 @@
 
     async function fetchSpecificDoc(docId) {
       if (decryptedStore[docId]) return decryptedStore[docId];
+
+      try {
+        const res = await fetch(`https://docvault-d9ded-default-rtdb.firebaseio.com/vaults/${currentSessionUser.name}/documents/${docId}.json`);
+        if (res.ok) {
+          const item = await res.json();
+          if (item) {
+            const raw = item.enc || item;
+            const dec = universalDecrypt(raw);
+            if (dec) {
+              decryptedStore[docId] = dec;
+              return dec;
+            }
+          }
+        }
+      } catch (e) {}
 
       const snap = await db.ref(`vaults/${currentSessionUser.name}/documents/${docId}`).once('value');
       const item = snap.val();
@@ -1720,7 +1742,7 @@
 
     // ================= FLASHCARD SYSTEM =================
     let activeCardTarget = 'my_aadhaar';
-    let activeCardLabel = 'Identity Card';
+    let activeCardLabel = 'My Aadhaar Card';
     let currentSideTarget = 'front';
 
     function openAadhaarFamilyModal() {
