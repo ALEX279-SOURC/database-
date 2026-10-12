@@ -626,7 +626,7 @@
       border-radius: 8px;
     }
 
-    /* Family Aadhaar Modal */
+    /* Family Document Modal */
     .family-tab-option {
       background: #1e293b;
       border: 1px solid #334155;
@@ -969,35 +969,35 @@
     </div>
   </div>
 
-  <!-- Family Aadhaar Modal -->
+  <!-- Family Documents Modal -->
   <div id="aadhaarFamilyModal" class="modal-overlay hidden" onclick="closeAadhaarModalOnBackdrop(event)">
     <div class="modal-qr-card" style="max-width:380px; text-align:left; background:#111827; border-radius:22px; padding:20px; border:1px solid #334155;" onclick="event.stopPropagation()">
       <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div style="font-weight:700; font-size:1.15rem; color:#f8fafc;">Family Aadhaar Vault</div>
+        <div style="font-weight:700; font-size:1.15rem; color:#f8fafc;">Family Identity Vault</div>
         <button class="icon-btn" style="width:32px; height:32px;" onclick="closeAadhaarFamilyModal()">✕</button>
       </div>
-      <p style="font-size:0.8rem; color:#94a3b8; margin: 4px 0 12px 0;">Select which Aadhaar Card you want to manage:</p>
+      <p style="font-size:0.8rem; color:#94a3b8; margin: 4px 0 12px 0;">Select which identity card you want to manage:</p>
 
       <div style="display:flex; flex-direction:column; gap:10px;">
-        <div class="family-tab-option" onclick="openFlashcardManager('my_aadhaar', 'My Aadhaar Card')">
+        <div class="family-tab-option" onclick="openFlashcardManager('my_aadhaar', 'My Primary Identity Card')">
           <div>
-            <div style="font-weight:600; color:#f1f5f9;">My Aadhaar Card</div>
+            <div style="font-weight:600; color:#f1f5f9;">My Primary Identity Card</div>
             <div style="font-size:0.75rem; color:#94a3b8;" id="statusText_my_aadhaar">Checking...</div>
           </div>
           <span style="color:#60a5fa;">›</span>
         </div>
 
-        <div class="family-tab-option" onclick="openFlashcardManager('father_aadhaar', 'Father\'s Aadhaar Card')">
+        <div class="family-tab-option" onclick="openFlashcardManager('father_aadhaar', 'Father\'s Identity Card')">
           <div>
-            <div style="font-weight:600; color:#f1f5f9;">Father's Aadhaar Card</div>
+            <div style="font-weight:600; color:#f1f5f9;">Father's Identity Card</div>
             <div style="font-size:0.75rem; color:#94a3b8;" id="statusText_father_aadhaar">Checking...</div>
           </div>
           <span style="color:#60a5fa;">›</span>
         </div>
 
-        <div class="family-tab-option" onclick="openFlashcardManager('mother_aadhaar', 'Mother\'s Aadhaar Card')">
+        <div class="family-tab-option" onclick="openFlashcardManager('mother_aadhaar', 'Mother\'s Identity Card')">
           <div>
-            <div style="font-weight:600; color:#f1f5f9;">Mother's Aadhaar Card</div>
+            <div style="font-weight:600; color:#f1f5f9;">Mother's Identity Card</div>
             <div style="font-size:0.75rem; color:#94a3b8;" id="statusText_mother_aadhaar">Checking...</div>
           </div>
           <span style="color:#60a5fa;">›</span>
@@ -1051,7 +1051,7 @@
   <div id="flashcardModal" class="modal-overlay hidden" onclick="closeFlashcardOnBackdrop(event)">
     <div style="width:100%; max-width:420px; background:#111827; border:1px solid #334155; border-radius:20px; overflow:hidden;" onclick="event.stopPropagation()">
       <div style="padding:14px 18px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1f2937;">
-        <div id="flashcardModalTitle" style="font-weight:600; font-size:1rem; color:#f1f5f9;">Aadhaar Card</div>
+        <div id="flashcardModalTitle" style="font-weight:600; font-size:1rem; color:#f1f5f9;">Identity Card</div>
         <button class="icon-btn" style="width:32px; height:32px;" onclick="closeFlashcardModal()">✕</button>
       </div>
 
@@ -1186,18 +1186,16 @@
       }
     }
 
-    // ================= CLIENT-SIDE SMART IMAGE COMPRESSOR =================
-    // Capping at 1800px width/height & ~350-400KB target preserving 100% sharp readability
+    // Smart Canvas Image Compression (~350KB target, 1800px max)
     function compressImageFile(file, maxDimension = 1800, quality = 0.85) {
       return new Promise((resolve) => {
-        if (!file.type.startsWith('image/')) {
+        if (!file.type || !file.type.startsWith('image/')) {
           const reader = new FileReader();
           reader.onload = (e) => resolve(e.target.result);
           reader.readAsDataURL(file);
           return;
         }
 
-        // Agar pehle se hi 380 KB se choti file hai toh compress karne ki zaroorat nahi
         if (file.size <= 380 * 1024) {
           const reader = new FileReader();
           reader.onload = (e) => resolve(e.target.result);
@@ -1237,7 +1235,7 @@
       });
     }
 
-    // ================= ROBUST OMNI-KEY DECRYPTOR =================
+    // Robust Multi-Key Decryptor
     function universalDecrypt(cipherPayload) {
       if (!cipherPayload) return null;
 
@@ -1312,7 +1310,7 @@
     }
 
     const masterCollegeDocuments = [
-      { id: 'doc_aadhaar', title: 'Aadhaar Card (Family Vault)', desc: 'Forms, verification aur biometric verification ke liye.', category: 'Identity', isAadhaarCustom: true },
+      { id: 'doc_aadhaar', title: 'Identity Card (Family Vault)', desc: 'Forms, verification aur biometric verification ke liye.', category: 'Identity', isAadhaarCustom: true },
       { id: 'doc_voter_pan', title: 'Voter ID / PAN Card / Driving License', desc: 'Secondary identity proof aur bank verification.', category: 'Identity', isSecondaryIdCustom: true },
       { id: 'doc_birth_cert', title: 'Birth Certificate', desc: 'Date of birth verify karne ke liye.', category: 'Identity' },
       { id: 'doc_10th', title: '10th (SSC) Marksheet & Passing Certificate', desc: 'Date of birth aur primary schooling proof.', category: 'Academic' },
@@ -1444,7 +1442,6 @@
       }
     }
 
-    // ================= BULLETPROOF LOGIN & PATH FINDER =================
     async function handleLogin() {
       const btn = document.getElementById('btnLoginAction');
       const rawInput = document.getElementById('loginName').value.trim();
@@ -1460,7 +1457,6 @@
 
       try {
         const cleaned = rawInput.toLowerCase().replace(/[^a-z0-9_]/g, '');
-        
         let foundPath = "";
         let user = null;
 
@@ -1520,7 +1516,6 @@
       }
     }
 
-    // ================= INSTANT DOCUMENT RECOVERY & UI RENDER =================
     async function loadUserVault(user, pathKey) {
       currentSessionUser = user;
       resolvedUserKey = pathKey;
@@ -1542,7 +1537,7 @@
       renderDocuments('All');
 
       const docPath = `vaults/${pathKey}/documents`;
-      
+
       const applyDocs = (docsTree) => {
         if (!docsTree) return;
         activeKeysList = Object.keys(docsTree);
@@ -1571,6 +1566,7 @@
         console.error("Direct fetch error:", e);
       }
 
+      db.ref(docPath).off();
       db.ref(docPath).on('value', (snap) => {
         if (snap.exists()) {
           applyDocs(snap.val());
@@ -1781,7 +1777,7 @@
 
     // ================= FLASHCARD SYSTEM =================
     let activeCardTarget = 'my_aadhaar';
-    let activeCardLabel = 'My Aadhaar Card';
+    let activeCardLabel = 'My Identity Card';
     let currentSideTarget = 'front';
 
     function openAadhaarFamilyModal() {
@@ -1907,7 +1903,6 @@
       const file = event.target.files[0];
       if (!file || !resolvedUserKey || !userRawPin) return;
 
-      // Smart compression applied before encrypting
       const base64Data = await compressImageFile(file, 1800, 0.85);
 
       let cur = decryptedStore[activeCardTarget] || {};
@@ -1916,16 +1911,21 @@
       cur[currentSideTarget] = base64Data;
       cur.updatedAt = new Date().toLocaleDateString();
 
-      const encryptedBlob = encryptData(cur);
-      await db.ref(`vaults/${resolvedUserKey}/documents/${activeCardTarget}`).set({
-        enc: encryptedBlob,
-        updatedAt: new Date().toLocaleDateString()
-      });
-
       decryptedStore[activeCardTarget] = cur;
       if (!activeKeysList.includes(activeCardTarget)) activeKeysList.push(activeCardTarget);
       renderFlashcardView();
       updateAllCustomCardStatusIndicators();
+
+      try {
+        const encryptedBlob = encryptData(cur);
+        await db.ref(`vaults/${resolvedUserKey}/documents/${activeCardTarget}`).set({
+          enc: encryptedBlob,
+          updatedAt: new Date().toLocaleDateString()
+        });
+      } catch(err) {
+        console.error("Side upload error:", err);
+      }
+
       event.target.value = '';
     }
 
@@ -2025,7 +2025,6 @@
       const file = event.target.files[0];
       if (!file || !currentUploadTargetId || !resolvedUserKey || !userRawPin) return;
 
-      // Smart compression applied
       const base64Data = await compressImageFile(file, 1800, 0.85);
 
       const fileData = {
@@ -2035,19 +2034,30 @@
         updatedAt: new Date().toLocaleDateString()
       };
 
-      const encryptedBlob = encryptData(fileData);
-      await db.ref(`vaults/${resolvedUserKey}/documents/${currentUploadTargetId}`).set({
-        enc: encryptedBlob,
-        updatedAt: new Date().toLocaleDateString()
-      });
-
+      // 1. Instant optimistic local UI update
       decryptedStore[currentUploadTargetId] = fileData;
-      if (!activeKeysList.includes(currentUploadTargetId)) activeKeysList.push(currentUploadTargetId);
-      
-      renderDocuments('All');
+      if (!activeKeysList.includes(currentUploadTargetId)) {
+        activeKeysList.push(currentUploadTargetId);
+      }
+
       if (currentUploadTargetId === 'doc_signature' || currentUploadTargetId === 'doc_photo') {
         restoreSignatureAndPhoto();
       }
+      renderDocuments('All');
+      updateAllCustomCardStatusIndicators();
+
+      // 2. Encrypt & background write to Firebase
+      try {
+        const encryptedBlob = encryptData(fileData);
+        await db.ref(`vaults/${resolvedUserKey}/documents/${currentUploadTargetId}`).set({
+          enc: encryptedBlob,
+          updatedAt: new Date().toLocaleDateString()
+        });
+      } catch (err) {
+        console.error("Upload error:", err);
+        alert("Upload failed: " + err.message);
+      }
+
       event.target.value = '';
     }
 
@@ -2117,28 +2127,46 @@
     }
 
     function restoreSignatureAndPhoto() {
-      let sign = decryptedStore['doc_signature'];
+      const sign = decryptedStore['doc_signature'];
+      const sigBox = document.getElementById('signatureBox');
+      const sigDownBtn = document.getElementById('downloadSignBtn');
+
       if (sign) {
-        if (typeof sign === 'string') sign = universalDecrypt(sign) || sign;
-        const signUrl = typeof sign === 'string' ? sign : sign.dataUrl;
-        if (signUrl) {
-          document.getElementById('signatureBox').innerHTML = `<img src="${signUrl}">`;
-          document.getElementById('downloadSignBtn').href = signUrl;
+        let signUrl = "";
+        if (typeof sign === 'string') {
+          const dec = universalDecrypt(sign);
+          signUrl = (dec && dec.dataUrl) ? dec.dataUrl : (dec || sign);
+        } else {
+          signUrl = sign.dataUrl || sign;
+        }
+
+        if (signUrl && typeof signUrl === 'string' && signUrl.startsWith('data:')) {
+          sigBox.innerHTML = `<img src="${signUrl}" style="max-height:85px; max-width:100%; object-fit:contain;">`;
+          if (sigDownBtn) sigDownBtn.href = signUrl;
         }
       } else {
-        document.getElementById('signatureBox').innerHTML = `<span style="font-size:1.05rem; color:#64748b;">No signature uploaded</span>`;
+        sigBox.innerHTML = `<span style="font-size:1.05rem; color:#64748b;">No signature uploaded</span>`;
       }
 
-      let photo = decryptedStore['doc_photo'];
+      const photo = decryptedStore['doc_photo'];
+      const photoBox = document.getElementById('photoBox');
+      const photoDownBtn = document.getElementById('downloadPhotoBtn');
+
       if (photo) {
-        if (typeof photo === 'string') photo = universalDecrypt(photo) || photo;
-        const photoUrl = typeof photo === 'string' ? photo : photo.dataUrl;
-        if (photoUrl) {
-          document.getElementById('photoBox').innerHTML = `<img src="${photoUrl}" style="width:100%; height:100%; object-fit:cover;">`;
-          document.getElementById('downloadPhotoBtn').href = photoUrl;
+        let photoUrl = "";
+        if (typeof photo === 'string') {
+          const dec = universalDecrypt(photo);
+          photoUrl = (dec && dec.dataUrl) ? dec.dataUrl : (dec || photo);
+        } else {
+          photoUrl = photo.dataUrl || photo;
+        }
+
+        if (photoUrl && typeof photoUrl === 'string' && photoUrl.startsWith('data:')) {
+          photoBox.innerHTML = `<img src="${photoUrl}" style="width:100%; height:100%; object-fit:cover;">`;
+          if (photoDownBtn) photoDownBtn.href = photoUrl;
         }
       } else {
-        document.getElementById('photoBox').innerHTML = `Photo`;
+        photoBox.innerHTML = `Photo`;
       }
     }
 
