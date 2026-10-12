@@ -774,7 +774,7 @@
       </div>
     </div>
 
-    <!-- Vault Dashboard (Corrected display class) -->
+    <!-- Vault Dashboard -->
     <div id="vaultDashboard" class="hidden">
       
       <div class="header">
@@ -1224,7 +1224,7 @@
       return CryptoJS.AES.encrypt(jsonStr, pinToUse).toString();
     }
 
-    // ================= REALTIME LIVE METRICS =================
+    // ================= REALTIME LIVE METRICS (LIGHTWEIGHT - NO CHOKE) =================
     function initLiveMetrics() {
       const presenceRef = db.ref('active_presence');
       const myConnectionRef = presenceRef.push();
@@ -1242,20 +1242,9 @@
         document.getElementById('activeUsersCount').innerText = count > 0 ? count : 1;
       });
 
-      db.ref('vaults').on('value', (snap) => {
-        if (snap.exists()) {
-          const total = snap.numChildren();
-          document.getElementById('totalUsersCount').innerText = total;
-          db.ref('public_meta/vault_count').set(total);
-        } else {
-          db.ref('public_meta/vault_count').once('value', (s) => {
-            document.getElementById('totalUsersCount').innerText = s.val() || 1;
-          });
-        }
-      }, () => {
-        db.ref('public_meta/vault_count').on('value', (s) => {
-          document.getElementById('totalUsersCount').innerText = s.val() || 1;
-        });
+      // Sirf lightweight public_meta sunna hai, poora vaults nahi!
+      db.ref('public_meta/vault_count').on('value', (s) => {
+        document.getElementById('totalUsersCount').innerText = s.val() || 1;
       });
     }
 
@@ -1358,8 +1347,10 @@
       btn.disabled = true;
 
       try {
-        const snapshot = await db.ref(`vaults/${name}/profile`).once('value');
-        if (snapshot.exists()) {
+        // Direct REST check to prevent any freeze
+        const checkRes = await fetch(`https://docvault-d9ded-default-rtdb.firebaseio.com/vaults/${name}/profile.json`);
+        const existing = await checkRes.json();
+        if (existing) {
           alert("This username already exists! Click 'Access Data' to login.");
           btn.innerText = "Create Encrypted Vault";
           btn.disabled = false;
@@ -1391,7 +1382,7 @@
       }
     }
 
-    // ================= FIXED ROBUST LOGIN FUNCTION =================
+    // ================= UNSTOPPABLE FAST LOGIN ENGINE =================
     async function handleLogin() {
       const btn = document.getElementById('btnLoginAction');
       const rawNameInput = document.getElementById('loginName').value.trim();
@@ -1407,8 +1398,30 @@
       btn.disabled = true;
 
       try {
-        const snapshot = await db.ref('vaults/' + name + '/profile').once('value');
-        const user = snapshot.val();
+        let user = null;
+
+        // Step 1: Lightning Fast Direct Fetch (Never gets blocked by Brave Shields)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4500);
+
+        try {
+          const res = await fetch(`https://docvault-d9ded-default-rtdb.firebaseio.com/vaults/${name}/profile.json`, {
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+          if (res.ok) {
+            user = await res.json();
+          }
+        } catch (fetchErr) {
+          // If fetch aborts or fails, fallback to SDK
+          console.warn("REST fetch timeout or failed, falling back to SDK listener...");
+        }
+
+        // Step 2: Fallback to SDK if needed
+        if (!user) {
+          const snapshot = await db.ref(`vaults/${name}/profile`).once('value');
+          user = snapshot.val();
+        }
 
         if (!user) {
           alert("No vault found for username: " + name);
