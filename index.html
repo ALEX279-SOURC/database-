@@ -765,7 +765,7 @@
         <button id="btnCreateAction" class="btn-primary" style="margin-top:8px;" onclick="handleRegister()" disabled style="opacity:0.6;">Create Encrypted Vault</button>
       </div>
 
-      <!-- Security Advisory Tip (Login / Register Screen) -->
+      <!-- Security Advisory Tip -->
       <div style="background: rgba(30, 41, 59, 0.6); border: 1px dashed #475569; border-radius: 12px; padding: 10px 12px; text-align: left; margin-top: 4px; display: flex; gap: 8px; align-items: flex-start;">
         <span style="font-size: 1rem; line-height: 1.2;">⚠️</span>
         <div style="font-size: 0.72rem; color: #94a3b8; line-height: 1.35;">
@@ -774,8 +774,8 @@
       </div>
     </div>
 
-    <!-- Vault Dashboard -->
-    <div id="vaultDashboard" class="hidden" style="display:flex; flex-direction:column; gap:16px;">
+    <!-- Vault Dashboard (Corrected display class) -->
+    <div id="vaultDashboard" class="hidden">
       
       <div class="header">
         <div class="brand-group">
@@ -792,7 +792,6 @@
         </button>
       </div>
 
-      <!-- Security Status Banner with Live Tip -->
       <div class="security-status-banner">
         <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
           <span>🛡 Zero-Knowledge Active (3 min auto-lock)</span>
@@ -803,7 +802,7 @@
         </div>
       </div>
 
-      <div class="profile-card">
+      <div class="profile-card" style="margin-top: 14px;">
         <div class="user-info">
           <div class="avatar" id="avatarInitial">U</div>
           <div>
@@ -824,7 +823,7 @@
         </div>
       </div>
 
-      <div class="tabs-slider">
+      <div class="tabs-slider" style="margin-top: 14px;">
         <div class="tab-pill active" onclick="filterCategory('All', this)">All Records</div>
         <div class="tab-pill" onclick="filterCategory('Identity', this)">Identity & Personal</div>
         <div class="tab-pill" onclick="filterCategory('Academic', this)">Academic Records</div>
@@ -834,7 +833,7 @@
       </div>
 
       <!-- Digital Signature Section -->
-      <div class="item-card">
+      <div class="item-card" style="margin-top: 14px;">
         <div class="item-card-header">
           <div class="item-card-title">Digital Signature</div>
           <button class="card-action-btn primary" style="flex:none; padding:4px 10px;" onclick="triggerDocUpload('doc_signature')">Update</button>
@@ -849,7 +848,7 @@
       </div>
 
       <!-- Passport Photo Section -->
-      <div class="item-card">
+      <div class="item-card" style="margin-top: 14px;">
         <div class="item-card-header">
           <div class="item-card-title">Passport Size Photographs</div>
           <button class="card-action-btn primary" style="flex:none; padding:4px 10px;" onclick="triggerDocUpload('doc_photo')">Update</button>
@@ -870,7 +869,7 @@
       </div>
 
       <!-- Documents List Container -->
-      <div id="documentsList" style="display:flex; flex-direction:column; gap:12px;"></div>
+      <div id="documentsList" style="display:flex; flex-direction:column; gap:12px; margin-top:14px;"></div>
     </div>
 
   </div>
@@ -893,7 +892,7 @@
   <input type="file" id="universalFileInput" class="hidden" accept="image/*,application/pdf" onchange="handleUniversalFileUpload(event)">
   <input type="file" id="sideFileInput" class="hidden" accept="image/*" onchange="handleSideFileUpload(event)">
 
-  <!-- ================= MANDATORY SECURITY UPGRADE MODAL (FOR OLD USERS) ================= -->
+  <!-- MANDATORY SECURITY UPGRADE MODAL -->
   <div id="pinUpgradeModal" class="modal-overlay hidden" style="z-index:99999;">
     <div class="modal-viewer-card" style="height:auto; max-width:390px; padding:22px; background:#111827; border:1px solid #38bdf8;" onclick="event.stopPropagation()">
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
@@ -908,7 +907,6 @@
       <label style="font-size:0.75rem; color:#cbd5e1; font-weight:600; margin-bottom:4px; display:block;">Naya 8+ Character PIN Set Karein:</label>
       <input type="password" id="newMigrationPin" class="input-field" placeholder="e.g. Vault@2026" oninput="checkMigrationPinStrength(this.value)">
 
-      <!-- Live Dynamic Rules Box -->
       <div style="margin-top:8px; background:#0b1120; padding:10px; border-radius:10px; border:1px solid #1f2937;">
         <div id="migRuleLen" class="rule-item">✖ Minimum 8 characters lamba hona chahiye</div>
         <div id="migRuleNum" class="rule-item">✖ Kam se kam 1 Number (0-9) hona chahiye</div>
@@ -1383,7 +1381,7 @@
         db.ref('public_meta/vault_count').transaction((cur) => (cur || 0) + 1);
 
         alert("Encrypted Vault created successfully with 8+ chars security!");
-        await loadUserVault(profileData);
+        loadUserVault(profileData);
       } catch (err) {
         console.error("Vault Creation Error:", err);
         alert("Database error: " + (err.message || "Failed to create account"));
@@ -1393,10 +1391,11 @@
       }
     }
 
-    // ================= STRICT AUTHENTICATION LOGIN =================
+    // ================= FIXED ROBUST LOGIN FUNCTION =================
     async function handleLogin() {
       const btn = document.getElementById('btnLoginAction');
-      const name = document.getElementById('loginName').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+      const rawNameInput = document.getElementById('loginName').value.trim();
+      const name = rawNameInput.toLowerCase().replace(/[^a-z0-9_]/g, '');
       const pin = document.getElementById('loginPin').value.trim();
 
       if (!name || !pin) {
@@ -1408,17 +1407,17 @@
       btn.disabled = true;
 
       try {
-        const snapshot = await db.ref(`vaults/${name}/profile`).once('value');
+        const snapshot = await db.ref('vaults/' + name + '/profile').once('value');
         const user = snapshot.val();
 
         if (!user) {
-          alert("No vault found for this username on cloud.");
+          alert("No vault found for username: " + name);
           btn.innerText = "Unlock & Decrypt";
           btn.disabled = false;
           return;
         }
 
-        // Strict Hash Verification
+        // Exact Pin Hash verification
         const inputHash = CryptoJS.SHA256(pin + "_salt_" + name).toString();
         const legacyHashPlain = CryptoJS.SHA256(pin).toString();
 
@@ -1439,9 +1438,8 @@
         }
 
         userRawPin = pin;
-        await loadUserVault(user);
+        loadUserVault(user);
 
-        // Sirf tab upgrade modal show ho jab pin rules meet na ho rahe hon
         const rules = evaluatePinRules(pin);
         if (!rules.len || !rules.num || !rules.special) {
           setTimeout(() => {
@@ -1450,14 +1448,14 @@
         }
       } catch (err) {
         console.error("Login Error:", err);
-        alert("Connection error: " + (err.message || "Failed to reach Firebase"));
+        alert("Connection error: " + (err.message || "Network issue"));
       } finally {
         btn.innerText = "Unlock & Decrypt";
         btn.disabled = false;
       }
     }
 
-    async function loadUserVault(user) {
+    function loadUserVault(user) {
       currentSessionUser = user;
       resetInactivityTimer();
 
@@ -1465,8 +1463,11 @@
         window.history.replaceState({}, document.title, window.location.pathname);
       }
 
+      // Hide auth screen and unhide dashboard smoothly
       document.getElementById('authScreen').classList.add('hidden');
-      document.getElementById('vaultDashboard').classList.remove('hidden');
+      const dash = document.getElementById('vaultDashboard');
+      dash.classList.remove('hidden');
+      dash.style.display = 'block';
 
       document.getElementById('userNameDisplay').innerText = user.name.toUpperCase();
       document.getElementById('userCourseDisplay').innerText = user.course || 'Student';
@@ -1501,7 +1502,7 @@
       });
     }
 
-    // ================= FIXED MIGRATION PIPELINE FOR OLD USERS =================
+    // ================= MIGRATION PIPELINE FOR OLD USERS =================
     async function executePinMigration() {
       const newPin = document.getElementById("newMigrationPin").value.trim();
       const btn = document.getElementById("btnExecuteMigration");
@@ -1520,7 +1521,6 @@
         const snap = await vaultRef.child('documents').once('value');
         const docsTree = snap.val() || {};
 
-        // 1. Re-encrypt all existing documents with new PIN
         const reEncryptedDocs = {};
         for (const docKey of Object.keys(docsTree)) {
           const rawPayload = docsTree[docKey].enc || docsTree[docKey];
@@ -1535,12 +1535,10 @@
           }
         }
 
-        // 2. Documents update dispatch
         if (Object.keys(reEncryptedDocs).length > 0) {
           await vaultRef.child('documents').update(reEncryptedDocs);
         }
 
-        // 3. Compute and update new PIN Hash
         const newPinHash = CryptoJS.SHA256(newPin + "_salt_" + currentSessionUser.name).toString();
         await vaultRef.child('profile').update({
           pinHash: newPinHash
@@ -1587,7 +1585,10 @@
       sanitizeDOMPreviews();
 
       document.getElementById('loginPin').value = '';
-      document.getElementById('vaultDashboard').classList.add('hidden');
+      const dash = document.getElementById('vaultDashboard');
+      dash.classList.add('hidden');
+      dash.style.display = 'none';
+
       document.getElementById('authScreen').classList.remove('hidden');
       document.getElementById('loginNameFieldContainer').style.display = 'block';
       document.getElementById('authToggleGroup').style.display = 'flex';
@@ -1704,7 +1705,7 @@
       renderDocuments(cat);
     }
 
-    // ================= FLASHCARD SYSTEM WITH SHIMMER LOADER =================
+    // ================= FLASHCARD SYSTEM =================
     let activeCardTarget = 'my_aadhaar';
     let activeCardLabel = 'Identity Card';
     let currentSideTarget = 'front';
