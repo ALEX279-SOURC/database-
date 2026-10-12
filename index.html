@@ -626,7 +626,7 @@
       border-radius: 8px;
     }
 
-    /* Flashcard UI Frame */
+    /* Family Aadhaar Modal */
     .family-tab-option {
       background: #1e293b;
       border: 1px solid #334155;
@@ -751,7 +751,6 @@
           <label>Set Master Passphrase / PIN (8+ Characters)</label>
           <input type="password" id="regPin" class="input-field" placeholder="e.g. Vault@2026" oninput="checkRegisterPinStrength(this.value)">
           
-          <!-- Live Validation Hints -->
           <div style="margin-top:6px; background:#0b1120; padding:8px 10px; border-radius:8px; border:1px solid #1f2937;">
             <div id="regRuleLen" class="rule-item">✖ Minimum 8 characters lamba hona chahiye</div>
             <div id="regRuleNum" class="rule-item">✖ Kam se kam 1 Number (0-9) zaroori hai</div>
@@ -970,7 +969,7 @@
     </div>
   </div>
 
-  <!-- Family Aadhaar Modal (Restored Original Names) -->
+  <!-- Family Aadhaar Modal -->
   <div id="aadhaarFamilyModal" class="modal-overlay hidden" onclick="closeAadhaarModalOnBackdrop(event)">
     <div class="modal-qr-card" style="max-width:380px; text-align:left; background:#111827; border-radius:22px; padding:20px; border:1px solid #334155;" onclick="event.stopPropagation()">
       <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -1122,7 +1121,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // ================= ENCRYPTION & VALIDATION LOGIC =================
+    // ================= ENCRYPTION & DECRYPTION LOGIC =================
     let userRawPin = "";
     let activeKeysList = [];
     let decryptedStore = {};
@@ -1187,19 +1186,24 @@
       }
     }
 
-    function universalDecrypt(cipherText) {
-      if (!cipherText || typeof cipherText !== 'string') return null;
-      if (!cipherText.startsWith("U2FsdGVkX1")) return cipherText;
+    function universalDecrypt(cipherPayload) {
+      if (!cipherPayload) return null;
+      let textToDecrypt = typeof cipherPayload === 'object' ? (cipherPayload.enc || cipherPayload.dataUrl || '') : cipherPayload;
+      if (typeof textToDecrypt !== 'string') return textToDecrypt;
+      if (!textToDecrypt.startsWith("U2FsdGVkX1")) {
+        try { return JSON.parse(textToDecrypt); } catch(e) { return textToDecrypt; }
+      }
 
+      const uName = (currentSessionUser?.name || "").toLowerCase();
       const keysToTry = [
         userRawPin,
         CryptoJS.SHA256(userRawPin).toString(),
-        CryptoJS.SHA256(userRawPin + "_salt_" + (currentSessionUser?.name || "").toLowerCase()).toString(),
-        CryptoJS.SHA256(userRawPin + "_pepper_salt_" + (currentSessionUser?.name || "").toLowerCase()).toString()
+        CryptoJS.SHA256(userRawPin + "_salt_" + uName).toString(),
+        CryptoJS.SHA256(userRawPin + "_pepper_salt_" + uName).toString()
       ];
 
       try {
-        const salt = CryptoJS.enc.Utf8.parse("docvault_salt_" + (currentSessionUser?.name || "").toLowerCase());
+        const salt = CryptoJS.enc.Utf8.parse("docvault_salt_" + uName);
         const k1 = CryptoJS.PBKDF2(userRawPin, salt, { keySize: 256/32, iterations: 15000, hasher: CryptoJS.algo.SHA256 }).toString(CryptoJS.enc.Hex);
         const k2 = CryptoJS.PBKDF2(userRawPin, salt, { keySize: 256/32, iterations: 1000, hasher: CryptoJS.algo.SHA256 }).toString(CryptoJS.enc.Hex);
         keysToTry.push(k1, k2);
@@ -1208,7 +1212,7 @@
       for (let key of keysToTry) {
         if (!key) continue;
         try {
-          const bytes = CryptoJS.AES.decrypt(cipherText, key);
+          const bytes = CryptoJS.AES.decrypt(textToDecrypt, key);
           const decryptedStr = bytes.toString(CryptoJS.enc.Utf8);
           if (decryptedStr && decryptedStr.length > 0) {
             try { return JSON.parse(decryptedStr); } catch(jsonErr) { return decryptedStr; }
@@ -1224,7 +1228,7 @@
       return CryptoJS.AES.encrypt(jsonStr, pinToUse).toString();
     }
 
-    // ================= REALTIME LIVE METRICS =================
+    // ================= REALTIME METRICS =================
     function initLiveMetrics() {
       const presenceRef = db.ref('active_presence');
       const myConnectionRef = presenceRef.push();
@@ -1247,7 +1251,7 @@
       });
     }
 
-    // ================= MASTER DOCUMENTS DEFINITION (ORIGINAL RESTORED) =================
+    // ================= MASTER DOCUMENTS DEFINITION =================
     const masterCollegeDocuments = [
       { id: 'doc_aadhaar', title: 'Aadhaar Card (Family Vault)', desc: 'Forms, verification aur biometric verification ke liye.', category: 'Identity', isAadhaarCustom: true },
       { id: 'doc_voter_pan', title: 'Voter ID / PAN Card / Driving License', desc: 'Secondary identity proof aur bank verification.', category: 'Identity', isSecondaryIdCustom: true },
@@ -1327,7 +1331,8 @@
 
     async function handleRegister() {
       const btn = document.getElementById('btnCreateAction');
-      const name = document.getElementById('regName').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+      const rawName = document.getElementById('regName').value.trim();
+      const name = rawName.toLowerCase().replace(/[^a-z0-9_]/g, '');
       const course = document.getElementById('regCourse').value.trim() || 'Student';
       const pin = document.getElementById('regPin').value.trim();
       const pinConfirm = document.getElementById('regPinConfirm').value.trim();
@@ -1346,9 +1351,8 @@
       btn.disabled = true;
 
       try {
-        const checkRes = await fetch(`https://docvault-d9ded-default-rtdb.firebaseio.com/vaults/${name}/profile.json`);
-        const existing = await checkRes.json();
-        if (existing) {
+        const snap = await db.ref(`vaults/${name}/profile`).once('value');
+        if (snap.exists()) {
           alert("This username already exists! Click 'Access Data' to login.");
           btn.innerText = "Create Encrypted Vault";
           btn.disabled = false;
@@ -1370,7 +1374,7 @@
         db.ref('public_meta/vault_count').transaction((cur) => (cur || 0) + 1);
 
         alert("Encrypted Vault created successfully with 8+ chars security!");
-        loadUserVault(profileData);
+        await loadUserVault(profileData);
       } catch (err) {
         console.error("Vault Creation Error:", err);
         alert("Database error: " + (err.message || "Failed to create account"));
@@ -1380,7 +1384,7 @@
       }
     }
 
-    // ================= UNSTOPPABLE FAST LOGIN ENGINE =================
+    // ================= SECURE VERIFIED LOGIN =================
     async function handleLogin() {
       const btn = document.getElementById('btnLoginAction');
       const rawNameInput = document.getElementById('loginName').value.trim();
@@ -1396,23 +1400,13 @@
       btn.disabled = true;
 
       try {
-        let user = null;
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4500);
+        // Try lowercase path first, then raw path
+        let snap = await db.ref(`vaults/${name}/profile`).once('value');
+        let user = snap.val();
 
-        try {
-          const res = await fetch(`https://docvault-d9ded-default-rtdb.firebaseio.com/vaults/${name}/profile.json`, {
-            signal: controller.signal
-          });
-          clearTimeout(timeoutId);
-          if (res.ok) user = await res.json();
-        } catch (fetchErr) {
-          console.warn("REST fetch fallback to SDK...");
-        }
-
-        if (!user) {
-          const snapshot = await db.ref(`vaults/${name}/profile`).once('value');
-          user = snapshot.val();
+        if (!user && rawNameInput !== name) {
+          snap = await db.ref(`vaults/${rawNameInput}/profile`).once('value');
+          user = snap.val();
         }
 
         if (!user) {
@@ -1423,7 +1417,8 @@
         }
 
         // Exact Pin Hash verification
-        const inputHash = CryptoJS.SHA256(pin + "_salt_" + name).toString();
+        const lookupKey = (user.name || name).toLowerCase();
+        const inputHash = CryptoJS.SHA256(pin + "_salt_" + lookupKey).toString();
         const legacyHashPlain = CryptoJS.SHA256(pin).toString();
 
         let isMatch = false;
@@ -1460,7 +1455,7 @@
       }
     }
 
-    // ================= LOAD VAULT WITH INSTANT DOCUMENTS FETCH =================
+    // ================= LOAD VAULT WITH COMPLETE DATA RECOVERY =================
     async function loadUserVault(user) {
       currentSessionUser = user;
       resetInactivityTimer();
@@ -1474,52 +1469,53 @@
       dash.classList.remove('hidden');
       dash.style.display = 'block';
 
-      document.getElementById('userNameDisplay').innerText = user.name.toUpperCase();
+      document.getElementById('userNameDisplay').innerText = (user.name || '').toUpperCase();
       document.getElementById('userCourseDisplay').innerText = user.course || 'Student';
-      document.getElementById('avatarInitial').innerText = user.name.charAt(0).toUpperCase();
+      document.getElementById('avatarInitial').innerText = (user.name || 'U').charAt(0).toUpperCase();
 
       renderDocuments('All');
 
-      // 1. Direct Instant REST Fetch for User's Documents
+      const targetPath = (user.name || '').toLowerCase();
+
+      // Direct Firebase Snapshot load (Always reliable)
       try {
-        const docRes = await fetch(`https://docvault-d9ded-default-rtdb.firebaseio.com/vaults/${user.name}/documents.json`);
-        if (docRes.ok) {
-          const docsData = await docRes.json();
-          if (docsData) {
-            applyLoadedDocuments(docsData);
-          }
+        const snap = await db.ref(`vaults/${targetPath}/documents`).once('value');
+        let docs = snap.val();
+
+        // Fallback to exact user.name case if needed
+        if (!docs && user.name !== targetPath) {
+          const snap2 = await db.ref(`vaults/${user.name}/documents`).once('value');
+          docs = snap2.val();
         }
-      } catch (err) {
-        console.warn("Direct doc fetch error, relying on realtime listener:", err);
+
+        if (docs) {
+          applyDocumentsData(docs);
+        }
+      } catch(e) {
+        console.warn("Once fetch error, listening via realtime ref:", e);
       }
 
-      // 2. Realtime listener for live updates
-      db.ref(`vaults/${user.name}/documents`).on('value', (snap) => {
+      // Realtime listener
+      db.ref(`vaults/${targetPath}/documents`).on('value', (snap) => {
         const allDocs = snap.val() || {};
-        applyLoadedDocuments(allDocs);
+        applyDocumentsData(allDocs);
       });
     }
 
-    function applyLoadedDocuments(allDocs) {
+    function applyDocumentsData(allDocs) {
+      if (!allDocs) return;
       activeKeysList = Object.keys(allDocs);
 
-      if (allDocs['doc_signature']) {
-        const rawSig = allDocs['doc_signature'].enc || allDocs['doc_signature'];
-        decryptedStore['doc_signature'] = universalDecrypt(rawSig);
-      }
-      if (allDocs['doc_photo']) {
-        const rawPhoto = allDocs['doc_photo'].enc || allDocs['doc_photo'];
-        decryptedStore['doc_photo'] = universalDecrypt(rawPhoto);
+      for (let key of activeKeysList) {
+        const dec = universalDecrypt(allDocs[key]);
+        if (dec) {
+          decryptedStore[key] = dec;
+        }
       }
 
       restoreSignatureAndPhoto();
       renderDocuments('All');
       updateAllCustomCardStatusIndicators();
-
-      if (allDocs['my_aadhaar'] && !decryptedStore['my_aadhaar']) {
-        const rawAadhaar = allDocs['my_aadhaar'].enc || allDocs['my_aadhaar'];
-        decryptedStore['my_aadhaar'] = universalDecrypt(rawAadhaar);
-      }
     }
 
     // ================= MIGRATION PIPELINE FOR OLD USERS =================
@@ -1537,14 +1533,14 @@
       btn.disabled = true;
 
       try {
-        const vaultRef = db.ref(`vaults/${currentSessionUser.name}`);
+        const uPath = (currentSessionUser.name || '').toLowerCase();
+        const vaultRef = db.ref(`vaults/${uPath}`);
         const snap = await vaultRef.child('documents').once('value');
         const docsTree = snap.val() || {};
 
         const reEncryptedDocs = {};
         for (const docKey of Object.keys(docsTree)) {
-          const rawPayload = docsTree[docKey].enc || docsTree[docKey];
-          const decryptedObject = universalDecrypt(rawPayload);
+          const decryptedObject = universalDecrypt(docsTree[docKey]);
           if (decryptedObject) {
             const freshEncryptedBlob = encryptData(decryptedObject, newPin);
             reEncryptedDocs[docKey] = {
@@ -1559,7 +1555,7 @@
           await vaultRef.child('documents').update(reEncryptedDocs);
         }
 
-        const newPinHash = CryptoJS.SHA256(newPin + "_salt_" + currentSessionUser.name).toString();
+        const newPinHash = CryptoJS.SHA256(newPin + "_salt_" + uPath).toString();
         await vaultRef.child('profile').update({
           pinHash: newPinHash
         });
@@ -1579,27 +1575,12 @@
     async function fetchSpecificDoc(docId) {
       if (decryptedStore[docId]) return decryptedStore[docId];
 
-      try {
-        const res = await fetch(`https://docvault-d9ded-default-rtdb.firebaseio.com/vaults/${currentSessionUser.name}/documents/${docId}.json`);
-        if (res.ok) {
-          const item = await res.json();
-          if (item) {
-            const raw = item.enc || item;
-            const dec = universalDecrypt(raw);
-            if (dec) {
-              decryptedStore[docId] = dec;
-              return dec;
-            }
-          }
-        }
-      } catch (e) {}
-
-      const snap = await db.ref(`vaults/${currentSessionUser.name}/documents/${docId}`).once('value');
+      const uPath = (currentSessionUser?.name || '').toLowerCase();
+      const snap = await db.ref(`vaults/${uPath}/documents/${docId}`).once('value');
       const item = snap.val();
       if (!item) return null;
 
-      const raw = item.enc || item;
-      const dec = universalDecrypt(raw);
+      const dec = universalDecrypt(item);
       if (dec) {
         decryptedStore[docId] = dec;
         return dec;
@@ -1610,7 +1591,8 @@
     function lockVault() {
       clearTimeout(inactivityTimer);
       if (currentSessionUser) {
-        db.ref(`vaults/${currentSessionUser.name}/documents`).off();
+        const uPath = (currentSessionUser.name || '').toLowerCase();
+        db.ref(`vaults/${uPath}/documents`).off();
       }
       currentSessionUser = null;
       userRawPin = "";
@@ -1874,7 +1856,8 @@
         cur.updatedAt = new Date().toLocaleDateString();
 
         const encryptedBlob = encryptData(cur);
-        await db.ref(`vaults/${currentSessionUser.name}/documents/${activeCardTarget}`).set({
+        const uPath = (currentSessionUser.name || '').toLowerCase();
+        await db.ref(`vaults/${uPath}/documents/${activeCardTarget}`).set({
           enc: encryptedBlob,
           updatedAt: new Date().toLocaleDateString()
         });
@@ -1993,7 +1976,8 @@
         };
 
         const encryptedBlob = encryptData(fileData);
-        await db.ref(`vaults/${currentSessionUser.name}/documents/${currentUploadTargetId}`).set({
+        const uPath = (currentSessionUser.name || '').toLowerCase();
+        await db.ref(`vaults/${uPath}/documents/${currentUploadTargetId}`).set({
           enc: encryptedBlob,
           updatedAt: new Date().toLocaleDateString()
         });
@@ -2098,7 +2082,7 @@
       const qrBox = document.getElementById('qrcodeBox');
       qrBox.innerHTML = '';
 
-      document.getElementById('qrCardUsernameDisplay').innerText = currentSessionUser.name.toUpperCase();
+      document.getElementById('qrCardUsernameDisplay').innerText = (currentSessionUser.name || '').toUpperCase();
 
       const vaultUrl = `${window.location.origin}${window.location.pathname}?vault=${currentSessionUser.name}`;
 
