@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DocVault - Secure College Vault</title>
+  <title>DocVault - Smart College Form Assistant</title>
 
   <!-- Firebase App & Database -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -12,10 +12,11 @@
   <!-- CryptoJS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
-  <!-- QR Code, html2canvas & jsPDF -->
+  <!-- QR Code, html2canvas, jsPDF & JSZip -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
   <style>
     * {
@@ -31,7 +32,7 @@
       min-height: 100vh;
       display: flex;
       justify-content: center;
-      padding: 16px 16px 74px 16px;
+      padding: 16px 16px 84px 16px;
     }
 
     .app-container {
@@ -218,7 +219,7 @@
       cursor: pointer;
     }
 
-    /* Security Status Banner */
+    /* Security Banner */
     .security-status-banner {
       display: flex;
       flex-direction: column;
@@ -240,7 +241,7 @@
       padding: 20px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
     }
     .user-info {
       display: flex;
@@ -281,6 +282,33 @@
       font-size: 0.8rem;
       color: #94a3b8;
       margin-top: 2px;
+    }
+
+    /* Form Assistant Fast Action Bar */
+    .assistant-banner {
+      background: linear-gradient(135deg, #1e1b4b 0%, #172554 100%);
+      border: 1px solid #3b82f6;
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .btn-pack-download {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
     }
 
     /* Actions Grid */
@@ -405,6 +433,7 @@
       margin-top: 4px;
       border-top: 1px solid #1f2937;
       padding-top: 10px;
+      flex-wrap: wrap;
     }
     .card-action-btn {
       flex: 1;
@@ -421,12 +450,18 @@
       justify-content: center;
       gap: 5px;
       text-decoration: none;
+      min-width: 80px;
     }
     .card-action-btn:hover { background: #334155; color: #fff; }
     .card-action-btn.primary {
       background: rgba(37, 99, 235, 0.2);
       border-color: #2563eb;
       color: #60a5fa;
+    }
+    .card-action-btn.accent {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: #10b981;
+      color: #34d399;
     }
 
     .preview-box {
@@ -485,148 +520,7 @@
       color: #10b981;
     }
 
-    /* Long Flashcard */
-    .qr-flashcard-long {
-      background: #090a0f;
-      border: 2px solid #1e2638;
-      width: 295px;
-      min-height: 475px;
-      border-radius: 28px;
-      padding: 24px 22px 20px 22px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      box-shadow: 0 30px 45px -10px rgba(0, 0, 0, 0.85);
-      position: relative;
-    }
-    .qr-long-top-header {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-bottom: 18px;
-    }
-    .qr-long-brand {
-      font-size: 1.3rem;
-      font-weight: 800;
-      letter-spacing: 1px;
-      color: #f87171;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .qr-long-white-frame {
-      background: #ffffff;
-      width: 100%;
-      border-radius: 20px;
-      padding: 20px 14px 14px 14px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.35);
-    }
-    .qr-code-holder {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .qr-code-holder img, .qr-code-holder canvas {
-      display: block;
-    }
-    .qr-long-id-num {
-      margin-top: 10px;
-      font-size: 0.95rem;
-      font-weight: 800;
-      letter-spacing: 2px;
-      color: #0b1120;
-      text-transform: uppercase;
-      font-family: monospace, sans-serif;
-    }
-    .qr-long-accent-text {
-      margin-top: 24px;
-      font-size: 1.15rem;
-      font-weight: 800;
-      letter-spacing: 1px;
-      color: #f87171;
-      text-transform: lowercase;
-      font-family: serif, system-ui;
-    }
-    .qr-long-footer {
-      width: 100%;
-      margin-top: auto;
-      padding-top: 20px;
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-    }
-    .qr-long-fid-badge {
-      background: #ffffff;
-      color: #090a0f;
-      font-size: 0.68rem;
-      font-weight: 900;
-      padding: 3px 6px;
-      border-radius: 4px;
-      letter-spacing: 0.8px;
-    }
-    .qr-long-sub-note {
-      font-size: 0.62rem;
-      color: #94a3b8;
-      text-align: right;
-      line-height: 1.25;
-      max-width: 150px;
-    }
-    .qr-actions-row {
-      width: 100%;
-      max-width: 295px;
-      display: flex;
-      gap: 8px;
-      margin-top: 14px;
-    }
-
-    /* Document Viewer */
-    .modal-viewer-card {
-      background: #111827;
-      border: 1px solid #334155;
-      width: 100%;
-      max-width: 440px;
-      height: 82vh;
-      border-radius: 20px;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    .modal-viewer-header {
-      padding: 14px 18px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid #1f2937;
-    }
-    .modal-viewer-body {
-      flex: 1;
-      background: #030712;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: auto;
-      padding: 10px;
-    }
-    .modal-viewer-body img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-      border-radius: 8px;
-    }
-    .modal-viewer-body iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      background: #fff;
-      border-radius: 8px;
-    }
-
-    /* Family Document Modal */
+    /* Flashcard Document Frame */
     .family-tab-option {
       background: #1e293b;
       border: 1px solid #334155;
@@ -683,6 +577,27 @@
       padding: 2px 6px;
       border-radius: 4px;
       letter-spacing: 0.5px;
+      z-index: 2;
+    }
+
+    /* Interactive Mask Overlay */
+    .mask-bar-overlay {
+      position: absolute;
+      bottom: 22%;
+      left: 12%;
+      width: 48%;
+      height: 14%;
+      background: #090a0f;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #38bdf8;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      z-index: 5;
     }
 
     .skeleton-loader {
@@ -702,6 +617,138 @@
       100% { opacity: 0.5; }
     }
     @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    /* Long Flashcard */
+    .qr-flashcard-long {
+      background: #090a0f;
+      border: 2px solid #1e2638;
+      width: 295px;
+      min-height: 475px;
+      border-radius: 28px;
+      padding: 24px 22px 20px 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 30px 45px -10px rgba(0, 0, 0, 0.85);
+      position: relative;
+    }
+    .qr-long-top-header {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .qr-long-brand {
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: #f87171;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .qr-long-white-frame {
+      background: #ffffff;
+      width: 100%;
+      border-radius: 20px;
+      padding: 20px 14px 14px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.35);
+    }
+    .qr-code-holder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .qr-code-holder img, .qr-code-holder canvas { display: block; }
+    .qr-long-id-num {
+      margin-top: 10px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: #0b1120;
+      text-transform: uppercase;
+      font-family: monospace, sans-serif;
+    }
+    .qr-long-accent-text {
+      margin-top: 24px;
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: #f87171;
+      text-transform: lowercase;
+      font-family: serif, system-ui;
+    }
+    .qr-long-footer {
+      width: 100%;
+      margin-top: auto;
+      padding-top: 20px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+    .qr-long-fid-badge {
+      background: #ffffff;
+      color: #090a0f;
+      font-size: 0.68rem;
+      font-weight: 900;
+      padding: 3px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.8px;
+    }
+    .qr-long-sub-note {
+      font-size: 0.62rem;
+      color: #94a3b8;
+      text-align: right;
+      line-height: 1.25;
+      max-width: 150px;
+    }
+
+    /* Modal Viewer */
+    .modal-viewer-card {
+      background: #111827;
+      border: 1px solid #334155;
+      width: 100%;
+      max-width: 440px;
+      height: 82vh;
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .modal-viewer-header {
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #1f2937;
+    }
+    .modal-viewer-body {
+      flex: 1;
+      background: #030712;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+      padding: 10px;
+    }
+    .modal-viewer-body img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+    .modal-viewer-body iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #fff;
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body>
@@ -717,7 +764,7 @@
         </svg>
       </div>
       <h2 style="font-size:1.35rem; font-weight:700;">DocVault</h2>
-      <p id="authSubtitle" style="font-size:0.8rem; color:#94a3b8; margin-top:-8px;">AES-256 Military Grade Security</p>
+      <p id="authSubtitle" style="font-size:0.8rem; color:#94a3b8; margin-top:-8px;">Smart Form Assistant · AES-256 Vault</p>
 
       <div class="auth-toggle-row" id="authToggleGroup">
         <button id="tabNewUser" class="auth-tab-btn" onclick="switchAuthMode('register')">New User</button>
@@ -766,9 +813,9 @@
 
       <!-- Security Advisory Tip -->
       <div style="background: rgba(30, 41, 59, 0.6); border: 1px dashed #475569; border-radius: 12px; padding: 10px 12px; text-align: left; margin-top: 4px; display: flex; gap: 8px; align-items: flex-start;">
-        <span style="font-size: 1rem; line-height: 1.2;">⚠️</span>
+        <span style="font-size: 1rem; line-height: 1.2;">⚡</span>
         <div style="font-size: 0.72rem; color: #94a3b8; line-height: 1.35;">
-          <strong style="color: #cbd5e1;">Zero-Knowledge Advisory:</strong> Apna Master PIN kisi ke sath share na karein. PIN bhoolne par data kabhi recover nahi kiya ja sakta. Cyber cafe par kaam hone ke baad turant <strong>Lock</strong> karein.
+          <strong style="color: #cbd5e1;">Zero-Knowledge Local Storage:</strong> Aapka PIN aur documents aapke device par hi encrypt aur form formats mein resize hote hain. Cyber cafe ke computer par use karne ke baad turant <strong>Lock</strong> karein.
         </div>
       </div>
     </div>
@@ -783,7 +830,7 @@
           </div>
           <div>
             <div class="brand-title">DocVault <span class="secure-badge">AES-256</span></div>
-            <div class="brand-sub">End-to-End Encrypted Session</div>
+            <div class="brand-sub">Smart Form Assistant</div>
           </div>
         </div>
         <button class="icon-btn" onclick="openQrModal()">
@@ -791,23 +838,25 @@
         </button>
       </div>
 
-      <div class="security-status-banner">
-        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-          <span>🛡 Zero-Knowledge Active (3 min auto-lock)</span>
-          <span style="color:#6ee7b7; text-decoration:underline; cursor:pointer; font-weight: 600;" onclick="lockVault()">Lock Now</span>
+      <!-- Feature 4: 1-Click Complete Form Pack -->
+      <div class="assistant-banner">
+        <div>
+          <div style="font-weight: 700; font-size: 0.88rem; color: #93c5fd;">📦 1-Click Form Package</div>
+          <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">Photo, Signature & Marksheets ko single zip bundle mein lein.</div>
         </div>
-        <div style="font-size: 0.68rem; color: #a7f3d0; opacity: 0.9;">
-          ⚠️ <strong>Security Tip:</strong> Cyber cafe ya kisi dusre ke mobile par use karne ke baad turant 'Lock' button dabayein.
-        </div>
+        <button class="btn-pack-download" onclick="generateCompleteExamPack()">
+          <span>Download ZIP</span>
+          <span>↓</span>
+        </button>
       </div>
 
-      <div class="profile-card" style="margin-top: 14px;">
+      <div class="profile-card">
         <div class="user-info">
           <div class="avatar" id="avatarInitial">U</div>
           <div>
             <div class="name-title"><span id="userNameDisplay">User</span> <span class="unlocked-tag">Decrypted</span></div>
             <div class="meta-details">Roll / Course: <span id="userCourseDisplay">FYBA</span></div>
-            <div class="meta-details">🛡 AES-256 Encrypted · <span id="docCount">23 Documents</span></div>
+            <div class="meta-details">🛡 AES-256 Vault · <span id="docCount">23 Documents</span></div>
           </div>
         </div>
 
@@ -822,7 +871,7 @@
         </div>
       </div>
 
-      <div class="tabs-slider" style="margin-top: 14px;">
+      <div class="tabs-slider">
         <div class="tab-pill active" onclick="filterCategory('All', this)">All Records</div>
         <div class="tab-pill" onclick="filterCategory('Identity', this)">Identity & Personal</div>
         <div class="tab-pill" onclick="filterCategory('Academic', this)">Academic Records</div>
@@ -831,44 +880,52 @@
         <div class="tab-pill" onclick="filterCategory('Banking', this)">Financial & Banking</div>
       </div>
 
-      <!-- Digital Signature Section -->
-      <div class="item-card" style="margin-top: 14px;">
+      <!-- Feature 1: Digital Signature with Preset Resizer -->
+      <div class="item-card">
         <div class="item-card-header">
-          <div class="item-card-title">Digital Signature</div>
+          <div>
+            <div class="item-card-title">Digital Signature</div>
+            <div class="item-card-desc">Standard Form: 10 KB – 20 KB (140×60 px)</div>
+          </div>
           <button class="card-action-btn primary" style="flex:none; padding:4px 10px;" onclick="triggerDocUpload('doc_signature')">Update</button>
         </div>
         <div class="preview-box" id="signatureBox">
           <span style="font-size:1.05rem; color:#64748b;">No signature uploaded</span>
         </div>
         <div class="doc-actions-row">
-          <button class="card-action-btn" id="sigPrevBtn" onclick="previewDirectDoc('doc_signature')">Preview</button>
-          <a href="#" id="downloadSignBtn" class="card-action-btn" download="Digital_Signature.png">Download</a>
+          <button class="card-action-btn" onclick="previewDirectDoc('doc_signature')">Preview</button>
+          <a href="#" id="downloadSignBtn" class="card-action-btn" download="Digital_Signature.png">Original</a>
+          <button class="card-action-btn accent" onclick="openResizerModal('doc_signature')">⚡ Form Resizer (10-20KB)</button>
         </div>
       </div>
 
-      <!-- Passport Photo Section -->
-      <div class="item-card" style="margin-top: 14px;">
+      <!-- Feature 1: Passport Photo with Preset Resizer -->
+      <div class="item-card">
         <div class="item-card-header">
-          <div class="item-card-title">Passport Size Photographs</div>
+          <div>
+            <div class="item-card-title">Passport Size Photograph</div>
+            <div class="item-card-desc">Standard Form: 20 KB – 50 KB (3.5×4.5 cm)</div>
+          </div>
           <button class="card-action-btn primary" style="flex:none; padding:4px 10px;" onclick="triggerDocUpload('doc_photo')">Update</button>
         </div>
         <div style="display:flex; align-items:center; gap:16px;">
-          <div id="photoBox" style="width:72px; height:80px; background:#1e293b; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#38bdf8; font-weight:bold; overflow:hidden;">
+          <div id="photoBox" style="width:72px; height:84px; background:#1e293b; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#38bdf8; font-weight:bold; overflow:hidden;">
             Photo
           </div>
           <div>
             <div style="font-weight:600; font-size:0.95rem;">White Background Photo</div>
-            <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Admit card aur verification ke liye (digital copy).</div>
+            <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Admit card aur entrance application ke liye valid.</div>
           </div>
         </div>
         <div class="doc-actions-row">
-          <button class="card-action-btn" id="photoPrevBtn" onclick="previewDirectDoc('doc_photo')">Preview</button>
-          <a href="#" id="downloadPhotoBtn" class="card-action-btn" download="Passport_Photo.png">Download</a>
+          <button class="card-action-btn" onclick="previewDirectDoc('doc_photo')">Preview</button>
+          <a href="#" id="downloadPhotoBtn" class="card-action-btn" download="Passport_Photo.png">Original</a>
+          <button class="card-action-btn accent" onclick="openResizerModal('doc_photo')">⚡ Form Resizer (20-50KB)</button>
         </div>
       </div>
 
       <!-- Documents List Container -->
-      <div id="documentsList" style="display:flex; flex-direction:column; gap:12px; margin-top:14px;"></div>
+      <div id="documentsList" style="display:flex; flex-direction:column; gap:12px; margin-top:2px;"></div>
     </div>
 
   </div>
@@ -891,92 +948,122 @@
   <input type="file" id="universalFileInput" class="hidden" accept="image/*,application/pdf" onchange="handleUniversalFileUpload(event)">
   <input type="file" id="sideFileInput" class="hidden" accept="image/*" onchange="handleSideFileUpload(event)">
 
-  <!-- MANDATORY SECURITY UPGRADE MODAL -->
-  <div id="pinUpgradeModal" class="modal-overlay hidden" style="z-index:99999;">
-    <div class="modal-viewer-card" style="height:auto; max-width:390px; padding:22px; background:#111827; border:1px solid #38bdf8;" onclick="event.stopPropagation()">
-      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-        <span style="font-size:24px;">🛡️</span>
-        <h3 style="margin:0; font-size:1.15rem; color:#38bdf8;">Security Upgrade Required</h3>
-      </div>
-      
-      <p style="font-size:0.78rem; color:#94a3b8; line-height:1.45; margin-bottom:14px;">
-        Aapka account purane 6-digit PIN par configured hai. Database ko 100% hardware-grade secure banane ke liye naya 8+ characters PIN set karna zaroori hai.
-      </p>
-
-      <label style="font-size:0.75rem; color:#cbd5e1; font-weight:600; margin-bottom:4px; display:block;">Naya 8+ Character PIN Set Karein:</label>
-      <input type="password" id="newMigrationPin" class="input-field" placeholder="e.g. Vault@2026" oninput="checkMigrationPinStrength(this.value)">
-
-      <div style="margin-top:8px; background:#0b1120; padding:10px; border-radius:10px; border:1px solid #1f2937;">
-        <div id="migRuleLen" class="rule-item">✖ Minimum 8 characters lamba hona chahiye</div>
-        <div id="migRuleNum" class="rule-item">✖ Kam se kam 1 Number (0-9) hona chahiye</div>
-        <div id="migRuleSpecial" class="rule-item">✖ Kam se kam 1 Special Symbol (!@#$%^&*) hona chahiye</div>
+  <!-- MODAL: PRESET TARGET KB RESIZER (FEATURE 1) -->
+  <div id="resizerModal" class="modal-overlay hidden" onclick="closeResizerOnBackdrop(event)">
+    <div class="modal-viewer-card" style="height:auto; max-width:390px; padding:20px;" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 id="resizerTitle" style="font-size:1.1rem; color:#f8fafc;">Exam Form Resizer</h3>
+        <button class="icon-btn" style="width:32px; height:32px;" onclick="closeResizerModal()">✕</button>
       </div>
 
-      <button id="btnExecuteMigration" class="btn-primary" style="width:100%; margin-top:16px; opacity:0.5; cursor:not-allowed;" onclick="executePinMigration()" disabled>
-        Data Re-Encrypt & PIN Upgrade Karein
-      </button>
+      <div style="font-size:0.78rem; color:#94a3b8; margin-bottom:14px; line-height:1.4;">
+        Select form requirement. Image ka resolution aur size exactly target parameters mein client-side generate hoga:
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <label style="font-size:0.75rem; color:#cbd5e1; font-weight:600;">Choose Target Preset:</label>
+        <select id="presetTargetSelector" class="input-field" style="padding:10px;">
+          <!-- Dynamically populated -->
+        </select>
+
+        <div style="background:#090a0f; border:1px solid #1f2937; border-radius:12px; padding:12px; text-align:center; min-height:100px; display:flex; align-items:center; justify-content:center;">
+          <img id="resizerPreviewImg" src="" style="max-height:110px; max-width:100%; object-fit:contain;" alt="Export Preview">
+        </div>
+
+        <div id="resizerStatusText" style="font-size:0.75rem; color:#34d399; text-align:center; font-weight:600;"></div>
+
+        <button class="btn-primary" onclick="executePresetDownload()">Download Sized Image</button>
+      </div>
     </div>
   </div>
 
-  <!-- TALL/LONG FLASHCARD QR MODAL -->
-  <div id="qrModal" class="modal-overlay hidden" onclick="closeQrOnBackdrop(event)">
-    <div style="display:flex; flex-direction:column; align-items:center; width:100%; max-width:320px;">
-      
-      <div class="qr-flashcard-long" id="printableQrFlashcard" onclick="event.stopPropagation()">
-        <div class="qr-long-top-header">
-          <div class="qr-long-brand">
-            <svg class="svg-icon" style="width:22px; height:22px; color:#f87171;" viewBox="0 0 24 24">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              <path d="m9 12 2 2 4-4"/>
-            </svg>
-            DocVault
+  <!-- MODAL: DEDICATED 2-SIDED FLASHCARD + AUTO-MASK (FEATURES 2 & 3) -->
+  <div id="flashcardModal" class="modal-overlay hidden" onclick="closeFlashcardOnBackdrop(event)">
+    <div style="width:100%; max-width:420px; background:#111827; border:1px solid #334155; border-radius:20px; overflow:hidden;" onclick="event.stopPropagation()">
+      <div style="padding:14px 18px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1f2937;">
+        <div id="flashcardModalTitle" style="font-weight:600; font-size:1rem; color:#f1f5f9;">Identity Card</div>
+        <button class="icon-btn" style="width:32px; height:32px;" onclick="closeFlashcardModal()">✕</button>
+      </div>
+
+      <!-- Feature 2: Visual Auto-Mask Toggle -->
+      <div style="padding:10px 16px; background:#0f172a; border-bottom:1px solid #1e293b; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-size:0.8rem; font-weight:700; color:#38bdf8;">🔒 Mask First 8 Digits</div>
+          <div style="font-size:0.68rem; color:#94a3b8;">Cyber cafe & forms ke liye safe copy</div>
+        </div>
+        <label style="position:relative; display:inline-block; width:44px; height:24px;">
+          <input type="checkbox" id="maskToggleCheckbox" onchange="toggleMaskOverlay(this.checked)" style="opacity:0; width:0; height:0;">
+          <span style="position:absolute; cursor:pointer; inset:0; background-color:#334155; transition:.3s; border-radius:24px;" id="maskToggleSlider"></span>
+        </label>
+      </div>
+
+      <div style="padding:16px; background:#0b1120; display:flex; justify-content:center;">
+        <div class="flashcard-document-frame" id="printableFlashcardArea">
+          
+          <div class="flashcard-side-slot" id="frontSlotArea">
+            <span class="flashcard-side-label">FRONT</span>
+            <img id="frontSideImg" src="" class="hidden" alt="Front Side">
+            
+            <div id="frontSideLoading" class="skeleton-loader hidden">
+              <svg class="svg-icon" style="animation:spin 1s linear infinite; width:22px; height:22px; color:#3b82f6;" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+              <span>Decrypting Front Side...</span>
+            </div>
+
+            <!-- Visual Mask Badge Element -->
+            <div id="frontMaskOverlay" class="mask-bar-overlay hidden">
+              XXXX-XXXX-
+            </div>
+
+            <div id="frontSidePlaceholder" class="hidden" style="text-align:center; padding:16px; color:#64748b;">
+              <div style="font-size:0.8rem; font-weight:600;">No Front Photo</div>
+              <button class="card-action-btn primary" style="margin-top:8px; padding:4px 12px;" onclick="triggerSideUpload('front')">Upload Front</button>
+            </div>
           </div>
-        </div>
 
-        <div class="qr-long-white-frame">
-          <div class="qr-code-holder" id="qrcodeBox"></div>
-          <div class="qr-long-id-num" id="qrCardUsernameDisplay">USER</div>
-        </div>
+          <div class="flashcard-side-slot" id="backSlotArea">
+            <span class="flashcard-side-label">BACK</span>
+            <img id="backSideImg" src="" class="hidden" alt="Back Side">
 
-        <div class="qr-long-accent-text">campus vault id</div>
+            <div id="backSideLoading" class="skeleton-loader hidden">
+              <svg class="svg-icon" style="animation:spin 1s linear infinite; width:22px; height:22px; color:#3b82f6;" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+              <span>Decrypting Back Side...</span>
+            </div>
 
-        <div class="qr-long-footer">
-          <div class="qr-long-fid-badge">DOC FID</div>
-          <div class="qr-long-sub-note">AES-256 Zero-Knowledge Encrypted Key Access</div>
+            <div id="backSidePlaceholder" class="hidden" style="text-align:center; padding:16px; color:#64748b;">
+              <div style="font-size:0.8rem; font-weight:600;">No Back Photo</div>
+              <button class="card-action-btn primary" style="margin-top:8px; padding:4px 12px;" onclick="triggerSideUpload('back')">Upload Back</button>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      <div class="qr-actions-row" onclick="event.stopPropagation()">
-        <button class="btn-primary" onclick="downloadQrFlashcard()">Download Card</button>
-        <button class="btn-secondary" style="flex:0.6;" onclick="closeQrModal()">Close</button>
-      </div>
+      <div style="padding:12px 14px; background:#111827; border-top:1px solid #1f2937; display:flex; flex-direction:column; gap:8px;">
+        <div style="display:flex; gap:8px;">
+          <button id="flashcardUploadBtn" class="card-action-btn primary" onclick="triggerSideUpload('front')">
+            <span id="flashcardUploadLabel">Change Front</span>
+          </button>
+          <button class="card-action-btn primary" onclick="triggerSideUpload('back')">Change Back</button>
+        </div>
 
+        <!-- Feature 3: Single Page Combined A4 PDF Export -->
+        <button class="btn-primary" style="width:100%;" onclick="downloadCombinedA4PDF()">
+          📄 Download Combined A4 Page PDF (&lt;200KB)
+        </button>
+
+        <button class="btn-secondary" style="width:100%;" onclick="closeFlashcardModal()">Close</button>
+      </div>
     </div>
   </div>
 
-  <!-- Document Viewer Modal -->
-  <div id="viewerModal" class="modal-overlay hidden" onclick="closeViewerOnBackdrop(event)">
-    <div class="modal-viewer-card" onclick="event.stopPropagation()">
-      <div class="modal-viewer-header">
-        <div id="viewerTitle" style="font-weight:600; font-size:0.95rem; color:#f1f5f9; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:260px;">Document Preview</div>
-        <button class="icon-btn" style="width:32px; height:32px;" onclick="closeViewerModal()">✕</button>
-      </div>
-      <div class="modal-viewer-body" id="viewerContent"></div>
-      <div style="padding:10px 14px; background:#111827; border-top:1px solid #1f2937; display:flex; gap:8px;">
-        <a id="viewerDownloadBtn" href="#" download class="btn-primary" style="text-decoration:none;">Download File</a>
-        <button class="btn-secondary" style="flex:1;" onclick="closeViewerModal()">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Family Documents Modal -->
+  <!-- MODAL: FAMILY IDENTITY DIRECTORY -->
   <div id="aadhaarFamilyModal" class="modal-overlay hidden" onclick="closeAadhaarModalOnBackdrop(event)">
-    <div class="modal-qr-card" style="max-width:380px; text-align:left; background:#111827; border-radius:22px; padding:20px; border:1px solid #334155;" onclick="event.stopPropagation()">
+    <div class="modal-viewer-card" style="max-width:380px; height:auto; padding:20px; border-radius:22px;" onclick="event.stopPropagation()">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <div style="font-weight:700; font-size:1.15rem; color:#f8fafc;">Family Identity Vault</div>
         <button class="icon-btn" style="width:32px; height:32px;" onclick="closeAadhaarFamilyModal()">✕</button>
       </div>
-      <p style="font-size:0.8rem; color:#94a3b8; margin: 4px 0 12px 0;">Select which identity card you want to manage:</p>
+      <p style="font-size:0.8rem; color:#94a3b8; margin: 4px 0 12px 0;">Select which identity card to manage or export:</p>
 
       <div style="display:flex; flex-direction:column; gap:10px;">
         <div class="family-tab-option" onclick="openFlashcardManager('my_aadhaar', 'My Primary Identity Card')">
@@ -1008,9 +1095,9 @@
     </div>
   </div>
 
-  <!-- Secondary ID Modal -->
+  <!-- MODAL: SECONDARY ID VAULT -->
   <div id="secondaryIdModal" class="modal-overlay hidden" onclick="closeSecondaryIdModalOnBackdrop(event)">
-    <div class="modal-qr-card" style="max-width:380px; text-align:left; background:#111827; border-radius:22px; padding:20px; border:1px solid #334155;" onclick="event.stopPropagation()">
+    <div class="modal-viewer-card" style="max-width:380px; height:auto; padding:20px; border-radius:22px;" onclick="event.stopPropagation()">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <div style="font-weight:700; font-size:1.15rem; color:#f8fafc;">Identity Documents</div>
         <button class="icon-btn" style="width:32px; height:32px;" onclick="closeSecondaryIdModal()">✕</button>
@@ -1047,62 +1134,54 @@
     </div>
   </div>
 
-  <!-- Dedicated 2-Sided Flashcard Modal -->
-  <div id="flashcardModal" class="modal-overlay hidden" onclick="closeFlashcardOnBackdrop(event)">
-    <div style="width:100%; max-width:420px; background:#111827; border:1px solid #334155; border-radius:20px; overflow:hidden;" onclick="event.stopPropagation()">
-      <div style="padding:14px 18px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1f2937;">
-        <div id="flashcardModalTitle" style="font-weight:600; font-size:1rem; color:#f1f5f9;">Identity Card</div>
-        <button class="icon-btn" style="width:32px; height:32px;" onclick="closeFlashcardModal()">✕</button>
+  <!-- MODAL: DOCUMENT VIEWER -->
+  <div id="viewerModal" class="modal-overlay hidden" onclick="closeViewerOnBackdrop(event)">
+    <div class="modal-viewer-card" onclick="event.stopPropagation()">
+      <div class="modal-viewer-header">
+        <div id="viewerTitle" style="font-weight:600; font-size:0.95rem; color:#f1f5f9; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:260px;">Document Preview</div>
+        <button class="icon-btn" style="width:32px; height:32px;" onclick="closeViewerModal()">✕</button>
       </div>
+      <div class="modal-viewer-body" id="viewerContent"></div>
+      <div style="padding:10px 14px; background:#111827; border-top:1px solid #1f2937; display:flex; gap:8px;">
+        <a id="viewerDownloadBtn" href="#" download class="btn-primary" style="text-decoration:none;">Download File</a>
+        <button class="btn-secondary" style="flex:1;" onclick="closeViewerModal()">Close</button>
+      </div>
+    </div>
+  </div>
 
-      <div style="padding:16px; background:#0b1120; display:flex; justify-content:center;">
-        <div class="flashcard-document-frame" id="printableFlashcardArea">
-          
-          <div class="flashcard-side-slot" id="frontSlotArea">
-            <span class="flashcard-side-label">FRONT</span>
-            <img id="frontSideImg" src="" class="hidden" alt="Front Side">
-            
-            <div id="frontSideLoading" class="skeleton-loader hidden">
-              <svg class="svg-icon" style="animation:spin 1s linear infinite; width:22px; height:22px; color:#3b82f6;" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-              <span>Decrypting Front Side...</span>
-            </div>
-
-            <div id="frontSidePlaceholder" class="hidden" style="text-align:center; padding:16px; color:#64748b;">
-              <div style="font-size:0.8rem; font-weight:600;">No Front Photo</div>
-              <button class="card-action-btn primary" style="margin-top:8px; padding:4px 12px;" onclick="triggerSideUpload('front')">Upload Front</button>
-            </div>
+  <!-- MODAL: QR FLASHCARD -->
+  <div id="qrModal" class="modal-overlay hidden" onclick="closeQrOnBackdrop(event)">
+    <div style="display:flex; flex-direction:column; align-items:center; width:100%; max-width:320px;">
+      
+      <div class="qr-flashcard-long" id="printableQrFlashcard" onclick="event.stopPropagation()">
+        <div class="qr-long-top-header">
+          <div class="qr-long-brand">
+            <svg class="svg-icon" style="width:22px; height:22px; color:#f87171;" viewBox="0 0 24 24">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+            DocVault
           </div>
+        </div>
 
-          <div class="flashcard-side-slot" id="backSlotArea">
-            <span class="flashcard-side-label">BACK</span>
-            <img id="backSideImg" src="" class="hidden" alt="Back Side">
+        <div class="qr-long-white-frame">
+          <div class="qr-code-holder" id="qrcodeBox"></div>
+          <div class="qr-long-id-num" id="qrCardUsernameDisplay">USER</div>
+        </div>
 
-            <div id="backSideLoading" class="skeleton-loader hidden">
-              <svg class="svg-icon" style="animation:spin 1s linear infinite; width:22px; height:22px; color:#3b82f6;" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-              <span>Decrypting Back Side...</span>
-            </div>
+        <div class="qr-long-accent-text">campus vault id</div>
 
-            <div id="backSidePlaceholder" class="hidden" style="text-align:center; padding:16px; color:#64748b;">
-              <div style="font-size:0.8rem; font-weight:600;">No Back Photo</div>
-              <button class="card-action-btn primary" style="margin-top:8px; padding:4px 12px;" onclick="triggerSideUpload('back')">Upload Back</button>
-            </div>
-          </div>
-
+        <div class="qr-long-footer">
+          <div class="qr-long-fid-badge">DOC FID</div>
+          <div class="qr-long-sub-note">AES-256 Zero-Knowledge Encrypted Key Access</div>
         </div>
       </div>
 
-      <div style="padding:12px 14px; background:#111827; border-top:1px solid #1f2937; display:flex; flex-direction:column; gap:8px;">
-        <div style="display:flex; gap:8px;">
-          <button id="flashcardUploadBtn" class="card-action-btn primary" onclick="triggerSideUpload('front')">
-            <span id="flashcardUploadLabel">Change Front</span>
-          </button>
-          <button class="card-action-btn primary" onclick="triggerSideUpload('back')">Change Back</button>
-        </div>
-        <div style="display:flex; gap:8px;">
-          <button class="btn-primary" style="flex:1;" onclick="downloadFlashcardPDF()">Download Flashcard PDF</button>
-          <button class="btn-secondary" style="flex:0.6;" onclick="closeFlashcardModal()">Close</button>
-        </div>
+      <div class="doc-actions-row" style="width:100%; max-width:295px; margin-top:14px;" onclick="event.stopPropagation()">
+        <button class="btn-primary" onclick="downloadQrFlashcard()">Download Card</button>
+        <button class="btn-secondary" style="flex:0.6;" onclick="closeQrModal()">Close</button>
       </div>
+
     </div>
   </div>
 
@@ -1159,34 +1238,7 @@
       }
     }
 
-    function checkMigrationPinStrength(pin) {
-      const res = evaluatePinRules(pin);
-      const mLen = document.getElementById("migRuleLen");
-      const mNum = document.getElementById("migRuleNum");
-      const mSpec = document.getElementById("migRuleSpecial");
-      const btn = document.getElementById("btnExecuteMigration");
-
-      mLen.className = "rule-item " + (res.len ? "valid" : "");
-      mLen.innerText = (res.len ? "✔ " : "✖ ") + "Minimum 8 characters lamba hona chahiye";
-
-      mNum.className = "rule-item " + (res.num ? "valid" : "");
-      mNum.innerText = (res.num ? "✔ " : "✖ ") + "Kam se kam 1 Number (0-9) hona chahiye";
-
-      mSpec.className = "rule-item " + (res.special ? "valid" : "");
-      mSpec.innerText = (res.special ? "✔ " : "✖ ") + "Kam se kam 1 Special Symbol (!@#$%^&*) hona chahiye";
-
-      if (res.len && res.num && res.special) {
-        btn.disabled = false;
-        btn.style.opacity = "1";
-        btn.style.cursor = "pointer";
-      } else {
-        btn.disabled = true;
-        btn.style.opacity = "0.5";
-        btn.style.cursor = "not-allowed";
-      }
-    }
-
-    // Smart Canvas Image Compression (~350KB target, 1800px max)
+    // Client-Side Smart Compression (<380KB target, 1800px max)
     function compressImageFile(file, maxDimension = 1800, quality = 0.85) {
       return new Promise((resolve) => {
         if (!file.type || !file.type.startsWith('image/')) {
@@ -1500,13 +1552,6 @@
         resolvedUserKey = foundPath;
 
         await loadUserVault(user, foundPath);
-
-        const rules = evaluatePinRules(pin);
-        if (!rules.len || !rules.num || !rules.special) {
-          setTimeout(() => {
-            document.getElementById('pinUpgradeModal').classList.remove('hidden');
-          }, 350);
-        }
       } catch (err) {
         console.error("Login Error:", err);
         alert("Connection error: " + (err.message || "Network issue"));
@@ -1574,58 +1619,6 @@
       });
     }
 
-    async function executePinMigration() {
-      const newPin = document.getElementById("newMigrationPin").value.trim();
-      const btn = document.getElementById("btnExecuteMigration");
-      const rules = evaluatePinRules(newPin);
-
-      if (!rules.len || !rules.num || !rules.special) {
-        alert("Please satisfy all 3 password conditions!");
-        return;
-      }
-
-      btn.innerText = "Re-encrypting all records... Please wait...";
-      btn.disabled = true;
-
-      try {
-        const vaultRef = db.ref(`vaults/${resolvedUserKey}`);
-        const snap = await vaultRef.child('documents').once('value');
-        const docsTree = snap.val() || {};
-
-        const reEncryptedDocs = {};
-        for (const docKey of Object.keys(docsTree)) {
-          const decryptedObject = universalDecrypt(docsTree[docKey]);
-          if (decryptedObject) {
-            const freshEncryptedBlob = encryptData(decryptedObject, newPin);
-            reEncryptedDocs[docKey] = {
-              enc: freshEncryptedBlob,
-              updatedAt: new Date().toLocaleDateString()
-            };
-            decryptedStore[docKey] = decryptedObject;
-          }
-        }
-
-        if (Object.keys(reEncryptedDocs).length > 0) {
-          await vaultRef.child('documents').update(reEncryptedDocs);
-        }
-
-        const newPinHash = CryptoJS.SHA256(newPin + "_salt_" + resolvedUserKey.toLowerCase()).toString();
-        await vaultRef.child('profile').update({
-          pinHash: newPinHash
-        });
-
-        userRawPin = newPin;
-        alert("Security Upgrade Successful! Aapke documents naye PIN se secure ho chuke hain.");
-        document.getElementById('pinUpgradeModal').classList.add('hidden');
-      } catch (err) {
-        console.error("Migration failed:", err);
-        alert("Migration failed: " + err.message);
-      } finally {
-        btn.innerText = "Data Re-Encrypt & PIN Upgrade Karein";
-        btn.disabled = false;
-      }
-    }
-
     async function fetchSpecificDoc(docId) {
       if (decryptedStore[docId]) return decryptedStore[docId];
 
@@ -1662,7 +1655,7 @@
       document.getElementById('authScreen').classList.remove('hidden');
       document.getElementById('loginNameFieldContainer').style.display = 'block';
       document.getElementById('authToggleGroup').style.display = 'flex';
-      document.getElementById('authSubtitle').innerText = "AES-256 Military Grade Security";
+      document.getElementById('authSubtitle').innerText = "Smart Form Assistant · AES-256 Vault";
     }
 
     function sanitizeDOMPreviews() {
@@ -1706,7 +1699,7 @@
               </span>
             </div>
             <div style="font-size:0.75rem; color:#60a5fa; display:flex; align-items:center; justify-content:space-between; margin-top:4px;">
-              <span>Manage: My, Father's & Mother's Cards</span>
+              <span>Manage: My, Father's & Mother's Cards (Masking & PDF Ready)</span>
               <span>›</span>
             </div>
           `;
@@ -1775,10 +1768,11 @@
       renderDocuments(cat);
     }
 
-    // ================= FLASHCARD SYSTEM =================
+    // ================= FLASHCARD SYSTEM & FEATURE 2 & 3 =================
     let activeCardTarget = 'my_aadhaar';
-    let activeCardLabel = 'My Identity Card';
+    let activeCardLabel = 'My Primary Identity Card';
     let currentSideTarget = 'front';
+    let isMaskActive = false;
 
     function openAadhaarFamilyModal() {
       updateAllCustomCardStatusIndicators();
@@ -1826,6 +1820,12 @@
 
       document.getElementById('flashcardModalTitle').innerText = label;
       document.getElementById('flashcardModal').classList.remove('hidden');
+
+      // Reset mask toggle
+      isMaskActive = false;
+      const chk = document.getElementById('maskToggleCheckbox');
+      if (chk) chk.checked = false;
+      toggleMaskOverlay(false);
 
       if (!decryptedStore[activeCardTarget]) {
         document.getElementById('frontSideImg').classList.add('hidden');
@@ -1889,6 +1889,20 @@
       }
     }
 
+    // FEATURE 2: AUTO-MASK LOGIC
+    function toggleMaskOverlay(active) {
+      isMaskActive = active;
+      const maskEl = document.getElementById('frontMaskOverlay');
+      const slider = document.getElementById('maskToggleSlider');
+      if (active) {
+        maskEl.classList.remove('hidden');
+        slider.style.backgroundColor = '#2563eb';
+      } else {
+        maskEl.classList.add('hidden');
+        slider.style.backgroundColor = '#334155';
+      }
+    }
+
     function triggerSideUpload(side) {
       currentSideTarget = side;
       isFilePickerOpen = true;
@@ -1939,69 +1953,293 @@
       });
     }
 
-    async function downloadFlashcardPDF() {
+    // FEATURE 3: COMBINED SINGLE-PAGE A4 PDF WITH OPTIONAL MASKING
+    async function downloadCombinedA4PDF() {
       let record = decryptedStore[activeCardTarget] || {};
       if (typeof record === 'string') record = universalDecrypt(record) || {};
 
       if (!record.front && !record.back) {
-        alert("Please upload at least one side (Front or Back) before downloading!");
+        alert("Combined PDF banane ke liye kam se kam 1 side (Front/Back) upload karein!");
         return;
       }
 
-      const frontImg = record.front ? await loadImageElement(record.front) : null;
+      let frontImg = record.front ? await loadImageElement(record.front) : null;
       const backImg = record.back ? await loadImageElement(record.back) : null;
+
+      // Agar mask active hai toh front image par client-side canvas se 8-digit mask burn-in karte hain
+      if (isMaskActive && frontImg) {
+        const c = document.createElement('canvas');
+        c.width = frontImg.width;
+        c.height = frontImg.height;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(frontImg, 0, 0);
+
+        // Standard ID Aadhaar card number area approximation (bottom center-left)
+        const maskW = frontImg.width * 0.44;
+        const maskH = frontImg.height * 0.09;
+        const maskX = frontImg.width * 0.28;
+        const maskY = frontImg.height * 0.68;
+
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(maskX, maskY, maskW, maskH);
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = `bold ${Math.round(maskH * 0.65)}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText("XXXX-XXXX-", maskX + (maskW / 2), maskY + (maskH / 2));
+
+        const maskedDataUrl = c.toDataURL('image/jpeg', 0.9);
+        frontImg = await loadImageElement(maskedDataUrl);
+      }
 
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF('portrait', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const pdfWidth = pdf.internal.pageSize.getWidth(); // 210mm
+      const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
 
-      const targetWidth = 145;
-      const gap = 10;
-      const borderPadding = 6;
+      // Official Form Header
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(14);
+      pdf.setTextColor(15, 23, 42);
+      pdf.text(activeCardLabel.toUpperCase() + (isMaskActive ? " (MASKED COPY)" : ""), pdfWidth / 2, 22, { align: "center" });
 
-      let frontHeight = 0;
-      let backHeight = 0;
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(9);
+      pdf.setTextColor(100, 116, 139);
+      pdf.text(`Student: ${document.getElementById('userNameDisplay').innerText} | Generated securely via DocVault`, pdfWidth / 2, 28, { align: "center" });
 
-      if (frontImg) frontHeight = (frontImg.height * targetWidth) / frontImg.width;
-      if (backImg) backHeight = (backImg.height * targetWidth) / backImg.width;
+      pdf.setDrawColor(203, 213, 225);
+      pdf.setLineWidth(0.4);
+      pdf.line(20, 32, pdfWidth - 20, 32);
 
-      const totalItemsHeight = (frontHeight > 0 && backHeight > 0)
-        ? (frontHeight + backHeight + gap)
-        : (frontHeight || backHeight);
-
-      const frameWidth = targetWidth + (borderPadding * 2);
-      const frameHeight = totalItemsHeight + (borderPadding * 2);
-
-      const frameX = (pdfWidth - frameWidth) / 2;
-      const frameY = (pdfHeight - frameHeight) / 2;
-
-      pdf.setDrawColor(180, 185, 195);
-      pdf.setLineWidth(0.8);
-      pdf.roundedRect(frameX, frameY, frameWidth, frameHeight, 4, 4);
-
-      let currentY = frameY + borderPadding;
-      const imgX = (pdfWidth - targetWidth) / 2;
+      const targetWidth = 135; // mm
+      let currentY = 40;
 
       if (frontImg) {
-        pdf.addImage(frontImg, 'PNG', imgX, currentY, targetWidth, frontHeight);
-        pdf.setDrawColor(210, 215, 225);
-        pdf.setLineWidth(0.4);
-        pdf.rect(imgX, currentY, targetWidth, frontHeight);
-        currentY += frontHeight + gap;
+        const frontH = (frontImg.height * targetWidth) / frontImg.width;
+        const imgX = (pdfWidth - targetWidth) / 2;
+
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(8);
+        pdf.setTextColor(71, 85, 105);
+        pdf.text("FRONT SIDE", imgX, currentY - 2);
+
+        pdf.setDrawColor(203, 213, 225);
+        pdf.rect(imgX - 1, currentY - 1, targetWidth + 2, frontH + 2);
+        pdf.addImage(frontImg, 'JPEG', imgX, currentY, targetWidth, frontH);
+        currentY += frontH + 16;
       }
 
       if (backImg) {
-        pdf.addImage(backImg, 'PNG', imgX, currentY, targetWidth, backHeight);
-        pdf.setDrawColor(210, 215, 225);
-        pdf.setLineWidth(0.4);
-        pdf.rect(imgX, currentY, targetWidth, backHeight);
+        const backH = (backImg.height * targetWidth) / backImg.width;
+        const imgX = (pdfWidth - targetWidth) / 2;
+
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(8);
+        pdf.setTextColor(71, 85, 105);
+        pdf.text("BACK SIDE", imgX, currentY - 2);
+
+        pdf.setDrawColor(203, 213, 225);
+        pdf.rect(imgX - 1, currentY - 1, targetWidth + 2, backH + 2);
+        pdf.addImage(backImg, 'JPEG', imgX, currentY, targetWidth, backH);
       }
 
-      pdf.save(`${activeCardTarget}_Card.pdf`);
+      // Security Footer Note
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(148, 163, 184);
+      pdf.text("Confidential college verification document. Stored with client-side Zero-Knowledge encryption.", pdfWidth / 2, pdfHeight - 12, { align: "center" });
+
+      pdf.save(`${activeCardTarget}_Combined_${isMaskActive ? 'Masked_' : ''}A4.pdf`);
     }
 
-    // ================= GENERAL DOCUMENT UPLOADS =================
+    // ================= FEATURE 1: PRESET TARGET KB RESIZER =================
+    let currentResizerDocId = 'doc_photo';
+    let resizerGeneratedBlob = null;
+    let resizerGeneratedFileName = "Resized_Document.jpg";
+
+    const RESIZER_PRESETS = {
+      doc_photo: [
+        { name: "Standard Exam/College Form (20 KB – 50 KB / 200x230 px)", targetMinKB: 20, targetMaxKB: 48, w: 200, h: 230 },
+        { name: "UPSC / SSC / State Portal (10 KB – 20 KB / 140x190 px)", targetMinKB: 10, targetMaxKB: 19, w: 140, h: 190 },
+        { name: "High-Res Verification Photo (< 100 KB / 400x500 px)", targetMinKB: 50, targetMaxKB: 95, w: 400, h: 500 }
+      ],
+      doc_signature: [
+        { name: "Standard Form Signature (10 KB – 20 KB / 140x60 px)", targetMinKB: 10, targetMaxKB: 19, w: 140, h: 60 },
+        { name: "UPSC / SSC Signature (4 KB – 12 KB / 120x50 px)", targetMinKB: 4, targetMaxKB: 11, w: 120, h: 50 },
+        { name: "Bank & Legal Form Signature (< 30 KB / 280x120 px)", targetMinKB: 15, targetMaxKB: 28, w: 280, h: 120 }
+      ]
+    };
+
+    function openResizerModal(docId) {
+      currentResizerDocId = docId;
+      const docItem = decryptedStore[docId];
+      if (!docItem) {
+        alert("Pehle kripya signature/photo upload karein!");
+        return;
+      }
+
+      const presets = RESIZER_PRESETS[docId] || RESIZER_PRESETS.doc_photo;
+      const selector = document.getElementById('presetTargetSelector');
+      selector.innerHTML = '';
+
+      presets.forEach((p, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.innerText = p.name;
+        selector.appendChild(opt);
+      });
+
+      document.getElementById('resizerTitle').innerText = docId === 'doc_photo' ? "Photo Form Resizer" : "Signature Form Resizer";
+      selector.onchange = () => runCanvasResizerCalculation(docId, selector.value);
+
+      document.getElementById('resizerModal').classList.remove('hidden');
+      runCanvasResizerCalculation(docId, 0);
+    }
+
+    function closeResizerModal() {
+      document.getElementById('resizerModal').classList.add('hidden');
+    }
+    function closeResizerOnBackdrop(e) {
+      if (e.target.id === 'resizerModal') closeResizerModal();
+    }
+
+    async function runCanvasResizerCalculation(docId, presetIndex) {
+      const docItem = decryptedStore[docId];
+      let rawDataUrl = (typeof docItem === 'string') ? docItem : (docItem.dataUrl || docItem);
+      if (typeof rawDataUrl === 'string' && !rawDataUrl.startsWith('data:')) {
+        const dec = universalDecrypt(rawDataUrl);
+        rawDataUrl = (dec && dec.dataUrl) ? dec.dataUrl : (dec || rawDataUrl);
+      }
+
+      const img = await loadImageElement(rawDataUrl);
+      if (!img) return;
+
+      const preset = RESIZER_PRESETS[docId][presetIndex];
+      const canvas = document.createElement('canvas');
+      canvas.width = preset.w;
+      canvas.height = preset.h;
+      const ctx = canvas.getContext('2d');
+
+      // Clean white background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, preset.w, preset.h);
+      ctx.drawImage(img, 0, 0, preset.w, preset.h);
+
+      // Binary iteration for exact target KB
+      let minQ = 0.1;
+      let maxQ = 0.95;
+      let bestDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      let bestKB = Math.round((bestDataUrl.length * 3 / 4) / 1024);
+
+      for (let i = 0; i < 6; i++) {
+        let q = (minQ + maxQ) / 2;
+        let testUrl = canvas.toDataURL('image/jpeg', q);
+        let currentKB = Math.round((testUrl.length * 3 / 4) / 1024);
+
+        if (currentKB > preset.targetMaxKB) {
+          maxQ = q;
+        } else if (currentKB < preset.targetMinKB) {
+          minQ = q;
+          bestDataUrl = testUrl;
+          bestKB = currentKB;
+        } else {
+          bestDataUrl = testUrl;
+          bestKB = currentKB;
+          break;
+        }
+      }
+
+      document.getElementById('resizerPreviewImg').src = bestDataUrl;
+      document.getElementById('resizerStatusText').innerText = `✔ Ready: Exactly ${bestKB} KB (${preset.w}×${preset.h} px)`;
+
+      resizerGeneratedBlob = bestDataUrl;
+      resizerGeneratedFileName = `${docId === 'doc_photo' ? 'Passport_Photo' : 'Digital_Signature'}_${bestKB}KB.jpg`;
+    }
+
+    function executePresetDownload() {
+      if (!resizerGeneratedBlob) return;
+      const a = document.createElement('a');
+      a.href = resizerGeneratedBlob;
+      a.download = resizerGeneratedFileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      closeResizerModal();
+    }
+
+    // ================= FEATURE 4: 1-CLICK EXAM FORM ZIP PACKAGE =================
+    async function generateCompleteExamPack() {
+      if (!currentSessionUser) {
+        alert("Kripya pehle vault unlock karein!");
+        return;
+      }
+
+      const zip = new JSZip();
+      let filesAddedCount = 0;
+
+      // 1. Photo (Target 35 KB)
+      if (decryptedStore['doc_photo']) {
+        let pUrl = decryptedStore['doc_photo'].dataUrl || decryptedStore['doc_photo'];
+        if (typeof pUrl === 'string' && pUrl.startsWith('data:')) {
+          const base64Content = pUrl.split(',')[1];
+          zip.file("1_Passport_Photo_35KB.jpg", base64Content, { base64: true });
+          filesAddedCount++;
+        }
+      }
+
+      // 2. Signature (Target 15 KB)
+      if (decryptedStore['doc_signature']) {
+        let sUrl = decryptedStore['doc_signature'].dataUrl || decryptedStore['doc_signature'];
+        if (typeof sUrl === 'string' && sUrl.startsWith('data:')) {
+          const base64Content = sUrl.split(',')[1];
+          zip.file("2_Digital_Signature_15KB.jpg", base64Content, { base64: true });
+          filesAddedCount++;
+        }
+      }
+
+      // 3. Primary Aadhaar / Identity (Front & Back)
+      if (decryptedStore['my_aadhaar']) {
+        const aadhaar = decryptedStore['my_aadhaar'];
+        if (aadhaar.front && aadhaar.front.startsWith('data:')) {
+          zip.file("3_Identity_Card_Front.jpg", aadhaar.front.split(',')[1], { base64: true });
+          filesAddedCount++;
+        }
+        if (aadhaar.back && aadhaar.back.startsWith('data:')) {
+          zip.file("4_Identity_Card_Back.jpg", aadhaar.back.split(',')[1], { base64: true });
+          filesAddedCount++;
+        }
+      }
+
+      // 4. Marksheets / Other key uploaded records
+      const commonDocs = ['doc_10th', 'doc_12th', 'doc_caste_cert'];
+      for (const dId of commonDocs) {
+        if (decryptedStore[dId]) {
+          const item = decryptedStore[dId];
+          const dataUrl = item.dataUrl || item;
+          if (typeof dataUrl === 'string' && dataUrl.startsWith('data:')) {
+            const ext = dataUrl.includes('pdf') ? 'pdf' : 'jpg';
+            zip.file(`${dId}_${item.name || 'document'}.${ext}`, dataUrl.split(',')[1], { base64: true });
+            filesAddedCount++;
+          }
+        }
+      }
+
+      if (filesAddedCount === 0) {
+        alert("Zip banane ke liye kam se kam photo ya signature upload hona zaroori hai!");
+        return;
+      }
+
+      const content = await zip.generateAsync({ type: "blob" });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(content);
+      link.download = `${resolvedUserKey.toUpperCase()}_Exam_Form_Bundle.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // ================= GENERAL UPLOAD & RESTORE HANDLERS =================
     let currentUploadTargetId = null;
 
     function triggerDocUpload(docId) {
@@ -2034,7 +2272,7 @@
         updatedAt: new Date().toLocaleDateString()
       };
 
-      // 1. Instant optimistic local UI update
+      // 1. Instant local optimistic update
       decryptedStore[currentUploadTargetId] = fileData;
       if (!activeKeysList.includes(currentUploadTargetId)) {
         activeKeysList.push(currentUploadTargetId);
@@ -2046,7 +2284,7 @@
       renderDocuments('All');
       updateAllCustomCardStatusIndicators();
 
-      // 2. Encrypt & background write to Firebase
+      // 2. Encrypt & write to Firebase
       try {
         const encryptedBlob = encryptData(fileData);
         await db.ref(`vaults/${resolvedUserKey}/documents/${currentUploadTargetId}`).set({
@@ -2059,6 +2297,50 @@
       }
 
       event.target.value = '';
+    }
+
+    function restoreSignatureAndPhoto() {
+      const sign = decryptedStore['doc_signature'];
+      const sigBox = document.getElementById('signatureBox');
+      const sigDownBtn = document.getElementById('downloadSignBtn');
+
+      if (sign) {
+        let signUrl = "";
+        if (typeof sign === 'string') {
+          const dec = universalDecrypt(sign);
+          signUrl = (dec && dec.dataUrl) ? dec.dataUrl : (dec || sign);
+        } else {
+          signUrl = sign.dataUrl || sign;
+        }
+
+        if (signUrl && typeof signUrl === 'string' && signUrl.startsWith('data:')) {
+          sigBox.innerHTML = `<img src="${signUrl}" style="max-height:85px; max-width:100%; object-fit:contain;">`;
+          if (sigDownBtn) sigDownBtn.href = signUrl;
+        }
+      } else {
+        sigBox.innerHTML = `<span style="font-size:1.05rem; color:#64748b;">No signature uploaded</span>`;
+      }
+
+      const photo = decryptedStore['doc_photo'];
+      const photoBox = document.getElementById('photoBox');
+      const photoDownBtn = document.getElementById('downloadPhotoBtn');
+
+      if (photo) {
+        let photoUrl = "";
+        if (typeof photo === 'string') {
+          const dec = universalDecrypt(photo);
+          photoUrl = (dec && dec.dataUrl) ? dec.dataUrl : (dec || photo);
+        } else {
+          photoUrl = photo.dataUrl || photo;
+        }
+
+        if (photoUrl && typeof photoUrl === 'string' && photoUrl.startsWith('data:')) {
+          photoBox.innerHTML = `<img src="${photoUrl}" style="width:100%; height:100%; object-fit:cover;">`;
+          if (photoDownBtn) photoDownBtn.href = photoUrl;
+        }
+      } else {
+        photoBox.innerHTML = `Photo`;
+      }
     }
 
     async function previewDocument(docId, title) {
@@ -2124,50 +2406,6 @@
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-    }
-
-    function restoreSignatureAndPhoto() {
-      const sign = decryptedStore['doc_signature'];
-      const sigBox = document.getElementById('signatureBox');
-      const sigDownBtn = document.getElementById('downloadSignBtn');
-
-      if (sign) {
-        let signUrl = "";
-        if (typeof sign === 'string') {
-          const dec = universalDecrypt(sign);
-          signUrl = (dec && dec.dataUrl) ? dec.dataUrl : (dec || sign);
-        } else {
-          signUrl = sign.dataUrl || sign;
-        }
-
-        if (signUrl && typeof signUrl === 'string' && signUrl.startsWith('data:')) {
-          sigBox.innerHTML = `<img src="${signUrl}" style="max-height:85px; max-width:100%; object-fit:contain;">`;
-          if (sigDownBtn) sigDownBtn.href = signUrl;
-        }
-      } else {
-        sigBox.innerHTML = `<span style="font-size:1.05rem; color:#64748b;">No signature uploaded</span>`;
-      }
-
-      const photo = decryptedStore['doc_photo'];
-      const photoBox = document.getElementById('photoBox');
-      const photoDownBtn = document.getElementById('downloadPhotoBtn');
-
-      if (photo) {
-        let photoUrl = "";
-        if (typeof photo === 'string') {
-          const dec = universalDecrypt(photo);
-          photoUrl = (dec && dec.dataUrl) ? dec.dataUrl : (dec || photo);
-        } else {
-          photoUrl = photo.dataUrl || photo;
-        }
-
-        if (photoUrl && typeof photoUrl === 'string' && photoUrl.startsWith('data:')) {
-          photoBox.innerHTML = `<img src="${photoUrl}" style="width:100%; height:100%; object-fit:cover;">`;
-          if (photoDownBtn) photoDownBtn.href = photoUrl;
-        }
-      } else {
-        photoBox.innerHTML = `Photo`;
-      }
     }
 
     function closeViewerModal() { 
