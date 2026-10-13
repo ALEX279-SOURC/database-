@@ -219,20 +219,6 @@
       cursor: pointer;
     }
 
-    /* Security Banner */
-    .security-status-banner {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 6px;
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-size: 0.78rem;
-      background: rgba(6, 95, 70, 0.25);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      color: #6ee7b7;
-    }
-
     /* Profile Card */
     .profile-card {
       background: radial-gradient(circle at top left, #1e293b 0%, #0f172a 100%);
@@ -580,23 +566,23 @@
       z-index: 2;
     }
 
-    /* Interactive Mask Overlay */
+    /* Accurate Bottom Aadhaar Mask Overlay for UI Preview */
     .mask-bar-overlay {
       position: absolute;
-      bottom: 22%;
-      left: 12%;
-      width: 48%;
-      height: 14%;
-      background: #090a0f;
-      border-radius: 4px;
+      bottom: 14%;
+      left: 28%;
+      width: 40%;
+      height: 9%;
+      background: #0b1120;
+      border-radius: 3px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #38bdf8;
-      font-size: 0.7rem;
+      color: #ffffff;
+      font-size: 0.72rem;
       font-weight: 800;
       letter-spacing: 1.5px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
       z-index: 5;
     }
 
@@ -880,12 +866,12 @@
         <div class="tab-pill" onclick="filterCategory('Banking', this)">Financial & Banking</div>
       </div>
 
-      <!-- Feature 1: Digital Signature with Preset Resizer -->
+      <!-- Feature 1: Digital Signature with High-Res Preset Resizer -->
       <div class="item-card">
         <div class="item-card-header">
           <div>
             <div class="item-card-title">Digital Signature</div>
-            <div class="item-card-desc">Standard Form: 10 KB – 20 KB (140×60 px)</div>
+            <div class="item-card-desc">Standard Form: 10 KB – 20 KB (Crisp Ink Edges)</div>
           </div>
           <button class="card-action-btn primary" style="flex:none; padding:4px 10px;" onclick="triggerDocUpload('doc_signature')">Update</button>
         </div>
@@ -895,16 +881,16 @@
         <div class="doc-actions-row">
           <button class="card-action-btn" onclick="previewDirectDoc('doc_signature')">Preview</button>
           <a href="#" id="downloadSignBtn" class="card-action-btn" download="Digital_Signature.png">Original</a>
-          <button class="card-action-btn accent" onclick="openResizerModal('doc_signature')">⚡ Form Resizer (10-20KB)</button>
+          <button class="card-action-btn accent" onclick="openResizerModal('doc_signature')">⚡ HD Resizer (10-20KB)</button>
         </div>
       </div>
 
-      <!-- Feature 1: Passport Photo with Preset Resizer -->
+      <!-- Feature 1: Passport Photo with High-Res Preset Resizer -->
       <div class="item-card">
         <div class="item-card-header">
           <div>
             <div class="item-card-title">Passport Size Photograph</div>
-            <div class="item-card-desc">Standard Form: 20 KB – 50 KB (3.5×4.5 cm)</div>
+            <div class="item-card-desc">Standard Form: 20 KB – 50 KB (Crisp Face Ratio)</div>
           </div>
           <button class="card-action-btn primary" style="flex:none; padding:4px 10px;" onclick="triggerDocUpload('doc_photo')">Update</button>
         </div>
@@ -920,7 +906,7 @@
         <div class="doc-actions-row">
           <button class="card-action-btn" onclick="previewDirectDoc('doc_photo')">Preview</button>
           <a href="#" id="downloadPhotoBtn" class="card-action-btn" download="Passport_Photo.png">Original</a>
-          <button class="card-action-btn accent" onclick="openResizerModal('doc_photo')">⚡ Form Resizer (20-50KB)</button>
+          <button class="card-action-btn accent" onclick="openResizerModal('doc_photo')">⚡ HD Resizer (20-50KB)</button>
         </div>
       </div>
 
@@ -957,7 +943,7 @@
       </div>
 
       <div style="font-size:0.78rem; color:#94a3b8; margin-bottom:14px; line-height:1.4;">
-        Select form requirement. Image ka resolution aur size exactly target parameters mein client-side generate hoga:
+        High-definition smoothing ke saath target parameters generate kiye jayenge bina blur hue:
       </div>
 
       <div style="display:flex; flex-direction:column; gap:10px;">
@@ -966,8 +952,8 @@
           <!-- Dynamically populated -->
         </select>
 
-        <div style="background:#090a0f; border:1px solid #1f2937; border-radius:12px; padding:12px; text-align:center; min-height:100px; display:flex; align-items:center; justify-content:center;">
-          <img id="resizerPreviewImg" src="" style="max-height:110px; max-width:100%; object-fit:contain;" alt="Export Preview">
+        <div style="background:#090a0f; border:1px solid #1f2937; border-radius:12px; padding:12px; text-align:center; min-height:120px; display:flex; align-items:center; justify-content:center;">
+          <img id="resizerPreviewImg" src="" style="max-height:120px; max-width:100%; object-fit:contain;" alt="Export Preview">
         </div>
 
         <div id="resizerStatusText" style="font-size:0.75rem; color:#34d399; text-align:center; font-weight:600;"></div>
@@ -977,7 +963,7 @@
     </div>
   </div>
 
-  <!-- MODAL: DEDICATED 2-SIDED FLASHCARD + AUTO-MASK (FEATURES 2 & 3) -->
+  <!-- MODAL: DEDICATED 2-SIDED FLASHCARD + ACCURATE AUTO-MASK (FEATURES 2 & 3) -->
   <div id="flashcardModal" class="modal-overlay hidden" onclick="closeFlashcardOnBackdrop(event)">
     <div style="width:100%; max-width:420px; background:#111827; border:1px solid #334155; border-radius:20px; overflow:hidden;" onclick="event.stopPropagation()">
       <div style="padding:14px 18px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1f2937;">
@@ -989,7 +975,7 @@
       <div style="padding:10px 16px; background:#0f172a; border-bottom:1px solid #1e293b; display:flex; justify-content:space-between; align-items:center;">
         <div>
           <div style="font-size:0.8rem; font-weight:700; color:#38bdf8;">🔒 Mask First 8 Digits</div>
-          <div style="font-size:0.68rem; color:#94a3b8;">Cyber cafe & forms ke liye safe copy</div>
+          <div style="font-size:0.68rem; color:#94a3b8;">Bottom Aadhaar number par XXXX XXXX overlay</div>
         </div>
         <label style="position:relative; display:inline-block; width:44px; height:24px;">
           <input type="checkbox" id="maskToggleCheckbox" onchange="toggleMaskOverlay(this.checked)" style="opacity:0; width:0; height:0;">
@@ -1009,9 +995,9 @@
               <span>Decrypting Front Side...</span>
             </div>
 
-            <!-- Visual Mask Badge Element -->
+            <!-- Visual Mask Badge Element on Bottom Center -->
             <div id="frontMaskOverlay" class="mask-bar-overlay hidden">
-              XXXX-XXXX-
+              XXXX XXXX
             </div>
 
             <div id="frontSidePlaceholder" class="hidden" style="text-align:center; padding:16px; color:#64748b;">
@@ -1027,6 +1013,11 @@
             <div id="backSideLoading" class="skeleton-loader hidden">
               <svg class="svg-icon" style="animation:spin 1s linear infinite; width:22px; height:22px; color:#3b82f6;" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
               <span>Decrypting Back Side...</span>
+            </div>
+
+            <!-- Visual Mask Badge Element on Bottom Center for Back Side -->
+            <div id="backMaskOverlay" class="mask-bar-overlay hidden">
+              XXXX XXXX
             </div>
 
             <div id="backSidePlaceholder" class="hidden" style="text-align:center; padding:16px; color:#64748b;">
@@ -1821,7 +1812,6 @@
       document.getElementById('flashcardModalTitle').innerText = label;
       document.getElementById('flashcardModal').classList.remove('hidden');
 
-      // Reset mask toggle
       isMaskActive = false;
       const chk = document.getElementById('maskToggleCheckbox');
       if (chk) chk.checked = false;
@@ -1889,16 +1879,19 @@
       }
     }
 
-    // FEATURE 2: AUTO-MASK LOGIC
+    // FEATURE 2: VISUAL AUTO-MASK TOGGLE FOR FRONT & BACK
     function toggleMaskOverlay(active) {
       isMaskActive = active;
-      const maskEl = document.getElementById('frontMaskOverlay');
+      const frontMaskEl = document.getElementById('frontMaskOverlay');
+      const backMaskEl = document.getElementById('backMaskOverlay');
       const slider = document.getElementById('maskToggleSlider');
       if (active) {
-        maskEl.classList.remove('hidden');
+        if (frontMaskEl) frontMaskEl.classList.remove('hidden');
+        if (backMaskEl) backMaskEl.classList.remove('hidden');
         slider.style.backgroundColor = '#2563eb';
       } else {
-        maskEl.classList.add('hidden');
+        if (frontMaskEl) frontMaskEl.classList.add('hidden');
+        if (backMaskEl) backMaskEl.classList.add('hidden');
         slider.style.backgroundColor = '#334155';
       }
     }
@@ -1953,68 +1946,76 @@
       });
     }
 
-    // FEATURE 3: COMBINED SINGLE-PAGE A4 PDF WITH OPTIONAL MASKING
+    // FEATURE 3: ACCURATE AADHAAR NUMBER MASKED COMBINED A4 PDF
     async function downloadCombinedA4PDF() {
       let record = decryptedStore[activeCardTarget] || {};
       if (typeof record === 'string') record = universalDecrypt(record) || {};
 
       if (!record.front && !record.back) {
-        alert("Combined PDF banane ke liye kam se kam 1 side (Front/Back) upload karein!");
+        alert("Combined PDF ke liye kam se kam Front ya Back upload hona zaroori hai!");
         return;
       }
 
-      let frontImg = record.front ? await loadImageElement(record.front) : null;
-      const backImg = record.back ? await loadImageElement(record.back) : null;
+      // Helper function: Pehle 8 digits (XXXX XXXX) ko bottom number line par clean mask karein
+      const applyCleanAadhaarMask = async (imgDataUrl) => {
+        if (!imgDataUrl) return null;
+        const img = await loadImageElement(imgDataUrl);
+        if (!img) return null;
 
-      // Agar mask active hai toh front image par client-side canvas se 8-digit mask burn-in karte hain
-      if (isMaskActive && frontImg) {
         const c = document.createElement('canvas');
-        c.width = frontImg.width;
-        c.height = frontImg.height;
+        c.width = img.width;
+        c.height = img.height;
         const ctx = c.getContext('2d');
-        ctx.drawImage(frontImg, 0, 0);
+        ctx.drawImage(img, 0, 0);
 
-        // Standard ID Aadhaar card number area approximation (bottom center-left)
-        const maskW = frontImg.width * 0.44;
-        const maskH = frontImg.height * 0.09;
-        const maskX = frontImg.width * 0.28;
-        const maskY = frontImg.height * 0.68;
+        if (isMaskActive) {
+          // Standard Aadhaar bottom number coordinates
+          // Covers first 2 digit groups, leaves last 4 digits visible
+          const mW = img.width * 0.38;
+          const mH = img.height * 0.065;
+          const mX = img.width * 0.28;
+          const mY = img.height * 0.79;
 
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(maskX, maskY, maskW, maskH);
+          // Solid privacy background block
+          ctx.fillStyle = '#0b1120';
+          ctx.fillRect(mX, mY, mW, mH);
 
-        ctx.fillStyle = '#38bdf8';
-        ctx.font = `bold ${Math.round(maskH * 0.65)}px monospace`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText("XXXX-XXXX-", maskX + (maskW / 2), maskY + (maskH / 2));
+          // Centered crisp masked typography
+          ctx.fillStyle = '#ffffff';
+          ctx.font = `bold ${Math.round(mH * 0.7)}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText("XXXX XXXX", mX + (mW / 2), mY + (mH / 2));
+        }
 
-        const maskedDataUrl = c.toDataURL('image/jpeg', 0.9);
-        frontImg = await loadImageElement(maskedDataUrl);
-      }
+        return await loadImageElement(c.toDataURL('image/jpeg', 0.92));
+      };
+
+      const frontImg = record.front ? await applyCleanAadhaarMask(record.front) : null;
+      const backImg = record.back ? await applyCleanAadhaarMask(record.back) : null;
 
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF('portrait', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth(); // 210mm
-      const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
 
-      // Official Form Header
+      // Document Header
       pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(14);
+      pdf.setFontSize(13);
       pdf.setTextColor(15, 23, 42);
-      pdf.text(activeCardLabel.toUpperCase() + (isMaskActive ? " (MASKED COPY)" : ""), pdfWidth / 2, 22, { align: "center" });
+      pdf.text(activeCardLabel.toUpperCase() + (isMaskActive ? " (MASKED COPY)" : ""), pdfWidth / 2, 20, { align: "center" });
 
       pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(9);
+      pdf.setFontSize(8.5);
       pdf.setTextColor(100, 116, 139);
-      pdf.text(`Student: ${document.getElementById('userNameDisplay').innerText} | Generated securely via DocVault`, pdfWidth / 2, 28, { align: "center" });
+      pdf.text(`Student: ${document.getElementById('userNameDisplay').innerText} | Generated securely via DocVault`, pdfWidth / 2, 26, { align: "center" });
 
       pdf.setDrawColor(203, 213, 225);
-      pdf.setLineWidth(0.4);
-      pdf.line(20, 32, pdfWidth - 20, 32);
+      pdf.setLineWidth(0.3);
+      pdf.line(20, 30, pdfWidth - 20, 30);
 
-      const targetWidth = 135; // mm
-      let currentY = 40;
+      const targetWidth = 140; // mm
+      let currentY = 36;
 
       if (frontImg) {
         const frontH = (frontImg.height * targetWidth) / frontImg.width;
@@ -2026,9 +2027,9 @@
         pdf.text("FRONT SIDE", imgX, currentY - 2);
 
         pdf.setDrawColor(203, 213, 225);
-        pdf.rect(imgX - 1, currentY - 1, targetWidth + 2, frontH + 2);
+        pdf.rect(imgX - 0.5, currentY - 0.5, targetWidth + 1, frontH + 1);
         pdf.addImage(frontImg, 'JPEG', imgX, currentY, targetWidth, frontH);
-        currentY += frontH + 16;
+        currentY += frontH + 14;
       }
 
       if (backImg) {
@@ -2041,33 +2042,32 @@
         pdf.text("BACK SIDE", imgX, currentY - 2);
 
         pdf.setDrawColor(203, 213, 225);
-        pdf.rect(imgX - 1, currentY - 1, targetWidth + 2, backH + 2);
+        pdf.rect(imgX - 0.5, currentY - 0.5, targetWidth + 1, backH + 1);
         pdf.addImage(backImg, 'JPEG', imgX, currentY, targetWidth, backH);
       }
 
-      // Security Footer Note
       pdf.setFontSize(7.5);
       pdf.setTextColor(148, 163, 184);
-      pdf.text("Confidential college verification document. Stored with client-side Zero-Knowledge encryption.", pdfWidth / 2, pdfHeight - 12, { align: "center" });
+      pdf.text("Confidential college verification document. Stored with client-side Zero-Knowledge encryption.", pdfWidth / 2, pdfHeight - 10, { align: "center" });
 
       pdf.save(`${activeCardTarget}_Combined_${isMaskActive ? 'Masked_' : ''}A4.pdf`);
     }
 
-    // ================= FEATURE 1: PRESET TARGET KB RESIZER =================
+    // ================= FEATURE 1: HIGH-RES TARGET KB RESIZER =================
     let currentResizerDocId = 'doc_photo';
     let resizerGeneratedBlob = null;
     let resizerGeneratedFileName = "Resized_Document.jpg";
 
     const RESIZER_PRESETS = {
       doc_photo: [
-        { name: "Standard Exam/College Form (20 KB – 50 KB / 200x230 px)", targetMinKB: 20, targetMaxKB: 48, w: 200, h: 230 },
-        { name: "UPSC / SSC / State Portal (10 KB – 20 KB / 140x190 px)", targetMinKB: 10, targetMaxKB: 19, w: 140, h: 190 },
-        { name: "High-Res Verification Photo (< 100 KB / 400x500 px)", targetMinKB: 50, targetMaxKB: 95, w: 400, h: 500 }
+        { name: "Standard Exam/College Form (20 KB – 50 KB / High-Res)", targetMinKB: 20, targetMaxKB: 48, w: 600, h: 750 },
+        { name: "UPSC / SSC / State Portal (10 KB – 20 KB / Sharp)", targetMinKB: 10, targetMaxKB: 19, w: 450, h: 560 },
+        { name: "High-Res Verification Photo (< 100 KB / HD)", targetMinKB: 50, targetMaxKB: 95, w: 800, h: 1000 }
       ],
       doc_signature: [
-        { name: "Standard Form Signature (10 KB – 20 KB / 140x60 px)", targetMinKB: 10, targetMaxKB: 19, w: 140, h: 60 },
-        { name: "UPSC / SSC Signature (4 KB – 12 KB / 120x50 px)", targetMinKB: 4, targetMaxKB: 11, w: 120, h: 50 },
-        { name: "Bank & Legal Form Signature (< 30 KB / 280x120 px)", targetMinKB: 15, targetMaxKB: 28, w: 280, h: 120 }
+        { name: "Standard Form Signature (10 KB – 20 KB / Sharp Ink)", targetMinKB: 10, targetMaxKB: 19, w: 800, h: 350 },
+        { name: "UPSC / SSC Signature (5 KB – 15 KB / Clear Edges)", targetMinKB: 5, targetMaxKB: 14, w: 600, h: 260 },
+        { name: "Bank & Legal Form Signature (< 30 KB / Crisp HD)", targetMinKB: 15, targetMaxKB: 28, w: 900, h: 400 }
       ]
     };
 
@@ -2121,18 +2121,29 @@
       canvas.height = preset.h;
       const ctx = canvas.getContext('2d');
 
-      // Clean white background
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // Clean pure background
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, preset.w, preset.h);
-      ctx.drawImage(img, 0, 0, preset.w, preset.h);
 
-      // Binary iteration for exact target KB
-      let minQ = 0.1;
+      // Centered aspect ratio preservation without distortion
+      const hRatio = preset.w / img.width;
+      const vRatio = preset.h / img.height;
+      const ratio = Math.min(hRatio, vRatio);
+      const centerShiftX = (preset.w - img.width * ratio) / 2;
+      const centerShiftY = (preset.h - img.height * ratio) / 2;
+
+      ctx.drawImage(img, 0, 0, img.width, img.height,
+                    centerShiftX, centerShiftY, img.width * ratio, img.height * ratio);
+
+      let minQ = 0.05;
       let maxQ = 0.95;
-      let bestDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      let bestDataUrl = canvas.toDataURL('image/jpeg', 0.7);
       let bestKB = Math.round((bestDataUrl.length * 3 / 4) / 1024);
 
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 8; i++) {
         let q = (minQ + maxQ) / 2;
         let testUrl = canvas.toDataURL('image/jpeg', q);
         let currentKB = Math.round((testUrl.length * 3 / 4) / 1024);
@@ -2151,7 +2162,7 @@
       }
 
       document.getElementById('resizerPreviewImg').src = bestDataUrl;
-      document.getElementById('resizerStatusText').innerText = `✔ Ready: Exactly ${bestKB} KB (${preset.w}×${preset.h} px)`;
+      document.getElementById('resizerStatusText').innerText = `✔ Crisp HD Quality: ${bestKB} KB (${preset.w}×${preset.h} px)`;
 
       resizerGeneratedBlob = bestDataUrl;
       resizerGeneratedFileName = `${docId === 'doc_photo' ? 'Passport_Photo' : 'Digital_Signature'}_${bestKB}KB.jpg`;
@@ -2178,27 +2189,24 @@
       const zip = new JSZip();
       let filesAddedCount = 0;
 
-      // 1. Photo (Target 35 KB)
       if (decryptedStore['doc_photo']) {
         let pUrl = decryptedStore['doc_photo'].dataUrl || decryptedStore['doc_photo'];
         if (typeof pUrl === 'string' && pUrl.startsWith('data:')) {
           const base64Content = pUrl.split(',')[1];
-          zip.file("1_Passport_Photo_35KB.jpg", base64Content, { base64: true });
+          zip.file("1_Passport_Photo.jpg", base64Content, { base64: true });
           filesAddedCount++;
         }
       }
 
-      // 2. Signature (Target 15 KB)
       if (decryptedStore['doc_signature']) {
         let sUrl = decryptedStore['doc_signature'].dataUrl || decryptedStore['doc_signature'];
         if (typeof sUrl === 'string' && sUrl.startsWith('data:')) {
           const base64Content = sUrl.split(',')[1];
-          zip.file("2_Digital_Signature_15KB.jpg", base64Content, { base64: true });
+          zip.file("2_Digital_Signature.jpg", base64Content, { base64: true });
           filesAddedCount++;
         }
       }
 
-      // 3. Primary Aadhaar / Identity (Front & Back)
       if (decryptedStore['my_aadhaar']) {
         const aadhaar = decryptedStore['my_aadhaar'];
         if (aadhaar.front && aadhaar.front.startsWith('data:')) {
@@ -2211,7 +2219,6 @@
         }
       }
 
-      // 4. Marksheets / Other key uploaded records
       const commonDocs = ['doc_10th', 'doc_12th', 'doc_caste_cert'];
       for (const dId of commonDocs) {
         if (decryptedStore[dId]) {
@@ -2226,7 +2233,7 @@
       }
 
       if (filesAddedCount === 0) {
-        alert("Zip banane ke liye kam se kam photo ya signature upload hona zaroori hai!");
+        alert("Zip bundle banane ke liye kam se kam photo ya signature upload hona zaroori hai!");
         return;
       }
 
@@ -2272,7 +2279,6 @@
         updatedAt: new Date().toLocaleDateString()
       };
 
-      // 1. Instant local optimistic update
       decryptedStore[currentUploadTargetId] = fileData;
       if (!activeKeysList.includes(currentUploadTargetId)) {
         activeKeysList.push(currentUploadTargetId);
@@ -2284,7 +2290,6 @@
       renderDocuments('All');
       updateAllCustomCardStatusIndicators();
 
-      // 2. Encrypt & write to Firebase
       try {
         const encryptedBlob = encryptData(fileData);
         await db.ref(`vaults/${resolvedUserKey}/documents/${currentUploadTargetId}`).set({
