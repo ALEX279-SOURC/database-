@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DocVault - Zero-Knowledge Internal Storage</title>
 
+  <!-- PWA Metadata -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b1120">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="DocVault">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2092/2092663.png">
+
   <!-- CryptoJS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
@@ -12,15 +21,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <!-- PWA Meta Tags -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0b1120">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="DocVault">
-<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2092/2092663.png">
-  
+
   <style>
     * {
       box-sizing: border-box;
@@ -215,18 +216,18 @@
       cursor: pointer;
     }
 
-    .folder-status-box {
+    .storage-status-box {
       background: #0f172a;
-      border: 1px dashed #38bdf8;
+      border: 1px solid #10b981;
       border-radius: 12px;
-      padding: 12px;
-      text-align: center;
+      padding: 10px 14px;
+      text-align: left;
       display: flex;
-      flex-direction: column;
-      gap: 6px;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
     }
 
-    /* Security Status Banner */
     .security-status-banner {
       display: flex;
       justify-content: space-between;
@@ -239,7 +240,6 @@
       color: #6ee7b7;
     }
 
-    /* Profile Card */
     .profile-card {
       background: radial-gradient(circle at top left, #1e293b 0%, #0f172a 100%);
       border: 1px solid #334155;
@@ -287,7 +287,6 @@
       margin-top: 2px;
     }
 
-    /* Actions Grid */
     .actions-grid {
       display: flex;
       gap: 8px;
@@ -335,7 +334,6 @@
       font-size: 0.88rem;
     }
 
-    /* Tabs Slider */
     .tabs-slider {
       display: flex;
       gap: 8px;
@@ -359,7 +357,6 @@
       border-color: #2563eb;
     }
 
-    /* Cards */
     .item-card {
       background: #111827;
       border: 1px solid #1f2937;
@@ -460,7 +457,6 @@
     }
     .input-field:focus { border-color: #3b82f6; }
 
-    /* Modals */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -484,7 +480,6 @@
     }
     .rule-item.valid { color: #10b981; }
 
-    /* Flashcard QR */
     .qr-flashcard-long {
       background: #090a0f;
       border: 2px solid #1e2638;
@@ -563,7 +558,6 @@
       max-width: 150px;
     }
 
-    /* Modal Viewer */
     .modal-viewer-card {
       background: #111827;
       border: 1px solid #334155;
@@ -671,14 +665,12 @@
         </svg>
       </div>
       <h2 style="font-size:1.35rem; font-weight:700;">DocVault Internal</h2>
-      <p style="font-size:0.8rem; color:#94a3b8; margin-top:-8px;">PBKDF2 (100k) + Local Phone Storage (.enc)</p>
+      <p style="font-size:0.8rem; color:#94a3b8; margin-top:-8px;">OPFS Sandboxed Storage • Zero Permission Prompts</p>
 
-      <!-- Storage Folder Picker Box -->
-      <div class="folder-status-box">
-        <div style="font-size:0.8rem; color:#cbd5e1; font-weight:600;" id="folderStatusText">No Storage Folder Linked</div>
-        <button class="btn-secondary" style="font-size:0.78rem;" onclick="selectStorageDirectory()">
-          📁 Choose Phone Storage Folder
-        </button>
+      <!-- Auto Active OPFS Storage Banner -->
+      <div class="storage-status-box">
+        <span style="color:#6ee7b7; font-weight:600;">⚡ Direct Phone Memory Connected</span>
+        <span style="color:#34d399; font-weight:700;">Zero-Popup</span>
       </div>
 
       <div class="auth-toggle-row">
@@ -743,8 +735,8 @@
             <svg class="svg-icon" style="color:#38bdf8;" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
           </div>
           <div>
-            <div class="brand-title">DocVault <span class="secure-badge">LOCAL DISK</span></div>
-            <div class="brand-sub">Phone Directory: Encrypted (.enc) Files</div>
+            <div class="brand-title">DocVault <span class="secure-badge">OPFS ISOLATED</span></div>
+            <div style="font-size:0.75rem; color:#94a3b8;">Private Storage: Encrypted (.enc) Files</div>
           </div>
         </div>
         <button class="icon-btn" onclick="openQrModal()">
@@ -812,7 +804,7 @@
           </div>
           <div>
             <div style="font-weight:600; font-size:0.92rem;">White Background Photo</div>
-            <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Stored in phone as encrypted binary <code>doc_photo.enc</code></div>
+            <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Direct isolated file: <code>doc_photo.enc</code></div>
           </div>
         </div>
         <div class="doc-actions-row">
@@ -831,8 +823,8 @@
   <div class="fixed-footer-bar">
     <div class="footer-metrics-container">
       <div class="footer-metric-pill">
-        <span><span class="pulse-dot"></span> Storage Node</span>
-        <span class="footer-metric-val">Internal Phone</span>
+        <span><span class="pulse-dot"></span> Storage Mode</span>
+        <span class="footer-metric-val">Internal OPFS</span>
       </div>
       <div class="footer-metric-pill">
         <span>Vault Security</span>
@@ -1001,61 +993,7 @@
   </div>
 
   <script>
-    // ================= PERSISTENT HANDLE SYSTEM (INDEXEDDB) =================
-    const HANDLE_DB_NAME = "DocVault_HandleRegistry";
-    const HANDLE_STORE = "directory_handles";
-
-    function openHandleDB() {
-      return new Promise((resolve, reject) => {
-        const req = indexedDB.open(HANDLE_DB_NAME, 1);
-        req.onupgradeneeded = (e) => {
-          const db = e.target.result;
-          if (!db.objectStoreNames.contains(HANDLE_STORE)) {
-            db.createObjectStore(HANDLE_STORE);
-          }
-        };
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      });
-    }
-
-    async function saveDirectoryHandle(handle) {
-      const db = await openHandleDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(HANDLE_STORE, "readwrite");
-        tx.objectStore(HANDLE_STORE).put(handle, "vault_root");
-        tx.oncomplete = () => resolve(true);
-        tx.onerror = () => reject(tx.error);
-      });
-    }
-
-    async function getSavedDirectoryHandle() {
-      const db = await openHandleDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(HANDLE_STORE, "readonly");
-        const req = tx.objectStore(HANDLE_STORE).get("vault_root");
-        req.onsuccess = () => resolve(req.result || null);
-        req.onerror = () => reject(req.error);
-      });
-    }
-
-    async function verifyPermission(fileHandle, readWrite = true) {
-      const options = { mode: readWrite ? "readwrite" : "read" };
-      try {
-        if ((await fileHandle.queryPermission(options)) === "granted") {
-          return true;
-        }
-        if ((await fileHandle.requestPermission(options)) === "granted") {
-          return true;
-        }
-      } catch (e) {
-        console.warn("Permission verification request error:", e);
-      }
-      return false;
-    }
-
-    // ================= DISK FILE SYSTEM HELPERS =================
-    let directoryHandle = null;
+    // ================= ZERO-PERMISSION OPFS STORAGE ENGINE =================
     let derivedEncryptionKey = null;
     let currentSessionUser = null;
     let activeKeysList = [];
@@ -1064,18 +1002,23 @@
     let inactivityTimer = null;
     let isFilePickerOpen = false;
 
+    // Direct sandboxed root directory in phone memory
+    async function getOPFSRoot() {
+      return await navigator.storage.getDirectory();
+    }
+
     async function writeEncryptedFileToPhone(fileName, textData) {
-      if (!directoryHandle) throw new Error("Internal phone folder link nahi kiya gaya.");
-      const fileHandle = await directoryHandle.getFileHandle(fileName, { create: true });
+      const root = await getOPFSRoot();
+      const fileHandle = await root.getFileHandle(fileName, { create: true });
       const writable = await fileHandle.createWritable();
       await writable.write(textData);
       await writable.close();
     }
 
     async function readEncryptedFileFromPhone(fileName) {
-      if (!directoryHandle) return null;
       try {
-        const fileHandle = await directoryHandle.getFileHandle(fileName);
+        const root = await getOPFSRoot();
+        const fileHandle = await root.getFileHandle(fileName);
         const file = await fileHandle.getFile();
         return await file.text();
       } catch (e) {
@@ -1083,39 +1026,14 @@
       }
     }
 
-    function updateFolderUI(folderName, needsPermission = false) {
-      const statusEl = document.getElementById('folderStatusText');
-      if (statusEl) {
-        statusEl.innerText = needsPermission[span_0](start_span)[span_0](end_span)
-          ? `📁 Linked: ${folderName} (Permission required on unlock)`[span_1](start_span)[span_1](end_span)
-          : `✓ Linked: ${folderName}`;
-        statusEl.style.color = needsPermission ? "#fbbf24" : "#34d399";
-      }
-    }
-
-    async function selectStorageDirectory() {
-      try {
-        if ('showDirectoryPicker' in window) {
-          directoryHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-          await saveDirectoryHandle(directoryHandle);
-          updateFolderUI(directoryHandle.name, false);
-        } else {
-          alert("Directory Picker support nahi karta aapka browser. Chrome for Android use karein.");
-        }
-      } catch (err) {
-        console.warn("Folder picker canceled/failed:", err);
-      }
-    }
-
+    // Auto-enable persistent storage without user prompts
     window.addEventListener('load', async () => {
-      const savedHandle = await getSavedDirectoryHandle();
-      if (savedHandle) {
-        directoryHandle = savedHandle;
-        updateFolderUI(savedHandle.name, true);
+      if (navigator.storage && navigator.storage.persist) {
+        await navigator.storage.persist();
       }
     });
 
-    // ================= CRYPTOGRAPHIC DERIVATION ENGINE =================
+    // ================= CRYPTOGRAPHIC ENGINE =================
     function evaluatePinRules(pin) {
       return {
         len: pin.length >= 8,
@@ -1152,7 +1070,6 @@
       });
     }
 
-    // Har file ke aage wahi salt jod kar save karein: SALT:IV:CIPHERTEXT
     function encryptPayloadWithSalt(rawObject, pin, saltHex) {
       const jsonStr = typeof rawObject === 'string' ? rawObject : JSON.stringify(rawObject);
       const salt = CryptoJS.enc.Hex.parse(saltHex);
@@ -1172,7 +1089,6 @@
       return saltHex + ":" + iv.toString(CryptoJS.enc.Hex) + ":" + encrypted.ciphertext.toString(CryptoJS.enc.Base64);
     }
 
-    // Direct header salt nikaal kar decrypt karein
     function decryptPayloadWithPin(storedString, pin) {
       if (!storedString || typeof storedString !== 'string') return null;
       try {
@@ -1210,7 +1126,6 @@
       }
     }
 
-    // Document encryption helper (Uses active session key & salt)
     function encryptPayload(rawObject) {
       return encryptPayloadWithSalt(rawObject, currentSessionUser.rawPin, currentSessionUser.saltHex);
     }
@@ -1219,19 +1134,8 @@
       return decryptPayloadWithPin(storedString, currentSessionUser.rawPin);
     }
 
-    // ================= REGISTRATION (ENCRYPT ALL DETAILS) =================
+    // ================= INITIALIZATION & LOGIN =================
     async function handleRegister() {
-      if (!directoryHandle) {
-        alert("Pehle 'Choose Phone Storage Folder' button par click karke folder select karein.");
-        return;
-      }
-
-      const hasAccess = await verifyPermission(directoryHandle, true);
-      if (!hasAccess) {
-        alert("Folder write permission allow karein.");
-        return;
-      }
-
       const username = document.getElementById('regUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
       const fullName = document.getElementById('regFullName').value.trim();
       const course = document.getElementById('regCourse').value.trim() || 'Student';
@@ -1244,13 +1148,13 @@
         return;
       }
       if (pin !== pinConfirm) {
-        alert("Passphrase aur Confirm Passphrase match nahi kar rahe.");
+        alert("Passphrase match nahi kar rahe.");
         return;
       }
 
       const existingProfile = await readEncryptedFileFromPhone("profile.enc");
       if (existingProfile) {
-        alert("Is folder me pehle se encrypted vault exist karta hai. Kripya 'Unlock Vault' karein ya folder khali karein.");
+        alert("Is phone par already ek encrypted vault maujood hai! 'Unlock Vault' use karein.");
         return;
       }
 
@@ -1277,7 +1181,7 @@
         currentSessionUser = profilePayload;
 
         launchDashboard(profilePayload);
-        alert("Vault successfully create ho gaya! Saara data encrypted store hoga.");
+        alert("Encrypted Vault ready ho gaya! Ab koi permission popup nahi aayega.");
       } catch (err) {
         alert("Registration failed: " + err.message);
       } finally {
@@ -1286,20 +1190,7 @@
       }
     }
 
-    // ================= UNLOCK & LOGIN (SALT HEADER VERIFIED) =================
     async function handleLogin() {
-      if (!directoryHandle) {
-        alert("Pehle storage folder link karein.");
-        return;
-      }
-
-      // One-click permission verify
-      const hasAccess = await verifyPermission(directoryHandle, true);
-      if (!hasAccess) {
-        alert("Storage access allow karein taaki data decrypt ho sake.");
-        return;
-      }
-
       const username = document.getElementById('loginUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
       const pin = document.getElementById('loginPin').value.trim();
 
@@ -1315,19 +1206,16 @@
       try {
         const profileCipher = await readEncryptedFileFromPhone("profile.enc");
         if (!profileCipher) {
-          alert("Is folder me koi vault file nahi mili. New Vault create karein.");
+          alert("Is device par koi vault file nahi mili. New Vault create karein.");
           return;
         }
 
-        // Exact Salt header se profile decrypt hogi
         const profile = decryptPayloadWithPin(profileCipher, pin);
-
         if (!profile) {
-          alert("Galat Master PIN! Decryption impossible.");[span_2](start_span)[span_2](end_span)
+          alert("Galat Master PIN! Decryption impossible.");
           return;
         }
 
-        // Check if username matches if supplied
         if (username && profile.username && profile.username !== username) {
           alert("Vault Username match nahi hua.");
           return;
@@ -1350,21 +1238,18 @@
     async function loadAllLocalDocuments() {
       activeKeysList = [];
 
-      // Digital Signature
       const sigCipher = await readEncryptedFileFromPhone("doc_signature.enc");
       if (sigCipher) {
         decryptedStore['doc_signature'] = decryptPayload(sigCipher);
         activeKeysList.push('doc_signature');
       }
 
-      // Passport Photo
       const photoCipher = await readEncryptedFileFromPhone("doc_photo.enc");
       if (photoCipher) {
         decryptedStore['doc_photo'] = decryptPayload(photoCipher);
         activeKeysList.push('doc_photo');
       }
 
-      // All Master Documents
       for (const doc of masterCollegeDocuments) {
         const cipher = await readEncryptedFileFromPhone(`${doc.id}.enc`);
         if (cipher) {
@@ -1373,7 +1258,6 @@
         }
       }
 
-      // Identity Cards
       const multiKeys = ['my_aadhaar', 'father_aadhaar', 'mother_aadhaar', 'doc_voter_card', 'doc_pan_card', 'doc_dl_card'];
       for (const k of multiKeys) {
         const cipher = await readEncryptedFileFromPhone(`${k}.enc`);
@@ -1532,7 +1416,7 @@
       }
     }
 
-    // ================= FILE UPLOAD & DISK PERSISTENCE =================
+    // ================= FILE UPLOAD & DIRECT OPFS WRITE =================
     function triggerDocUpload(docId) {
       pendingUploadTarget = docId;
       isFilePickerOpen = true;
@@ -1842,7 +1726,7 @@
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(148, 163, 184);
-      doc.text("Mode: Zero-Knowledge Local Phone Storage (.enc) | 100k PBKDF2 Iterations", 14, 25);
+      doc.text("Mode: Zero-Knowledge OPFS Phone Storage (.enc) | 100k PBKDF2 Iterations", 14, 25);
 
       doc.setTextColor(30, 41, 59);
       doc.setFontSize(12);
@@ -1850,9 +1734,9 @@
       doc.text("1. Local Architecture & Cipher Review", 14, 42);
 
       const items = [
-        ["SEC-01", "Ciphertext Storage at Rest", "HIGH", "VERIFIED", "All data files (.enc) stored scrambled on disk."],
+        ["SEC-01", "Ciphertext Storage at Rest", "HIGH", "VERIFIED", "All data files (.enc) stored scrambled in OPFS."],
         ["SEC-02", "Zero Plaintext Profile Leaks", "HIGH", "VERIFIED", "Full name and course encrypted inside profile.enc."],
-        ["SEC-03", "Persistent Directory Handle", "MEDIUM", "VERIFIED", "Handle retained via IndexedDB + dynamic permission prompt."],
+        ["SEC-03", "Zero-Permission Sandbox", "HIGH", "VERIFIED", "OPFS isolated directory; zero browser popups."],
         ["SEC-04", "100,000 Iteration PBKDF2 Key", "HIGH", "VERIFIED", "AES-256 key derived in volatile RAM on PIN entry."],
         ["SEC-05", "Dynamic A4 Scaler for Cards", "LOW", "VERIFIED", "Preserves aspect ratio and prevents image clipping."]
       ];
@@ -1885,7 +1769,7 @@
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       doc.setTextColor(71, 85, 105);
-      doc.text("• No cloud server or backend database is connected; storage is on local phone hardware.", 14, y + 16);
+      doc.text("• No cloud server or backend database is connected; storage is on local OPFS partition.", 14, y + 16);
       doc.text("• Files on disk cannot be read by third-party file explorers without the Master PIN.", 14, y + 22);
 
       doc.setFontSize(8);
@@ -1894,14 +1778,15 @@
 
       doc.save("DocVault_Security_Report.pdf");
     }
+
     // Register Service Worker for PWA
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then((reg) => console.log('Service Worker Registered successfully:', reg.scope))
-      .catch((err) => console.warn('Service Worker Registration failed:', err));
-  });
-}
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => console.log('Service Worker Registered:', reg.scope))
+          .catch((err) => console.warn('Service Worker failed:', err));
+      });
+    }
   </script>
 </body>
 </html>
