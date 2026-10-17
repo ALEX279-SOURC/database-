@@ -40,7 +40,7 @@
 
     .hidden { display: none !important; }
 
-    /* Compact Fixed Footer */
+    /* Fixed Footer */
     .fixed-footer-bar {
       position: fixed;
       bottom: 0;
@@ -665,7 +665,7 @@
       <h2 style="font-size:1.35rem; font-weight:700;">DocVault Internal</h2>
       <p style="font-size:0.8rem; color:#94a3b8; margin-top:-8px;">PBKDF2 (100k) + Local Phone Storage (.enc)</p>
 
-      <!-- Persistent Storage Folder Picker Box -->
+      <!-- Storage Folder Picker Box -->
       <div class="folder-status-box">
         <div style="font-size:0.8rem; color:#cbd5e1; font-weight:600;" id="folderStatusText">No Storage Folder Linked</div>
         <button class="btn-secondary" style="font-size:0.78rem;" onclick="selectStorageDirectory()">
@@ -694,7 +694,7 @@
       <!-- Register Form -->
       <div id="registerForm" class="auth-input-group hidden">
         <div>
-          <label>Choose Username (Internal Reference ID)</label>
+          <label>Choose Username (No spaces)</label>
           <input type="text" id="regUsername" class="input-field" placeholder="e.g. arc">
         </div>
         <div>
@@ -735,7 +735,7 @@
             <svg class="svg-icon" style="color:#38bdf8;" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
           </div>
           <div>
-            <div class="brand-title">DocVault <span class="secure-badge">LOCAL STORAGE</span></div>
+            <div class="brand-title">DocVault <span class="secure-badge">LOCAL DISK</span></div>
             <div class="brand-sub">Phone Directory: Encrypted (.enc) Files</div>
           </div>
         </div>
@@ -753,7 +753,6 @@
         <div class="user-info">
           <div class="avatar" id="avatarInitial">U</div>
           <div>
-            <!-- Decrypted on fly in RAM from profile.enc -->
             <div class="name-title"><span id="userNameDisplay">User</span> <span class="unlocked-tag">Decrypted</span></div>
             <div class="meta-details">Roll / Course: <span id="userCourseDisplay">FYBA</span></div>
             <div class="meta-details">🛡 100k PBKDF2 Iterated · <span id="docCount">23 Documents</span></div>
@@ -805,7 +804,7 @@
           </div>
           <div>
             <div style="font-weight:600; font-size:0.92rem;">White Background Photo</div>
-            <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Saved encrypted to disk as <code>doc_photo.enc</code></div>
+            <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Stored in phone as encrypted binary <code>doc_photo.enc</code></div>
           </div>
         </div>
         <div class="doc-actions-row">
@@ -1034,11 +1033,15 @@
 
     async function verifyPermission(fileHandle, readWrite = true) {
       const options = { mode: readWrite ? "readwrite" : "read" };
-      if ((await fileHandle.queryPermission(options)) === "granted") {
-        return true;
-      }
-      if ((await fileHandle.requestPermission(options)) === "granted") {
-        return true;
+      try {
+        if ((await fileHandle.queryPermission(options)) === "granted") {
+          return true;
+        }
+        if ((await fileHandle.requestPermission(options)) === "granted") {
+          return true;
+        }
+      } catch (e) {
+        console.warn("Permission verification request error:", e);
       }
       return false;
     }
@@ -1054,7 +1057,7 @@
     let isFilePickerOpen = false;
 
     async function writeEncryptedFileToPhone(fileName, textData) {
-      if (!directoryHandle) throw new Error("Internal phone folder not selected.");
+      if (!directoryHandle) throw new Error("Internal phone folder link nahi kiya gaya.");
       const fileHandle = await directoryHandle.getFileHandle(fileName, { create: true });
       const writable = await fileHandle.createWritable();
       await writable.write(textData);
@@ -1075,8 +1078,8 @@
     function updateFolderUI(folderName, needsPermission = false) {
       const statusEl = document.getElementById('folderStatusText');
       if (statusEl) {
-        statusEl.innerText = needsPermission 
-          ? `📁 Linked: ${folderName} (Permission required on unlock)` 
+        statusEl.innerText = needsPermission[span_0](start_span)[span_0](end_span)
+          ? `📁 Linked: ${folderName} (Permission required on unlock)`[span_1](start_span)[span_1](end_span)
           : `✓ Linked: ${folderName}`;
         statusEl.style.color = needsPermission ? "#fbbf24" : "#34d399";
       }
@@ -1089,7 +1092,7 @@
           await saveDirectoryHandle(directoryHandle);
           updateFolderUI(directoryHandle.name, false);
         } else {
-          alert("Directory Picker is not supported in this browser. Please use Chrome on Android / Desktop.");
+          alert("Directory Picker support nahi karta aapka browser. Chrome for Android use karein.");
         }
       } catch (err) {
         console.warn("Folder picker canceled/failed:", err);
@@ -1141,50 +1144,83 @@
       });
     }
 
-    function encryptPayload(rawObject) {
+    // Har file ke aage wahi salt jod kar save karein: SALT:IV:CIPHERTEXT
+    function encryptPayloadWithSalt(rawObject, pin, saltHex) {
       const jsonStr = typeof rawObject === 'string' ? rawObject : JSON.stringify(rawObject);
+      const salt = CryptoJS.enc.Hex.parse(saltHex);
+      const key = CryptoJS.PBKDF2(pin, salt, {
+        keySize: 256 / 32,
+        iterations: 100000,
+        hasher: CryptoJS.algo.SHA256
+      });
+
       const iv = CryptoJS.lib.WordArray.random(16);
-      const encrypted = CryptoJS.AES.encrypt(jsonStr, derivedEncryptionKey, {
+      const encrypted = CryptoJS.AES.encrypt(jsonStr, key, {
         iv: iv,
         mode: CryptoJS.mode.CBC,
         padding: CryptoJS.pad.Pkcs7
       });
-      return iv.toString(CryptoJS.enc.Hex) + ":" + encrypted.ciphertext.toString(CryptoJS.enc.Base64);
+
+      return saltHex + ":" + iv.toString(CryptoJS.enc.Hex) + ":" + encrypted.ciphertext.toString(CryptoJS.enc.Base64);
     }
 
-    function decryptPayload(storedCipher) {
-      if (!storedCipher || !derivedEncryptionKey) return null;
+    // Direct header salt nikaal kar decrypt karein
+    function decryptPayloadWithPin(storedString, pin) {
+      if (!storedString || typeof storedString !== 'string') return null;
       try {
-        const parts = storedCipher.split(":");
-        const iv = CryptoJS.enc.Hex.parse(parts[0]);
-        const cipherParams = CryptoJS.lib.CipherParams.create({
-          ciphertext: CryptoJS.enc.Base64.parse(parts[1])
+        const parts = storedString.split(":");
+        if (parts.length < 3) return null;
+
+        const saltHex = parts[0];
+        const ivHex = parts[1];
+        const cipherBase64 = parts[2];
+
+        const salt = CryptoJS.enc.Hex.parse(saltHex);
+        const key = CryptoJS.PBKDF2(pin, salt, {
+          keySize: 256 / 32,
+          iterations: 100000,
+          hasher: CryptoJS.algo.SHA256
         });
-        const decrypted = CryptoJS.AES.decrypt(cipherParams, derivedEncryptionKey, {
+
+        const iv = CryptoJS.enc.Hex.parse(ivHex);
+        const cipherParams = CryptoJS.lib.CipherParams.create({
+          ciphertext: CryptoJS.enc.Base64.parse(cipherBase64)
+        });
+
+        const decrypted = CryptoJS.AES.decrypt(cipherParams, key, {
           iv: iv,
           mode: CryptoJS.mode.CBC,
           padding: CryptoJS.pad.Pkcs7
         });
-        const str = decrypted.toString(CryptoJS.enc.Utf8);
-        if (str) {
-          try { return JSON.parse(str); } catch (e) { return str; }
-        }
-      } catch (e) {
+
+        const resultStr = decrypted.toString(CryptoJS.enc.Utf8);
+        if (!resultStr) return null;
+
+        try { return JSON.parse(resultStr); } catch (e) { return resultStr; }
+      } catch (err) {
         return null;
       }
-      return null;
     }
 
-    // ================= INITIALIZATION / REGISTRATION =================
+    // Document encryption helper (Uses active session key & salt)
+    function encryptPayload(rawObject) {
+      return encryptPayloadWithSalt(rawObject, currentSessionUser.rawPin, currentSessionUser.saltHex);
+    }
+
+    function decryptPayload(storedString) {
+      return decryptPayloadWithPin(storedString, currentSessionUser.rawPin);
+    }
+
+    // ================= REGISTRATION (ENCRYPT ALL DETAILS) =================
     async function handleRegister() {
       if (!directoryHandle) {
-        alert("Pehle 'Choose Phone Storage Folder' button par click karke internal folder select karein.");
+        alert("Pehle 'Choose Phone Storage Folder' button par click karke folder select karein.");
         return;
       }
 
       const hasAccess = await verifyPermission(directoryHandle, true);
       if (!hasAccess) {
-        alert("Folder write access allow karein.");
+        alert("Folder write permission allow karein.");
         return;
       }
 
@@ -1206,7 +1242,7 @@
 
       const existingProfile = await readEncryptedFileFromPhone("profile.enc");
       if (existingProfile) {
-        alert("Is folder me already ek Encrypted Vault maujood hai! 'Unlock Vault' use karein.");
+        alert("Is folder me pehle se encrypted vault exist karta hai. Kripya 'Unlock Vault' karein ya folder khali karein.");
         return;
       }
 
@@ -1215,24 +1251,25 @@
       btn.disabled = true;
 
       try {
-        const storageSaltHex = CryptoJS.lib.WordArray.random(16).toString(CryptoJS.enc.Hex);
-        derivedEncryptionKey = deriveKeyFromPassphrase(pin, storageSaltHex);
+        const saltHex = CryptoJS.lib.WordArray.random(16).toString(CryptoJS.enc.Hex);
 
-        // Entire profile is encrypted (zero plaintext on disk)
         const profilePayload = {
           username: username,
           fullName: fullName,
           course: course,
-          saltHex: storageSaltHex,
+          saltHex: saltHex,
           registeredAt: new Date().toISOString()
         };
 
-        const encryptedProfile = encryptPayload(profilePayload);
+        const encryptedProfile = encryptPayloadWithSalt(profilePayload, pin, saltHex);
         await writeEncryptedFileToPhone("profile.enc", encryptedProfile);
 
+        profilePayload.rawPin = pin;
+        derivedEncryptionKey = deriveKeyFromPassphrase(pin, saltHex);
         currentSessionUser = profilePayload;
+
         launchDashboard(profilePayload);
-        alert("Encrypted Vault successfully aapke phone me setup ho gaya!");
+        alert("Vault successfully create ho gaya! Saara data encrypted store hoga.");
       } catch (err) {
         alert("Registration failed: " + err.message);
       } finally {
@@ -1241,24 +1278,25 @@
       }
     }
 
-    // ================= UNLOCK & LOGIN =================
+    // ================= UNLOCK & LOGIN (SALT HEADER VERIFIED) =================
     async function handleLogin() {
       if (!directoryHandle) {
-        alert("Pehle phone storage folder link karein.");
+        alert("Pehle storage folder link karein.");
         return;
       }
 
+      // One-click permission verify
       const hasAccess = await verifyPermission(directoryHandle, true);
       if (!hasAccess) {
-        alert("Folder permission allow karein taaki documents decrypt ho sakein.");
+        alert("Storage access allow karein taaki data decrypt ho sake.");
         return;
       }
 
       const username = document.getElementById('loginUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
       const pin = document.getElementById('loginPin').value.trim();
 
-      if (!username || !pin) {
-        alert("Username aur PIN enter karein.");
+      if (!pin) {
+        alert("Master PIN enter karein.");
         return;
       }
 
@@ -1273,33 +1311,28 @@
           return;
         }
 
-        // Try decrypting with test salt or inspect structure
-        // Since salt is in profile, we use standard deterministic initial PBKDF2 seed if profile has salt embedded in plaintext OR compute from salt
-        // Here we test PBKDF2 with standard SHA-256 username seed to decrypt profile wrapper:
-        const preSaltHex = CryptoJS.SHA256("DocVault_Static_Salt_" + username).toString().substring(0, 32);
-        const tempKey = deriveKeyFromPassphrase(pin, preSaltHex);
-
-        // Direct test:
-        derivedEncryptionKey = tempKey;
-        let profile = decryptPayload(profileCipher);
-
-        // If not matching, try fallback salt
-        if (!profile) {
-          const altSalt = CryptoJS.SHA256(username).toString().substring(0, 32);
-          derivedEncryptionKey = deriveKeyFromPassphrase(pin, altSalt);
-          profile = decryptPayload(profileCipher);
-        }
+        // Exact Salt header se profile decrypt hogi
+        const profile = decryptPayloadWithPin(profileCipher, pin);
 
         if (!profile) {
-          alert("Galat Master PIN! Decryption impossible.");
+          alert("Galat Master PIN! Decryption impossible.");[span_2](start_span)[span_2](end_span)
           return;
         }
 
+        // Check if username matches if supplied
+        if (username && profile.username && profile.username !== username) {
+          alert("Vault Username match nahi hua.");
+          return;
+        }
+
+        profile.rawPin = pin;
         currentSessionUser = profile;
+        derivedEncryptionKey = deriveKeyFromPassphrase(pin, profile.saltHex);
+
         await loadAllLocalDocuments();
         launchDashboard(profile);
       } catch (err) {
-        alert("Decryption Error: " + err.message);
+        alert("Login Error: " + err.message);
       } finally {
         btn.innerText = "Unlock & Decrypt";
         btn.disabled = false;
@@ -1504,7 +1537,7 @@
       resetInactivityTimer();
       const file = event.target.files[0];
       const targetDocId = pendingUploadTarget;
-      if (!file || !targetDocId || !currentSessionUser || !derivedEncryptionKey) return;
+      if (!file || !targetDocId || !currentSessionUser) return;
 
       const reader = new FileReader();
       reader.onload = async (e) => {
@@ -1660,7 +1693,7 @@
       isFilePickerOpen = false;
       resetInactivityTimer();
       const file = event.target.files[0];
-      if (!file || !currentSessionUser || !derivedEncryptionKey) return;
+      if (!file || !currentSessionUser) return;
 
       const reader = new FileReader();
       reader.onload = async (e) => {
@@ -1776,7 +1809,7 @@
         link.href = canvas.toDataURL('image/png');
         link.click();
       } catch (err) {
-        alert("Failed to render card image.");
+        alert("Card render nahi ho paya.");
       }
     }
 
