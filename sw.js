@@ -1,5 +1,5 @@
 // Cache name ko v1 se v2 karein taaki naya code forcefully load ho
-const CACHE_NAME = "docvault-cache-v2";
+const CACHE_NAME = "docvault-cache-v3";
 
 const ASSETS_TO_CACHE = [
   "./",
