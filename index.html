@@ -36,7 +36,7 @@
       min-height: 100vh;
       display: flex;
       justify-content: center;
-      padding: 16px 16px 80px 16px;
+      padding: 16px 16px 60px 16px;
     }
 
     .app-container {
@@ -49,59 +49,18 @@
 
     .hidden { display: none !important; }
 
-    /* Fixed Footer */
+    /* Fixed Footer (Empty / Clean) */
     .fixed-footer-bar {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
+      height: 24px;
       background: rgba(11, 17, 32, 0.95);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       border-top: 1px solid #1f2937;
-      padding: 8px 16px;
-      display: flex;
-      justify-content: center;
       z-index: 100;
-    }
-    .footer-metrics-container {
-      width: 100%;
-      max-width: 480px;
-      display: flex;
-      gap: 10px;
-    }
-    .footer-metric-pill {
-      flex: 1;
-      background: #111827;
-      border: 1px solid #1f2937;
-      border-radius: 12px;
-      padding: 6px 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.72rem;
-      color: #94a3b8;
-    }
-    .footer-metric-val {
-      font-weight: 700;
-      color: #f8fafc;
-      font-size: 0.85rem;
-      margin-left: 6px;
-    }
-    .pulse-dot {
-      width: 6px;
-      height: 6px;
-      background-color: #10b981;
-      border-radius: 50%;
-      display: inline-block;
-      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-      animation: pulse 1.6s infinite;
-      margin-right: 4px;
-    }
-    @keyframes pulse {
-      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-      70% { transform: scale(1); box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
-      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
     }
 
     /* Auth Screens */
@@ -214,18 +173,6 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-    }
-
-    .storage-status-box {
-      background: #0f172a;
-      border: 1px solid #10b981;
-      border-radius: 12px;
-      padding: 10px 14px;
-      text-align: left;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 0.78rem;
     }
 
     .security-status-banner {
@@ -664,14 +611,7 @@
           <path d="m9 12 2 2 4-4"/>
         </svg>
       </div>
-      <h2 style="font-size:1.35rem; font-weight:700;">DocVault Internal</h2>
-      <p style="font-size:0.8rem; color:#94a3b8; margin-top:-8px;">OPFS Sandboxed Storage • Zero Permission Prompts</p>
-
-      <!-- Auto Active OPFS Storage Banner -->
-      <div class="storage-status-box">
-        <span style="color:#6ee7b7; font-weight:600;">⚡ Direct Phone Memory Connected</span>
-        <span style="color:#34d399; font-weight:700;">Zero-Popup</span>
-      </div>
+      <h2 style="font-size:1.35rem; font-weight:700;">DocVault</h2>
 
       <div class="auth-toggle-row">
         <button id="tabNewUser" class="auth-tab-btn" onclick="switchAuthMode('register')">New Vault</button>
@@ -720,10 +660,6 @@
         </div>
         <button id="btnCreateAction" class="btn-primary" style="margin-top:8px;" onclick="handleRegister()" disabled>Initialize Encrypted Vault</button>
       </div>
-
-      <button onclick="downloadSecurityReportPDF()" class="btn-secondary" style="font-size:0.75rem; border-style:dashed; margin-top:4px;">
-        📄 Download Security Audit Report (PDF)
-      </button>
     </div>
 
     <!-- Vault Dashboard -->
@@ -820,18 +756,7 @@
   </div>
 
   <!-- FIXED FOOTER -->
-  <div class="fixed-footer-bar">
-    <div class="footer-metrics-container">
-      <div class="footer-metric-pill">
-        <span><span class="pulse-dot"></span> Storage Mode</span>
-        <span class="footer-metric-val">Internal OPFS</span>
-      </div>
-      <div class="footer-metric-pill">
-        <span>Vault Security</span>
-        <span class="footer-metric-val">AES-256 (.enc)</span>
-      </div>
-    </div>
-  </div>
+  <div class="fixed-footer-bar"></div>
 
   <!-- Hidden Inputs -->
   <input type="file" id="universalFileInput" class="hidden" accept="image/*,application/pdf" onchange="handleUniversalFileUpload(event)">
@@ -1002,7 +927,6 @@
     let inactivityTimer = null;
     let isFilePickerOpen = false;
 
-    // Direct sandboxed root directory in phone memory
     async function getOPFSRoot() {
       return await navigator.storage.getDirectory();
     }
@@ -1026,7 +950,6 @@
       }
     }
 
-    // Auto-enable persistent storage without user prompts
     window.addEventListener('load', async () => {
       if (navigator.storage && navigator.storage.persist) {
         await navigator.storage.persist();
@@ -1181,7 +1104,7 @@
         currentSessionUser = profilePayload;
 
         launchDashboard(profilePayload);
-        alert("Encrypted Vault ready ho gaya! Ab koi permission popup nahi aayega.");
+        alert("Encrypted Vault ready ho gaya!");
       } catch (err) {
         alert("Registration failed: " + err.message);
       } finally {
