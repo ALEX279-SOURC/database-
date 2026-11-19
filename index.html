@@ -14,8 +14,9 @@
   <meta name="apple-mobile-web-app-title" content="DocVault">
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2092/2092663.png">
 
-  <!-- CryptoJS -->
+  <!-- CryptoJS & JSZip -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
   <!-- QR Code, html2canvas & jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -30,13 +31,28 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
-    body {
+    html, body {
       background-color: #0b1120;
       color: #f8fafc;
       min-height: 100vh;
+    }
+
+    body {
       display: flex;
       justify-content: center;
       padding: 16px 16px 60px 16px;
+    }
+
+    /* Lock scrolling & center card strictly on Auth Screen */
+    body.auth-locked {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      align-items: center;
+      padding: 16px;
+      touch-action: none;
     }
 
     .app-container {
@@ -74,6 +90,9 @@
       gap: 16px;
       text-align: center;
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+      max-height: 92dvh;
+      overflow-y: auto;
+      touch-action: pan-y;
     }
     .auth-toggle-row {
       display: flex;
@@ -154,14 +173,6 @@
       align-items: center;
       gap: 6px;
     }
-    .secure-badge {
-      background: #065f46;
-      color: #34d399;
-      font-size: 0.7rem;
-      padding: 2px 6px;
-      border-radius: 6px;
-      font-weight: 600;
-    }
     .icon-btn {
       background: #1e293b;
       border: 1px solid #334155;
@@ -175,16 +186,10 @@
       cursor: pointer;
     }
 
-    .security-status-banner {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 14px;
-      border-radius: 10px;
-      font-size: 0.78rem;
-      background: rgba(6, 95, 70, 0.25);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      color: #6ee7b7;
+    /* Preserves vertical spacing where security banner used to be */
+    .banner-spacer {
+      height: 36px;
+      width: 100%;
     }
 
     .profile-card {
@@ -236,50 +241,41 @@
 
     .actions-grid {
       display: flex;
-      gap: 8px;
+      gap: 10px;
     }
     .btn-primary {
       flex: 1;
       background: #2563eb;
       color: white;
       border: none;
-      padding: 10px 14px;
+      padding: 11px 12px;
       border-radius: 10px;
-      font-size: 0.88rem;
+      font-size: 0.85rem;
       font-weight: 600;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 6px;
       cursor: pointer;
       text-decoration: none;
     }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-secondary {
+      flex: 1;
       background: #1e293b;
       border: 1px solid #334155;
       color: #f1f5f9;
-      padding: 10px 14px;
+      padding: 11px 12px;
       border-radius: 10px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.88rem;
-      font-weight: 500;
-    }
-    .btn-danger {
-      background: rgba(239, 68, 68, 0.12);
-      border: 1px solid rgba(239, 68, 68, 0.25);
-      color: #f87171;
-      padding: 10px 14px;
-      border-radius: 10px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
       gap: 6px;
-      font-size: 0.88rem;
+      font-size: 0.85rem;
+      font-weight: 600;
     }
+    .btn-secondary:hover { background: #334155; }
 
     .tabs-slider {
       display: flex;
@@ -599,7 +595,7 @@
     }
   </style>
 </head>
-<body>
+<body class="auth-locked">
 
   <div class="app-container">
 
@@ -671,7 +667,7 @@
             <svg class="svg-icon" style="color:#38bdf8;" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
           </div>
           <div>
-            <div class="brand-title">DocVault <span class="secure-badge">OPFS ISOLATED</span></div>
+            <div class="brand-title">DocVault</div>
             <div style="font-size:0.75rem; color:#94a3b8;">Private Storage: Encrypted (.enc) Files</div>
           </div>
         </div>
@@ -680,10 +676,8 @@
         </button>
       </div>
 
-      <div class="security-status-banner">
-        <span>🛡 Zero-Knowledge Active (3 min inactivity lock)</span>
-        <span style="color:#6ee7b7; text-decoration:underline; cursor:pointer;" onclick="lockVault()">Lock Now</span>
-      </div>
+      <!-- Preserves vertical gap where green zero-knowledge banner was -->
+      <div class="banner-spacer"></div>
 
       <div class="profile-card">
         <div class="user-info">
@@ -691,16 +685,13 @@
           <div>
             <div class="name-title"><span id="userNameDisplay">User</span> <span class="unlocked-tag">Decrypted</span></div>
             <div class="meta-details">Roll / Course: <span id="userCourseDisplay">FYBA</span></div>
-            <div class="meta-details">🛡 100k PBKDF2 Iterated · <span id="docCount">23 Documents</span></div>
+            <div class="meta-details"><span id="docCount">23 Documents</span></div>
           </div>
         </div>
 
         <div class="actions-grid">
-          <button class="btn-primary" onclick="openQrModal()">Instant QR Scan</button>
-          <button class="btn-secondary" onclick="downloadSecurityReportPDF()" title="Download PDF Report">
-            Audit PDF
-          </button>
-          <button class="btn-danger" onclick="lockVault()">Lock</button>
+          <button id="btnCreateZip" class="btn-primary" onclick="createEncryptedZipBackup()">Create Zip File</button>
+          <button id="btnUploadBackup" class="btn-secondary" onclick="triggerBackupZipUpload()">Upload Backup File</button>
         </div>
       </div>
 
@@ -761,6 +752,7 @@
   <!-- Hidden Inputs -->
   <input type="file" id="universalFileInput" class="hidden" accept="image/*,application/pdf" onchange="handleUniversalFileUpload(event)">
   <input type="file" id="sideFileInput" class="hidden" accept="image/*" onchange="handleSideFileUpload(event)">
+  <input type="file" id="backupZipInput" class="hidden" accept=".zip,application/zip" onchange="handleBackupZipUpload(event)">
 
   <!-- QR MODAL -->
   <div id="qrModal" class="modal-overlay hidden" onclick="if(event.target.id==='qrModal') closeQrModal()">
@@ -1057,6 +1049,128 @@
       return decryptPayloadWithPin(storedString, currentSessionUser.rawPin);
     }
 
+    // ================= ENCRYPTED ZIP BACKUP & RESTORE =================
+    async function createEncryptedZipBackup() {
+      if (!currentSessionUser) return;
+      if (typeof JSZip === 'undefined') {
+        alert("ZIP library load nahi hui hai. Internet connection check karein.");
+        return;
+      }
+
+      const btn = document.getElementById('btnCreateZip');
+      const originalText = btn.innerText;
+      btn.innerText = "Creating Zip...";
+      btn.disabled = true;
+
+      try {
+        const zip = new JSZip();
+        const root = await getOPFSRoot();
+        let fileCount = 0;
+
+        for await (const [name, handle] of root.entries()) {
+          if (handle.kind === 'file' && name.endsWith('.enc')) {
+            const file = await handle.getFile();
+            const encryptedText = await file.text();
+            zip.file(name, encryptedText);
+            if (name !== 'profile.enc') fileCount++;
+          }
+        }
+
+        if (fileCount === 0) {
+          alert("Backup ke liye koi uploaded document nahi mila!");
+          return;
+        }
+
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        const url = URL.createObjectURL(zipBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `DocVault_Backup_${currentSessionUser.username || 'vault'}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        alert(`Encrypted Backup ZIP created successfully! (${fileCount} encrypted documents packed)`);
+      } catch (err) {
+        alert("ZIP Backup Error: " + err.message);
+      } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    function triggerBackupZipUpload() {
+      if (!currentSessionUser) return;
+      isFilePickerOpen = true;
+      clearTimeout(inactivityTimer);
+      document.getElementById('backupZipInput').click();
+    }
+
+    async function handleBackupZipUpload(event) {
+      isFilePickerOpen = false;
+      resetInactivityTimer();
+      const file = event.target.files[0];
+      event.target.value = '';
+      if (!file || !currentSessionUser) return;
+
+      if (typeof JSZip === 'undefined') {
+        alert("ZIP library load nahi hui hai.");
+        return;
+      }
+
+      const btn = document.getElementById('btnUploadBackup');
+      const originalText = btn.innerText;
+      btn.innerText = "Verifying...";
+      btn.disabled = true;
+
+      try {
+        const zip = await JSZip.loadAsync(file);
+        const profileEntry = zip.file("profile.enc");
+
+        if (!profileEntry) {
+          alert("Wrong Account / Invalid Backup!\n\nIs ZIP file me account verification data nahi mila. Kripya sahi account se login karein ya documents dobara upload karein.");
+          return;
+        }
+
+        const backupProfileCipher = await profileEntry.async("text");
+        const backupProfile = decryptPayloadWithPin(backupProfileCipher, currentSessionUser.rawPin);
+
+        // Verify password decryption & exact username match
+        if (!backupProfile || backupProfile.username !== currentSessionUser.username) {
+          alert("Wrong Account!\n\nYe backup file kisi aur account ya password se banayi gayi hai. Sahi account login karein, warna aapko sabhi documents re-upload karne padenge.");
+          return;
+        }
+
+        // Valid account confirmed: restore all encrypted .enc files into OPFS
+        let restoredCount = 0;
+        const encFiles = Object.keys(zip.files).filter(
+          name => !zip.files[name].dir && name.endsWith('.enc') && name !== 'profile.enc'
+        );
+
+        for (const fileName of encFiles) {
+          const cipherText = await zip.files[fileName].async("text");
+          const verifiedData = decryptPayloadWithPin(cipherText, currentSessionUser.rawPin);
+          if (verifiedData) {
+            await writeEncryptedFileToPhone(fileName, cipherText);
+            restoredCount++;
+          }
+        }
+
+        await loadAllLocalDocuments();
+        renderDocuments('All');
+        restoreSignatureAndPhoto();
+        updateAllCustomCardStatusIndicators();
+
+        alert(`Backup Restored Successfully! (${restoredCount} documents decrypted & restored to their exact slots)`);
+      } catch (err) {
+        alert("Backup Restore Failed: Valid ZIP file select karein.");
+      } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+      }
+    }
+
     // ================= INITIALIZATION & LOGIN =================
     async function handleRegister() {
       const username = document.getElementById('regUsername').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
@@ -1193,6 +1307,7 @@
 
     function launchDashboard(profile) {
       resetInactivityTimer();
+      document.body.classList.remove('auth-locked');
       document.getElementById('authScreen').classList.add('hidden');
       document.getElementById('vaultDashboard').classList.remove('hidden');
 
@@ -1217,6 +1332,7 @@
       document.getElementById('loginPin').value = '';
       document.getElementById('vaultDashboard').classList.add('hidden');
       document.getElementById('authScreen').classList.remove('hidden');
+      document.body.classList.add('auth-locked');
     }
 
     function resetInactivityTimer() {
@@ -1631,75 +1747,6 @@
     function closeViewerModal() {
       document.getElementById('viewerModal').classList.add('hidden');
       document.getElementById('viewerContent').innerHTML = '';
-    }
-
-    // ================= SECURITY AUDIT REPORT EXPORTER =================
-    function downloadSecurityReportPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF('portrait', 'mm', 'a4');
-
-      doc.setFillColor(15, 23, 42);
-      doc.rect(0, 0, 210, 32, 'F');
-
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(16);
-      doc.setFont("helvetica", "bold");
-      doc.text("DOCVAULT - SECURITY TESTING REPORT", 14, 18);
-
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(148, 163, 184);
-      doc.text("Mode: Zero-Knowledge OPFS Phone Storage (.enc) | 100k PBKDF2 Iterations", 14, 25);
-
-      doc.setTextColor(30, 41, 59);
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text("1. Local Architecture & Cipher Review", 14, 42);
-
-      const items = [
-        ["SEC-01", "Ciphertext Storage at Rest", "HIGH", "VERIFIED", "All data files (.enc) stored scrambled in OPFS."],
-        ["SEC-02", "Zero Plaintext Profile Leaks", "HIGH", "VERIFIED", "Full name and course encrypted inside profile.enc."],
-        ["SEC-03", "Zero-Permission Sandbox", "HIGH", "VERIFIED", "OPFS isolated directory; zero browser popups."],
-        ["SEC-04", "100,000 Iteration PBKDF2 Key", "HIGH", "VERIFIED", "AES-256 key derived in volatile RAM on PIN entry."],
-        ["SEC-05", "Dynamic A4 Scaler for Cards", "LOW", "VERIFIED", "Preserves aspect ratio and prevents image clipping."]
-      ];
-
-      doc.setFontSize(8.5);
-      let y = 52;
-      items.forEach(row => {
-        doc.setFillColor(241, 245, 249);
-        doc.roundedRect(14, y, 182, 14, 2, 2, 'F');
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(37, 99, 235);
-        doc.text(row[0] + ": " + row[1], 18, y + 5.5);
-
-        doc.setTextColor(70, 40, 40);
-        doc.text(`Severity: ${row[2]}`, 130, y + 5.5);
-        doc.setTextColor(16, 185, 129);
-        doc.text(`[${row[3]}]`, 168, y + 5.5);
-
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(100, 116, 139);
-        doc.text("Status: " + row[4], 18, y + 10.5);
-        y += 18;
-      });
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.setTextColor(30, 41, 59);
-      doc.text("2. Verification & Architecture Confirmation", 14, y + 8);
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(71, 85, 105);
-      doc.text("• No cloud server or backend database is connected; storage is on local OPFS partition.", 14, y + 16);
-      doc.text("• Files on disk cannot be read by third-party file explorers without the Master PIN.", 14, y + 22);
-
-      doc.setFontSize(8);
-      doc.setTextColor(148, 163, 184);
-      doc.text("DocVault Automated Security Assessment • End-to-End Cryptographic Report", 14, 285);
-
-      doc.save("DocVault_Security_Report.pdf");
     }
 
     // Register Service Worker for PWA
