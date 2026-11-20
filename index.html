@@ -177,13 +177,17 @@
       background: #1e293b;
       border: 1px solid #334155;
       color: #94a3b8;
-      width: 40px;
-      height: 40px;
+      width: 38px;
+      height: 38px;
       border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
+    }
+    .icon-btn:hover {
+      background: #334155;
+      color: #f8fafc;
     }
 
     /* Preserves vertical spacing where security banner used to be */
@@ -274,6 +278,7 @@
       gap: 6px;
       font-size: 0.85rem;
       font-weight: 600;
+      text-decoration: none;
     }
     .btn-secondary:hover { background: #334155; }
 
@@ -343,34 +348,53 @@
       white-space: nowrap;
       border: 1px solid #334155;
     }
+    .doc-status-badge.available {
+      color: #34d399;
+      border-color: #059669;
+    }
 
     .doc-actions-row {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       margin-top: 4px;
       border-top: 1px solid #1f2937;
       padding-top: 10px;
     }
     .card-action-btn {
       flex: 1;
-      padding: 7px 10px;
+      padding: 7px 8px;
       background: #1e293b;
       border: 1px solid #334155;
       color: #cbd5e1;
       border-radius: 8px;
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       font-weight: 500;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 4px;
       text-decoration: none;
     }
-    .card-action-btn:hover { background: #334155; color: #fff; }
+    .card-action-btn:hover:not(:disabled):not(.disabled-btn) { background: #334155; color: #fff; }
+    .card-action-btn:disabled, .card-action-btn.disabled-btn {
+      opacity: 0.38;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
     .card-action-btn.primary {
       background: rgba(37, 99, 235, 0.2);
       border-color: #2563eb;
       color: #60a5fa;
+    }
+    .card-action-btn.danger {
+      background: rgba(239, 68, 68, 0.14);
+      border-color: rgba(239, 68, 68, 0.45);
+      color: #f87171;
+    }
+    .card-action-btn.danger:hover:not(:disabled):not(.disabled-btn) {
+      background: rgba(239, 68, 68, 0.28);
+      color: #fecaca;
     }
 
     .preview-box {
@@ -523,10 +547,12 @@
       flex: 1;
       background: #030712;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       overflow: auto;
       padding: 10px;
+      gap: 10px;
     }
     .modal-viewer-body img {
       max-width: 100%;
@@ -536,7 +562,7 @@
     }
     .modal-viewer-body iframe {
       width: 100%;
-      height: 100%;
+      flex: 1;
       border: none;
       background: #fff;
       border-radius: 8px;
@@ -578,7 +604,7 @@
     .flashcard-side-slot img {
       width: 100%;
       height: auto;
-      max-height: 180px;
+      max-height: 170px;
       object-fit: contain;
       display: block;
     }
@@ -592,6 +618,22 @@
       font-weight: 700;
       padding: 2px 6px;
       border-radius: 4px;
+    }
+    .flashcard-side-del-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: rgba(220, 38, 38, 0.9);
+      color: #fff;
+      border: none;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .flashcard-side-del-btn:hover {
+      background: #b91c1c;
     }
   </style>
 </head>
@@ -618,11 +660,11 @@
       <div id="loginForm" class="auth-input-group">
         <div>
           <label>Vault Username ID</label>
-          <input type="text" id="loginUsername" class="input-field" placeholder="Enter username (e.g. arc)">
+          <input type="text" id="loginUsername" class="input-field" placeholder="Enter username (e.g. arc)" autocomplete="username">
         </div>
         <div>
           <label>Master Passphrase / PIN</label>
-          <input type="password" id="loginPin" class="input-field" placeholder="Enter Master Passphrase">
+          <input type="password" id="loginPin" class="input-field" placeholder="Enter Master Passphrase" autocomplete="current-password">
         </div>
         <button id="btnLoginAction" class="btn-primary" style="margin-top:8px;" onclick="handleLogin()">Unlock & Decrypt</button>
       </div>
@@ -631,19 +673,19 @@
       <div id="registerForm" class="auth-input-group hidden">
         <div>
           <label>Choose Username (No spaces)</label>
-          <input type="text" id="regUsername" class="input-field" placeholder="e.g. arc">
+          <input type="text" id="regUsername" class="input-field" placeholder="e.g. arc" autocomplete="off">
         </div>
         <div>
           <label>Full Legal Name (Encrypted at rest)</label>
-          <input type="text" id="regFullName" class="input-field" placeholder="e.g. Pavar Amishbhai">
+          <input type="text" id="regFullName" class="input-field" placeholder="e.g. Pavar Amishbhai" autocomplete="off">
         </div>
         <div>
           <label>Course / Program (Encrypted at rest)</label>
-          <input type="text" id="regCourse" class="input-field" placeholder="e.g. FYBA">
+          <input type="text" id="regCourse" class="input-field" placeholder="e.g. FYBA" autocomplete="off">
         </div>
         <div>
           <label>Set Master Passphrase / PIN (8+ Chars)</label>
-          <input type="password" id="regPin" class="input-field" placeholder="e.g. Vault@2026" oninput="checkRegisterPinStrength(this.value)">
+          <input type="password" id="regPin" class="input-field" placeholder="e.g. Vault@2026" oninput="checkRegisterPinStrength(this.value)" autocomplete="new-password">
           <div style="margin-top:6px; background:#0b1120; padding:8px 10px; border-radius:8px; border:1px solid #1f2937;">
             <div id="regRuleLen" class="rule-item">✖ Minimum 8 characters</div>
             <div id="regRuleNum" class="rule-item">✖ Minimum 1 Number (0-9)</div>
@@ -652,7 +694,7 @@
         </div>
         <div>
           <label>Confirm Master Passphrase</label>
-          <input type="password" id="regPinConfirm" class="input-field" placeholder="Confirm Master Passphrase">
+          <input type="password" id="regPinConfirm" class="input-field" placeholder="Confirm Master Passphrase" autocomplete="new-password">
         </div>
         <button id="btnCreateAction" class="btn-primary" style="margin-top:8px;" onclick="handleRegister()" disabled>Initialize Encrypted Vault</button>
       </div>
@@ -668,12 +710,20 @@
           </div>
           <div>
             <div class="brand-title">DocVault</div>
-            <div style="font-size:0.75rem; color:#94a3b8;">Private Storage: Encrypted (.enc) Files</div>
+            <div style="font-size:0.75rem; color:#94a3b8;">Private Storage: Authenticated (.enc) Files</div>
           </div>
         </div>
-        <button class="icon-btn" onclick="openQrModal()">
-          <svg class="svg-icon" viewBox="0 0 24 24"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
-        </button>
+        <div style="display:flex; gap:6px;">
+          <button class="icon-btn" title="Change Master PIN" onclick="openChangePinModal()">
+            <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
+          </button>
+          <button class="icon-btn" title="Vault QR Card" onclick="openQrModal()">
+            <svg class="svg-icon" viewBox="0 0 24 24"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
+          </button>
+          <button class="icon-btn" title="Lock Vault" onclick="lockVault()">
+            <svg class="svg-icon" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </button>
+        </div>
       </div>
 
       <!-- Preserves vertical gap where green zero-knowledge banner was -->
@@ -695,13 +745,13 @@
         </div>
       </div>
 
-      <div class="tabs-slider">
-        <div class="tab-pill active" onclick="filterCategory('All', this)">All Records</div>
-        <div class="tab-pill" onclick="filterCategory('Identity', this)">Identity & Personal</div>
-        <div class="tab-pill" onclick="filterCategory('Academic', this)">Academic Records</div>
-        <div class="tab-pill" onclick="filterCategory('Administration', this)">Campus & Admin</div>
-        <div class="tab-pill" onclick="filterCategory('Scholarship', this)">Scholarship & Quota</div>
-        <div class="tab-pill" onclick="filterCategory('Banking', this)">Financial & Banking</div>
+      <div class="tabs-slider" id="categoryTabsSlider">
+        <div class="tab-pill active" data-cat="All" onclick="filterCategory('All', this)">All Records</div>
+        <div class="tab-pill" data-cat="Identity" onclick="filterCategory('Identity', this)">Identity & Personal</div>
+        <div class="tab-pill" data-cat="Academic" onclick="filterCategory('Academic', this)">Academic Records</div>
+        <div class="tab-pill" data-cat="Administration" onclick="filterCategory('Administration', this)">Campus & Admin</div>
+        <div class="tab-pill" data-cat="Scholarship" onclick="filterCategory('Scholarship', this)">Scholarship & Quota</div>
+        <div class="tab-pill" data-cat="Banking" onclick="filterCategory('Banking', this)">Financial & Banking</div>
       </div>
 
       <!-- Signature Section -->
@@ -714,8 +764,9 @@
           <span style="font-size:0.9rem; color:#64748b;">No signature uploaded</span>
         </div>
         <div class="doc-actions-row">
-          <button class="card-action-btn" onclick="previewDirectDoc('doc_signature')">Preview</button>
-          <a href="#" id="downloadSignBtn" class="card-action-btn" download="Digital_Signature.png">Download</a>
+          <button id="previewSignBtn" class="card-action-btn disabled-btn" disabled onclick="previewDirectDoc('doc_signature')">Preview</button>
+          <a href="#" id="downloadSignBtn" class="card-action-btn disabled-btn" download="Digital_Signature.png">Download</a>
+          <button id="deleteSignBtn" class="card-action-btn danger disabled-btn" disabled onclick="deleteStoredDocument('doc_signature', 'Digital Signature')">Delete</button>
         </div>
       </div>
 
@@ -735,8 +786,9 @@
           </div>
         </div>
         <div class="doc-actions-row">
-          <button class="card-action-btn" onclick="previewDirectDoc('doc_photo')">Preview</button>
-          <a href="#" id="downloadPhotoBtn" class="card-action-btn" download="Passport_Photo.png">Download</a>
+          <button id="previewPhotoBtn" class="card-action-btn disabled-btn" disabled onclick="previewDirectDoc('doc_photo')">Preview</button>
+          <a href="#" id="downloadPhotoBtn" class="card-action-btn disabled-btn" download="Passport_Photo.png">Download</a>
+          <button id="deletePhotoBtn" class="card-action-btn danger disabled-btn" disabled onclick="deleteStoredDocument('doc_photo', 'Passport Size Photograph')">Delete</button>
         </div>
       </div>
 
@@ -753,6 +805,52 @@
   <input type="file" id="universalFileInput" class="hidden" accept="image/*,application/pdf" onchange="handleUniversalFileUpload(event)">
   <input type="file" id="sideFileInput" class="hidden" accept="image/*" onchange="handleSideFileUpload(event)">
   <input type="file" id="backupZipInput" class="hidden" accept=".zip,application/zip" onchange="handleBackupZipUpload(event)">
+
+  <!-- CHANGE MASTER PIN MODAL -->
+  <div id="changePinModal" class="modal-overlay hidden" onclick="if(event.target.id==='changePinModal') closeChangePinModal()">
+    <div style="max-width:390px; width:100%; background:#111827; border-radius:20px; padding:20px; border:1px solid #334155; display:flex; flex-direction:column; gap:14px;" onclick="event.stopPropagation()">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="font-weight:700; font-size:1.08rem; display:flex; align-items:center; gap:8px;">
+          <svg class="svg-icon" style="color:#38bdf8;" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
+          Rotate Master PIN
+        </div>
+        <button class="icon-btn" style="width:32px; height:32px;" onclick="closeChangePinModal()">✕</button>
+      </div>
+
+      <p style="font-size:0.78rem; color:#94a3b8; line-height:1.4;">
+        Generates a fresh cryptographic salt and re-encrypts all stored <code>.enc</code> vault files with a new AES-256 + HMAC key.
+      </p>
+
+      <div class="auth-input-group">
+        <div>
+          <label>Current Master Passphrase / PIN</label>
+          <input type="password" id="oldPinInput" class="input-field" placeholder="Enter current PIN" autocomplete="current-password">
+        </div>
+        <div>
+          <label>New Master Passphrase / PIN (8+ Chars)</label>
+          <input type="password" id="newPinInput" class="input-field" placeholder="Enter new PIN" oninput="checkNewPinStrength(this.value)" autocomplete="new-password">
+          <div style="margin-top:6px; background:#0b1120; padding:8px 10px; border-radius:8px; border:1px solid #1f2937;">
+            <div id="newRuleLen" class="rule-item">✖ Minimum 8 characters</div>
+            <div id="newRuleNum" class="rule-item">✖ Minimum 1 Number (0-9)</div>
+            <div id="newRuleSpecial" class="rule-item">✖ Minimum 1 Special Character (!@#$%^&*)</div>
+          </div>
+        </div>
+        <div>
+          <label>Confirm New Master Passphrase</label>
+          <input type="password" id="newPinConfirmInput" class="input-field" placeholder="Re-enter new PIN" autocomplete="new-password">
+        </div>
+      </div>
+
+      <div id="pinRotationStatus" class="hidden" style="font-size:0.78rem; color:#38bdf8; background:#0b1120; padding:8px 10px; border-radius:8px; border:1px solid #1e3a8a; text-align:center;">
+        Re-encrypting vault files...
+      </div>
+
+      <div style="display:flex; gap:8px; margin-top:4px;">
+        <button id="btnConfirmPinChange" class="btn-primary" onclick="handleMasterPinRotation()" disabled>Re-Encrypt & Save</button>
+        <button id="btnCancelPinChange" class="btn-secondary" style="flex:0.6;" onclick="closeChangePinModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
 
   <!-- QR MODAL -->
   <div id="qrModal" class="modal-overlay hidden" onclick="if(event.target.id==='qrModal') closeQrModal()">
@@ -880,6 +978,7 @@
         <div class="flashcard-document-frame">
           <div class="flashcard-side-slot">
             <span class="flashcard-side-label">FRONT</span>
+            <button id="deleteFrontSideBtn" class="flashcard-side-del-btn hidden" onclick="deleteFlashcardSide('front')">Delete Front</button>
             <img id="frontSideImg" src="" class="hidden" alt="Front">
             <div id="frontSidePlaceholder" class="hidden" style="text-align:center; padding:16px; color:#64748b;">
               <div style="font-size:0.8rem; font-weight:600;">No Front Photo</div>
@@ -888,6 +987,7 @@
           </div>
           <div class="flashcard-side-slot">
             <span class="flashcard-side-label">BACK</span>
+            <button id="deleteBackSideBtn" class="flashcard-side-del-btn hidden" onclick="deleteFlashcardSide('back')">Delete Back</button>
             <img id="backSideImg" src="" class="hidden" alt="Back">
             <div id="backSidePlaceholder" class="hidden" style="text-align:center; padding:16px; color:#64748b;">
               <div style="font-size:0.8rem; font-weight:600;">No Back Photo</div>
@@ -900,6 +1000,7 @@
         <div style="display:flex; gap:8px;">
           <button class="card-action-btn primary" onclick="triggerSideUpload('front')">Change Front</button>
           <button class="card-action-btn primary" onclick="triggerSideUpload('back')">Change Back</button>
+          <button id="deleteEntireCardBtn" class="card-action-btn danger disabled-btn" disabled onclick="deleteEntireFlashcard()">Delete Card</button>
         </div>
         <div style="display:flex; gap:8px;">
           <button class="btn-primary" style="flex:1;" onclick="downloadFlashcardPDF()">Download Card PDF</button>
@@ -911,15 +1012,23 @@
 
   <script>
     // ================= ZERO-PERMISSION OPFS STORAGE ENGINE =================
-    let derivedEncryptionKey = null;
-    let currentSessionUser = null;
+    let derivedKeyBundle = null; // { encKey, macKey } cached for active session only
+    let currentSessionUser = null; // Never stores rawPin in memory
     let activeKeysList = [];
     let decryptedStore = {};
     let pendingUploadTarget = null;
     let inactivityTimer = null;
     let isFilePickerOpen = false;
+    let isPinRotating = false;
+    let currentCategoryFilter = 'All';
+    let activeViewerBlobUrl = null;
+
+    const ALLOWED_FILE_PREFIXES = ['doc_', 'my_aadhaar', 'father_aadhaar', 'mother_aadhaar'];
 
     async function getOPFSRoot() {
+      if (!navigator.storage || typeof navigator.storage.getDirectory !== 'function') {
+        throw new Error("OPFS Internal Storage is unavailable. Ensure the app is served over HTTPS or localhost in a modern WebView.");
+      }
       return await navigator.storage.getDirectory();
     }
 
@@ -942,13 +1051,34 @@
       }
     }
 
+    async function deleteEncryptedFileFromPhone(fileName) {
+      try {
+        const root = await getOPFSRoot();
+        await root.removeEntry(fileName);
+        return true;
+      } catch (e) {
+        if (e && e.name === 'NotFoundError') return true;
+        throw e;
+      }
+    }
+
     window.addEventListener('load', async () => {
       if (navigator.storage && navigator.storage.persist) {
-        await navigator.storage.persist();
+        try {
+          await navigator.storage.persist();
+        } catch (e) {
+          console.warn("Storage persist check skipped:", e);
+        }
       }
     });
 
-    // ================= CRYPTOGRAPHIC ENGINE =================
+    // ================= AUTHENTICATED CRYPTOGRAPHIC ENGINE =================
+    function getRandomHex(byteLength) {
+      const bytes = new Uint8Array(byteLength);
+      window.crypto.getRandomValues(bytes);
+      return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+    }
+
     function evaluatePinRules(pin) {
       return {
         len: pin.length >= 8,
@@ -976,58 +1106,78 @@
       btn.disabled = !(res.len && res.num && res.special);
     }
 
-    function deriveKeyFromPassphrase(pin, saltHex) {
-      const salt = CryptoJS.enc.Hex.parse(saltHex);
-      return CryptoJS.PBKDF2(pin, salt, {
-        keySize: 256 / 32,
-        iterations: 100000,
-        hasher: CryptoJS.algo.SHA256
-      });
+    function checkNewPinStrength(pin) {
+      const res = evaluatePinRules(pin);
+      const rLen = document.getElementById("newRuleLen");
+      const rNum = document.getElementById("newRuleNum");
+      const rSpec = document.getElementById("newRuleSpecial");
+      const btn = document.getElementById("btnConfirmPinChange");
+
+      rLen.className = "rule-item " + (res.len ? "valid" : "");
+      rLen.innerText = (res.len ? "✔ " : "✖ ") + "Minimum 8 characters";
+
+      rNum.className = "rule-item " + (res.num ? "valid" : "");
+      rNum.innerText = (res.num ? "✔ " : "✖ ") + "Minimum 1 Number (0-9)";
+
+      rSpec.className = "rule-item " + (res.special ? "valid" : "");
+      rSpec.innerText = (res.special ? "✔ " : "✖ ") + "Minimum 1 Special Character (!@#$%^&*)";
+
+      btn.disabled = !(res.len && res.num && res.special);
     }
 
-    function encryptPayloadWithSalt(rawObject, pin, saltHex) {
-      const jsonStr = typeof rawObject === 'string' ? rawObject : JSON.stringify(rawObject);
+    // Derives 512 bits once: 256 bits for AES-CBC encryption + 256 bits for HMAC-SHA256
+    function deriveKeyBundle(pin, saltHex) {
       const salt = CryptoJS.enc.Hex.parse(saltHex);
-      const key = CryptoJS.PBKDF2(pin, salt, {
-        keySize: 256 / 32,
+      const fullKey = CryptoJS.PBKDF2(pin, salt, {
+        keySize: 512 / 32,
         iterations: 100000,
         hasher: CryptoJS.algo.SHA256
       });
+      const words = fullKey.words;
+      return {
+        encKey: CryptoJS.lib.WordArray.create(words.slice(0, 8), 32),
+        macKey: CryptoJS.lib.WordArray.create(words.slice(8, 16), 32)
+      };
+    }
 
-      const iv = CryptoJS.lib.WordArray.random(16);
-      const encrypted = CryptoJS.AES.encrypt(jsonStr, key, {
+    // Encrypt-then-MAC format: saltHex:ivHex:cipherBase64:hmacHex
+    function encryptWithKeyBundle(rawObject, saltHex, keyBundle) {
+      const jsonStr = typeof rawObject === 'string' ? rawObject : JSON.stringify(rawObject);
+      const ivHex = getRandomHex(16);
+      const iv = CryptoJS.enc.Hex.parse(ivHex);
+
+      const encrypted = CryptoJS.AES.encrypt(jsonStr, keyBundle.encKey, {
         iv: iv,
         mode: CryptoJS.mode.CBC,
         padding: CryptoJS.pad.Pkcs7
       });
 
-      return saltHex + ":" + iv.toString(CryptoJS.enc.Hex) + ":" + encrypted.ciphertext.toString(CryptoJS.enc.Base64);
+      const payloadWithoutMac = `${saltHex}:${ivHex}:${encrypted.ciphertext.toString(CryptoJS.enc.Base64)}`;
+      const mac = CryptoJS.HmacSHA256(payloadWithoutMac, keyBundle.macKey).toString(CryptoJS.enc.Hex);
+      return `${payloadWithoutMac}:${mac}`;
     }
 
-    function decryptPayloadWithPin(storedString, pin) {
+    function decryptWithKeyBundle(storedString, pin = null, cachedBundle = null) {
       if (!storedString || typeof storedString !== 'string') return null;
       try {
-        const parts = storedString.split(":");
-        if (parts.length < 3) return null;
+        const parts = storedString.split(':');
+        if (parts.length !== 4) return null;
 
-        const saltHex = parts[0];
-        const ivHex = parts[1];
-        const cipherBase64 = parts[2];
+        const [saltHex, ivHex, cipherBase64, storedMac] = parts;
+        const bundle = cachedBundle || (pin ? deriveKeyBundle(pin, saltHex) : null);
+        if (!bundle) return null;
 
-        const salt = CryptoJS.enc.Hex.parse(saltHex);
-        const key = CryptoJS.PBKDF2(pin, salt, {
-          keySize: 256 / 32,
-          iterations: 100000,
-          hasher: CryptoJS.algo.SHA256
-        });
+        // 1. Verify HMAC integrity BEFORE decrypting
+        const payloadWithoutMac = `${saltHex}:${ivHex}:${cipherBase64}`;
+        const expectedMac = CryptoJS.HmacSHA256(payloadWithoutMac, bundle.macKey).toString(CryptoJS.enc.Hex);
+        if (expectedMac !== storedMac) return null;
 
-        const iv = CryptoJS.enc.Hex.parse(ivHex);
+        // 2. Decrypt AES-CBC payload
         const cipherParams = CryptoJS.lib.CipherParams.create({
           ciphertext: CryptoJS.enc.Base64.parse(cipherBase64)
         });
-
-        const decrypted = CryptoJS.AES.decrypt(cipherParams, key, {
-          iv: iv,
+        const decrypted = CryptoJS.AES.decrypt(cipherParams, bundle.encKey, {
+          iv: CryptoJS.enc.Hex.parse(ivHex),
           mode: CryptoJS.mode.CBC,
           padding: CryptoJS.pad.Pkcs7
         });
@@ -1035,18 +1185,197 @@
         const resultStr = decrypted.toString(CryptoJS.enc.Utf8);
         if (!resultStr) return null;
 
-        try { return JSON.parse(resultStr); } catch (e) { return resultStr; }
+        try { return JSON.parse(resultStr); } catch { return resultStr; }
       } catch (err) {
         return null;
       }
     }
 
     function encryptPayload(rawObject) {
-      return encryptPayloadWithSalt(rawObject, currentSessionUser.rawPin, currentSessionUser.saltHex);
+      if (!currentSessionUser || !derivedKeyBundle) throw new Error("Vault is locked.");
+      return encryptWithKeyBundle(rawObject, currentSessionUser.saltHex, derivedKeyBundle);
     }
 
     function decryptPayload(storedString) {
-      return decryptPayloadWithPin(storedString, currentSessionUser.rawPin);
+      if (!derivedKeyBundle) return null;
+      return decryptWithKeyBundle(storedString, null, derivedKeyBundle);
+    }
+
+    // ================= SECURE DOCUMENT DELETION =================
+    async function deleteStoredDocument(docId, displayLabel) {
+      if (!currentSessionUser || !derivedKeyBundle) return;
+      if (!decryptedStore[docId] && !activeKeysList.includes(docId)) return;
+
+      const confirmed = confirm(
+        `Permanently delete "${displayLabel}"?\n\nIs file ka encrypted record (${docId}.enc) phone ki internal storage se hamesha ke liye delete ho jayega.`
+      );
+      if (!confirmed) return;
+
+      try {
+        await deleteEncryptedFileFromPhone(`${docId}.enc`);
+
+        delete decryptedStore[docId];
+        activeKeysList = activeKeysList.filter(k => k !== docId);
+
+        if (docId === 'doc_signature' || docId === 'doc_photo') {
+          restoreSignatureAndPhoto();
+        } else {
+          renderDocuments(currentCategoryFilter);
+          updateAllCustomCardStatusIndicators();
+        }
+      } catch (err) {
+        alert("Delete failed: " + err.message);
+      }
+    }
+
+    // ================= MASTER PIN ROTATION & FULL RE-ENCRYPTION =================
+    function openChangePinModal() {
+      if (!currentSessionUser || !derivedKeyBundle) return;
+      document.getElementById('oldPinInput').value = '';
+      document.getElementById('newPinInput').value = '';
+      document.getElementById('newPinConfirmInput').value = '';
+      document.getElementById('pinRotationStatus').classList.add('hidden');
+      checkNewPinStrength('');
+      document.getElementById('changePinModal').classList.remove('hidden');
+    }
+
+    function closeChangePinModal() {
+      if (isPinRotating) return; // Prevent closing mid-migration
+      document.getElementById('oldPinInput').value = '';
+      document.getElementById('newPinInput').value = '';
+      document.getElementById('newPinConfirmInput').value = '';
+      document.getElementById('pinRotationStatus').classList.add('hidden');
+      document.getElementById('changePinModal').classList.add('hidden');
+    }
+
+    async function handleMasterPinRotation() {
+      if (!currentSessionUser || !derivedKeyBundle) return;
+
+      const oldPin = document.getElementById('oldPinInput').value.trim();
+      const newPin = document.getElementById('newPinInput').value.trim();
+      const newPinConfirm = document.getElementById('newPinConfirmInput').value.trim();
+
+      if (!oldPin) {
+        alert("Current Master PIN enter karein.");
+        return;
+      }
+      if (oldPin === newPin) {
+        alert("Naya PIN purane PIN se alag hona chahiye.");
+        return;
+      }
+      const rules = evaluatePinRules(newPin);
+      if (!rules.len || !rules.num || !rules.special) {
+        alert("Naya Passphrase sabhi security rules satisfy karna chahiye.");
+        return;
+      }
+      if (newPin !== newPinConfirm) {
+        alert("Naya Passphrase aur Confirm Passphrase match nahi kar rahe.");
+        return;
+      }
+
+      isPinRotating = true;
+      clearTimeout(inactivityTimer);
+
+      const confirmBtn = document.getElementById('btnConfirmPinChange');
+      const cancelBtn = document.getElementById('btnCancelPinChange');
+      const statusBox = document.getElementById('pinRotationStatus');
+
+      confirmBtn.disabled = true;
+      cancelBtn.disabled = true;
+      confirmBtn.innerText = "Rotating Keys...";
+      statusBox.classList.remove('hidden');
+      statusBox.textContent = "Verifying current Master PIN...";
+
+      await new Promise(r => requestAnimationFrame(r));
+
+      try {
+        const currentProfileCipher = await readEncryptedFileFromPhone("profile.enc");
+        if (!currentProfileCipher) {
+          throw new Error("Vault profile.enc file nahi mili.");
+        }
+
+        const profileParts = currentProfileCipher.split(':');
+        if (profileParts.length !== 4) {
+          throw new Error("Corrupted profile.enc format.");
+        }
+
+        const verifiedOldBundle = deriveKeyBundle(oldPin, profileParts[0]);
+        const verifiedProfile = decryptWithKeyBundle(currentProfileCipher, null, verifiedOldBundle);
+
+        if (!verifiedProfile || verifiedProfile.username !== currentSessionUser.username) {
+          alert("Current Master PIN galat hai!");
+          return;
+        }
+
+        statusBox.textContent = "Generating new cryptographic salt & keys...";
+        await new Promise(r => requestAnimationFrame(r));
+
+        const newSaltHex = getRandomHex(16);
+        const newKeyBundle = deriveKeyBundle(newPin, newSaltHex);
+
+        const root = await getOPFSRoot();
+        const stagedWrites = [];
+        let docCounter = 0;
+
+        for await (const [fileName, handle] of root.entries()) {
+          if (handle.kind !== 'file' || !fileName.endsWith('.enc') || fileName === 'profile.enc') {
+            continue;
+          }
+          if (!ALLOWED_FILE_PREFIXES.some(prefix => fileName.startsWith(prefix))) {
+            continue;
+          }
+
+          docCounter++;
+          statusBox.textContent = `Re-encrypting document ${docCounter} (${fileName})...`;
+          await new Promise(r => requestAnimationFrame(r));
+
+          const file = await handle.getFile();
+          const oldCipherText = await file.text();
+          const plainPayload = decryptWithKeyBundle(oldCipherText, null, verifiedOldBundle);
+
+          if (plainPayload === null) {
+            throw new Error(`Integrity check failed while decrypting ${fileName}. Rotation aborted safely.`);
+          }
+
+          const newCipherText = encryptWithKeyBundle(plainPayload, newSaltHex, newKeyBundle);
+          stagedWrites.push({ fileName, cipherText: newCipherText });
+        }
+
+        statusBox.textContent = `Writing ${stagedWrites.length} re-encrypted files to OPFS...`;
+        for (const entry of stagedWrites) {
+          await writeEncryptedFileToPhone(entry.fileName, entry.cipherText);
+        }
+
+        const updatedProfile = {
+          ...verifiedProfile,
+          saltHex: newSaltHex,
+          pinRotatedAt: new Date().toISOString()
+        };
+        const newProfileCipher = encryptWithKeyBundle(updatedProfile, newSaltHex, newKeyBundle);
+        await writeEncryptedFileToPhone("profile.enc", newProfileCipher);
+
+        derivedKeyBundle = newKeyBundle;
+        currentSessionUser = updatedProfile;
+        await loadAllLocalDocuments();
+
+        isPinRotating = false;
+        closeChangePinModal();
+        resetInactivityTimer();
+
+        alert(
+          `Master PIN successfully updated!\n\n` +
+          `• New cryptographic salt generated\n` +
+          `• ${stagedWrites.length} vault document(s) re-encrypted\n\n` +
+          `Note: Naya encrypted ZIP backup create kar lein kyunki purane ZIP backups ab purane PIN se locked hain.`
+        );
+      } catch (err) {
+        alert("PIN Rotation Error: " + err.message);
+      } finally {
+        isPinRotating = false;
+        confirmBtn.innerText = "Re-Encrypt & Save";
+        cancelBtn.disabled = false;
+        checkNewPinStrength(document.getElementById('newPinInput').value);
+      }
     }
 
     // ================= ENCRYPTED ZIP BACKUP & RESTORE =================
@@ -1112,7 +1441,7 @@
       resetInactivityTimer();
       const file = event.target.files[0];
       event.target.value = '';
-      if (!file || !currentSessionUser) return;
+      if (!file || !currentSessionUser || !derivedKeyBundle) return;
 
       if (typeof JSZip === 'undefined') {
         alert("ZIP library load nahi hui hai.");
@@ -1134,23 +1463,33 @@
         }
 
         const backupProfileCipher = await profileEntry.async("text");
-        const backupProfile = decryptPayloadWithPin(backupProfileCipher, currentSessionUser.rawPin);
+        const backupProfile = decryptWithKeyBundle(backupProfileCipher, null, derivedKeyBundle);
 
-        // Verify password decryption & exact username match
         if (!backupProfile || backupProfile.username !== currentSessionUser.username) {
-          alert("Wrong Account!\n\nYe backup file kisi aur account ya password se banayi gayi hai. Sahi account login karein, warna aapko sabhi documents re-upload karne padenge.");
+          alert("Wrong Account / PIN Mismatch!\n\nYe backup file kisi aur account ya purane PIN se banayi gayi hai. Sahi account/PIN se login karein.");
           return;
         }
 
-        // Valid account confirmed: restore all encrypted .enc files into OPFS
-        let restoredCount = 0;
-        const encFiles = Object.keys(zip.files).filter(
-          name => !zip.files[name].dir && name.endsWith('.enc') && name !== 'profile.enc'
+        const validEncFiles = Object.keys(zip.files).filter(name =>
+          !zip.files[name].dir &&
+          name.endsWith('.enc') &&
+          name !== 'profile.enc' &&
+          !name.includes('/') &&
+          !name.includes('\\') &&
+          ALLOWED_FILE_PREFIXES.some(prefix => name.startsWith(prefix))
         );
 
-        for (const fileName of encFiles) {
+        const root = await getOPFSRoot();
+        for await (const [existingName, handle] of root.entries()) {
+          if (handle.kind === 'file' && existingName.endsWith('.enc') && existingName !== 'profile.enc') {
+            await root.removeEntry(existingName);
+          }
+        }
+
+        let restoredCount = 0;
+        for (const fileName of validEncFiles) {
           const cipherText = await zip.files[fileName].async("text");
-          const verifiedData = decryptPayloadWithPin(cipherText, currentSessionUser.rawPin);
+          const verifiedData = decryptWithKeyBundle(cipherText, null, derivedKeyBundle);
           if (verifiedData) {
             await writeEncryptedFileToPhone(fileName, cipherText);
             restoredCount++;
@@ -1158,7 +1497,7 @@
         }
 
         await loadAllLocalDocuments();
-        renderDocuments('All');
+        renderDocuments(currentCategoryFilter);
         restoreSignatureAndPhoto();
         updateAllCustomCardStatusIndicators();
 
@@ -1179,6 +1518,10 @@
       const pin = document.getElementById('regPin').value.trim();
       const pinConfirm = document.getElementById('regPinConfirm').value.trim();
 
+      if (!username) {
+        alert("Valid Username enter karein.");
+        return;
+      }
       const rules = evaluatePinRules(pin);
       if (!rules.len || !rules.num || !rules.special) {
         alert("Passphrase criteria satisfy hona chahiye.");
@@ -1189,18 +1532,19 @@
         return;
       }
 
-      const existingProfile = await readEncryptedFileFromPhone("profile.enc");
-      if (existingProfile) {
-        alert("Is phone par already ek encrypted vault maujood hai! 'Unlock Vault' use karein.");
-        return;
-      }
-
       const btn = document.getElementById('btnCreateAction');
       btn.innerText = "Securing Vault...";
       btn.disabled = true;
 
       try {
-        const saltHex = CryptoJS.lib.WordArray.random(16).toString(CryptoJS.enc.Hex);
+        const existingProfile = await readEncryptedFileFromPhone("profile.enc");
+        if (existingProfile) {
+          alert("Is phone par already ek encrypted vault maujood hai! 'Unlock Vault' use karein.");
+          return;
+        }
+
+        const saltHex = getRandomHex(16);
+        const keyBundle = deriveKeyBundle(pin, saltHex);
 
         const profilePayload = {
           username: username,
@@ -1210,11 +1554,13 @@
           registeredAt: new Date().toISOString()
         };
 
-        const encryptedProfile = encryptPayloadWithSalt(profilePayload, pin, saltHex);
+        const encryptedProfile = encryptWithKeyBundle(profilePayload, saltHex, keyBundle);
         await writeEncryptedFileToPhone("profile.enc", encryptedProfile);
 
-        profilePayload.rawPin = pin;
-        derivedEncryptionKey = deriveKeyFromPassphrase(pin, saltHex);
+        document.getElementById('regPin').value = '';
+        document.getElementById('regPinConfirm').value = '';
+
+        derivedKeyBundle = keyBundle;
         currentSessionUser = profilePayload;
 
         launchDashboard(profilePayload);
@@ -1223,7 +1569,7 @@
         alert("Registration failed: " + err.message);
       } finally {
         btn.innerText = "Initialize Encrypted Vault";
-        btn.disabled = false;
+        checkRegisterPinStrength(document.getElementById('regPin').value);
       }
     }
 
@@ -1247,7 +1593,15 @@
           return;
         }
 
-        const profile = decryptPayloadWithPin(profileCipher, pin);
+        const parts = profileCipher.split(':');
+        if (parts.length !== 4) {
+          alert("Vault file format invalid ya corrupted hai.");
+          return;
+        }
+
+        const candidateBundle = deriveKeyBundle(pin, parts[0]);
+        const profile = decryptWithKeyBundle(profileCipher, null, candidateBundle);
+
         if (!profile) {
           alert("Galat Master PIN! Decryption impossible.");
           return;
@@ -1258,9 +1612,9 @@
           return;
         }
 
-        profile.rawPin = pin;
+        document.getElementById('loginPin').value = '';
         currentSessionUser = profile;
-        derivedEncryptionKey = deriveKeyFromPassphrase(pin, profile.saltHex);
+        derivedKeyBundle = candidateBundle;
 
         await loadAllLocalDocuments();
         launchDashboard(profile);
@@ -1274,24 +1628,34 @@
 
     async function loadAllLocalDocuments() {
       activeKeysList = [];
+      decryptedStore = {};
 
       const sigCipher = await readEncryptedFileFromPhone("doc_signature.enc");
       if (sigCipher) {
-        decryptedStore['doc_signature'] = decryptPayload(sigCipher);
-        activeKeysList.push('doc_signature');
+        const dec = decryptPayload(sigCipher);
+        if (dec) {
+          decryptedStore['doc_signature'] = dec;
+          activeKeysList.push('doc_signature');
+        }
       }
 
       const photoCipher = await readEncryptedFileFromPhone("doc_photo.enc");
       if (photoCipher) {
-        decryptedStore['doc_photo'] = decryptPayload(photoCipher);
-        activeKeysList.push('doc_photo');
+        const dec = decryptPayload(photoCipher);
+        if (dec) {
+          decryptedStore['doc_photo'] = dec;
+          activeKeysList.push('doc_photo');
+        }
       }
 
       for (const doc of masterCollegeDocuments) {
         const cipher = await readEncryptedFileFromPhone(`${doc.id}.enc`);
         if (cipher) {
-          decryptedStore[doc.id] = decryptPayload(cipher);
-          activeKeysList.push(doc.id);
+          const dec = decryptPayload(cipher);
+          if (dec) {
+            decryptedStore[doc.id] = dec;
+            activeKeysList.push(doc.id);
+          }
         }
       }
 
@@ -1299,8 +1663,11 @@
       for (const k of multiKeys) {
         const cipher = await readEncryptedFileFromPhone(`${k}.enc`);
         if (cipher) {
-          decryptedStore[k] = decryptPayload(cipher);
-          activeKeysList.push(k);
+          const dec = decryptPayload(cipher);
+          if (dec && (dec.front || dec.back)) {
+            decryptedStore[k] = dec;
+            activeKeysList.push(k);
+          }
         }
       }
     }
@@ -1315,20 +1682,32 @@
       document.getElementById('userCourseDisplay').innerText = profile.course || 'Student';
       document.getElementById('avatarInitial').innerText = (profile.fullName || profile.username).charAt(0).toUpperCase();
 
-      renderDocuments('All');
+      renderDocuments(currentCategoryFilter);
       restoreSignatureAndPhoto();
       updateAllCustomCardStatusIndicators();
     }
 
     function lockVault() {
       clearTimeout(inactivityTimer);
+      isPinRotating = false;
       currentSessionUser = null;
-      derivedEncryptionKey = null;
+      derivedKeyBundle = null;
       activeKeysList = [];
       decryptedStore = {};
 
-      document.getElementById('signatureBox').innerHTML = '<span style="font-size:0.9rem; color:#64748b;">No signature uploaded</span>';
-      document.getElementById('photoBox').innerHTML = 'Photo';
+      restoreSignatureAndPhoto();
+      document.getElementById('documentsList').innerHTML = '';
+
+      closeChangePinModal();
+      closeViewerModal();
+      closeFlashcardModal();
+      closeAadhaarFamilyModal();
+      closeSecondaryIdModal();
+      closeQrModal();
+      document.getElementById('frontSideImg').src = '';
+      document.getElementById('backSideImg').src = '';
+      document.getElementById('qrcodeBox').innerHTML = '';
+
       document.getElementById('loginPin').value = '';
       document.getElementById('vaultDashboard').classList.add('hidden');
       document.getElementById('authScreen').classList.remove('hidden');
@@ -1337,7 +1716,7 @@
 
     function resetInactivityTimer() {
       clearTimeout(inactivityTimer);
-      if (currentSessionUser && !isFilePickerOpen) {
+      if (currentSessionUser && !isFilePickerOpen && !isPinRotating) {
         inactivityTimer = setTimeout(lockVault, 3 * 60 * 1000);
       }
     }
@@ -1372,12 +1751,13 @@
       { id: 'doc_bank_passbook', title: 'Bank Passbook / Cancelled Cheque', desc: 'Direct Benefit Transfer (DBT) verification', category: 'Banking' }
     ];
 
-    function renderDocuments(category = 'All') {
+    function renderDocuments(category = currentCategoryFilter) {
+      currentCategoryFilter = category;
       const list = document.getElementById('documentsList');
       list.innerHTML = '';
 
-      const filtered = category === 'All' 
-        ? masterCollegeDocuments 
+      const filtered = category === 'All'
+        ? masterCollegeDocuments
         : masterCollegeDocuments.filter(d => d.category === category);
 
       document.getElementById('docCount').innerText = `${masterCollegeDocuments.length} Documents`;
@@ -1387,44 +1767,126 @@
 
         if (doc.isAadhaarCustom) {
           item.className = 'item-card clickable-card';
-          item.onclick = openAadhaarFamilyModal;
+          item.addEventListener('click', openAadhaarFamilyModal);
           const hasAny = activeKeysList.some(k => ['my_aadhaar', 'father_aadhaar', 'mother_aadhaar'].includes(k));
-          item.innerHTML = `
-            <div class="item-card-header">
-              <div class="item-card-title">${doc.title}<div class="item-card-desc">${doc.desc}</div></div>
-              <span class="doc-status-badge" style="${hasAny ? 'color:#34d399; border-color:#059669;' : ''}">${hasAny ? 'Available' : 'Pending'}</span>
-            </div>
-            <div style="font-size:0.75rem; color:#60a5fa; display:flex; justify-content:space-between; margin-top:4px;">
-              <span>Manage: Personal, Father & Mother</span><span>›</span>
-            </div>
-          `;
+
+          const header = document.createElement('div');
+          header.className = 'item-card-header';
+
+          const titleWrap = document.createElement('div');
+          titleWrap.className = 'item-card-title';
+          titleWrap.textContent = doc.title;
+
+          const descEl = document.createElement('div');
+          descEl.className = 'item-card-desc';
+          descEl.textContent = doc.desc;
+          titleWrap.appendChild(descEl);
+
+          const badge = document.createElement('span');
+          badge.className = `doc-status-badge ${hasAny ? 'available' : ''}`;
+          badge.textContent = hasAny ? 'Available' : 'Pending';
+
+          header.appendChild(titleWrap);
+          header.appendChild(badge);
+
+          const footerNote = document.createElement('div');
+          footerNote.style.cssText = 'font-size:0.75rem; color:#60a5fa; display:flex; justify-content:space-between; margin-top:4px;';
+          footerNote.innerHTML = '<span>Manage: Personal, Father & Mother</span><span>›</span>';
+
+          item.appendChild(header);
+          item.appendChild(footerNote);
         } else if (doc.isSecondaryIdCustom) {
           item.className = 'item-card clickable-card';
-          item.onclick = openSecondaryIdModal;
+          item.addEventListener('click', openSecondaryIdModal);
           const hasAny = activeKeysList.some(k => ['doc_voter_card', 'doc_pan_card', 'doc_dl_card'].includes(k));
-          item.innerHTML = `
-            <div class="item-card-header">
-              <div class="item-card-title">${doc.title}<div class="item-card-desc">${doc.desc}</div></div>
-              <span class="doc-status-badge" style="${hasAny ? 'color:#34d399; border-color:#059669;' : ''}">${hasAny ? 'Available' : 'Pending'}</span>
-            </div>
-            <div style="font-size:0.75rem; color:#60a5fa; display:flex; justify-content:space-between; margin-top:4px;">
-              <span>Manage: Voter ID, PAN & DL</span><span>›</span>
-            </div>
-          `;
+
+          const header = document.createElement('div');
+          header.className = 'item-card-header';
+
+          const titleWrap = document.createElement('div');
+          titleWrap.className = 'item-card-title';
+          titleWrap.textContent = doc.title;
+
+          const descEl = document.createElement('div');
+          descEl.className = 'item-card-desc';
+          descEl.textContent = doc.desc;
+          titleWrap.appendChild(descEl);
+
+          const badge = document.createElement('span');
+          badge.className = `doc-status-badge ${hasAny ? 'available' : ''}`;
+          badge.textContent = hasAny ? 'Available' : 'Pending';
+
+          header.appendChild(titleWrap);
+          header.appendChild(badge);
+
+          const footerNote = document.createElement('div');
+          footerNote.style.cssText = 'font-size:0.75rem; color:#60a5fa; display:flex; justify-content:space-between; margin-top:4px;';
+          footerNote.innerHTML = '<span>Manage: Voter ID, PAN & DL</span><span>›</span>';
+
+          item.appendChild(header);
+          item.appendChild(footerNote);
         } else {
           const hasFile = activeKeysList.includes(doc.id);
           item.className = 'item-card';
-          item.innerHTML = `
-            <div class="item-card-header">
-              <div class="item-card-title">${doc.title}<div class="item-card-desc">${doc.desc}</div></div>
-              <span class="doc-status-badge" style="${hasFile ? 'color:#34d399; border-color:#059669;' : ''}">${hasFile ? 'Available (.enc)' : 'Pending'}</span>
-            </div>
-            <div class="doc-actions-row">
-              <button class="card-action-btn primary" onclick="triggerDocUpload('${doc.id}')">${hasFile ? 'Change' : 'Upload'}</button>
-              <button class="card-action-btn" onclick="previewDocument('${doc.id}', '${doc.title}')" ${!hasFile ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''}>Preview</button>
-              <button class="card-action-btn" onclick="downloadDocument('${doc.id}', '${doc.title}')" ${!hasFile ? 'disabled style="opacity:0.4; cursor:not-allowed;"' : ''}>Download</button>
-            </div>
-          `;
+
+          const header = document.createElement('div');
+          header.className = 'item-card-header';
+
+          const titleWrap = document.createElement('div');
+          titleWrap.className = 'item-card-title';
+          titleWrap.textContent = doc.title;
+
+          const descEl = document.createElement('div');
+          descEl.className = 'item-card-desc';
+          descEl.textContent = doc.desc;
+          titleWrap.appendChild(descEl);
+
+          const badge = document.createElement('span');
+          badge.className = `doc-status-badge ${hasFile ? 'available' : ''}`;
+          badge.textContent = hasFile ? 'Available (.enc)' : 'Pending';
+
+          header.appendChild(titleWrap);
+          header.appendChild(badge);
+
+          const actionsRow = document.createElement('div');
+          actionsRow.className = 'doc-actions-row';
+
+          const uploadBtn = document.createElement('button');
+          uploadBtn.className = 'card-action-btn primary';
+          uploadBtn.textContent = hasFile ? 'Change' : 'Upload';
+          uploadBtn.addEventListener('click', () => triggerDocUpload(doc.id));
+
+          const previewBtn = document.createElement('button');
+          previewBtn.className = `card-action-btn ${!hasFile ? 'disabled-btn' : ''}`;
+          previewBtn.textContent = 'Preview';
+          previewBtn.disabled = !hasFile;
+          if (hasFile) {
+            previewBtn.addEventListener('click', () => previewDocument(doc.id, doc.title));
+          }
+
+          const downloadBtn = document.createElement('button');
+          downloadBtn.className = `card-action-btn ${!hasFile ? 'disabled-btn' : ''}`;
+          downloadBtn.textContent = 'Download';
+          downloadBtn.disabled = !hasFile;
+          if (hasFile) {
+            downloadBtn.addEventListener('click', () => downloadDocument(doc.id, doc.title));
+          }
+
+          const deleteBtn = document.createElement('button');
+          deleteBtn.className = `card-action-btn danger ${!hasFile ? 'disabled-btn' : ''}`;
+          deleteBtn.textContent = 'Delete';
+          deleteBtn.disabled = !hasFile;
+          if (hasFile) {
+            deleteBtn.addEventListener('click', () => deleteStoredDocument(doc.id, doc.title));
+          }
+
+          actionsRow.appendChild(uploadBtn);
+          actionsRow.appendChild(previewBtn);
+          actionsRow.appendChild(downloadBtn);
+          actionsRow.appendChild(deleteBtn);
+
+          item.appendChild(header);
+          item.appendChild(actionsRow);
         }
         list.appendChild(item);
       });
@@ -1468,40 +1930,61 @@
       resetInactivityTimer();
       const file = event.target.files[0];
       const targetDocId = pendingUploadTarget;
+      event.target.value = '';
       if (!file || !targetDocId || !currentSessionUser) return;
 
       const reader = new FileReader();
       reader.onload = async (e) => {
-        let payload;
-        if (targetDocId === 'doc_signature' || targetDocId === 'doc_photo') {
-          payload = e.target.result;
-        } else {
-          payload = {
-            name: file.name,
-            type: file.type,
-            dataUrl: e.target.result,
-            updatedAt: new Date().toLocaleDateString()
-          };
+        try {
+          let payload;
+          if (targetDocId === 'doc_signature' || targetDocId === 'doc_photo') {
+            payload = e.target.result;
+          } else {
+            payload = {
+              name: file.name,
+              type: file.type,
+              dataUrl: e.target.result,
+              updatedAt: new Date().toLocaleDateString()
+            };
+          }
+
+          const cipherText = encryptPayload(payload);
+          await writeEncryptedFileToPhone(`${targetDocId}.enc`, cipherText);
+
+          decryptedStore[targetDocId] = payload;
+          if (!activeKeysList.includes(targetDocId)) activeKeysList.push(targetDocId);
+
+          renderDocuments(currentCategoryFilter);
+          restoreSignatureAndPhoto();
+        } catch (err) {
+          alert("File save failed: " + err.message);
         }
-
-        const cipherText = encryptPayload(payload);
-        await writeEncryptedFileToPhone(`${targetDocId}.enc`, cipherText);
-
-        decryptedStore[targetDocId] = payload;
-        if (!activeKeysList.includes(targetDocId)) activeKeysList.push(targetDocId);
-
-        renderDocuments('All');
-        restoreSignatureAndPhoto();
-        event.target.value = '';
       };
       reader.readAsDataURL(file);
+    }
+
+    function dataUrlToBlobUrl(dataUrl) {
+      const [header, base64] = dataUrl.split(',');
+      const mimeMatch = header.match(/:(.*?);/);
+      const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+      const binary = atob(base64);
+      const array = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        array[i] = binary.charCodeAt(i);
+      }
+      return URL.createObjectURL(new Blob([array], { type: mime }));
     }
 
     function previewDocument(docId, title) {
       const data = decryptedStore[docId];
       if (!data) return;
 
-      document.getElementById('viewerTitle').innerText = title || data.name;
+      if (activeViewerBlobUrl) {
+        URL.revokeObjectURL(activeViewerBlobUrl);
+        activeViewerBlobUrl = null;
+      }
+
+      document.getElementById('viewerTitle').textContent = title || data.name || 'Preview';
       const content = document.getElementById('viewerContent');
       content.innerHTML = '';
 
@@ -1509,18 +1992,34 @@
       const type = data.type || (dataUrl.startsWith('data:image') ? 'image/png' : 'application/pdf');
 
       if (type.startsWith('image/')) {
-        content.innerHTML = `<img src="${dataUrl}" alt="Preview">`;
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        img.alt = 'Preview';
+        content.appendChild(img);
       } else if (type === 'application/pdf') {
-        content.innerHTML = `<iframe src="${dataUrl}"></iframe>`;
+        activeViewerBlobUrl = dataUrlToBlobUrl(dataUrl);
+        const iframe = document.createElement('iframe');
+        iframe.src = activeViewerBlobUrl;
+        content.appendChild(iframe);
+
+        const externalBtn = document.createElement('a');
+        externalBtn.href = activeViewerBlobUrl;
+        externalBtn.target = '_blank';
+        externalBtn.rel = 'noopener noreferrer';
+        externalBtn.className = 'btn-secondary';
+        externalBtn.style.cssText = 'flex:none; width:100%; padding:9px 12px; font-size:0.8rem;';
+        externalBtn.textContent = 'Open PDF in External Viewer';
+        content.appendChild(externalBtn);
       }
 
       const dl = document.getElementById('viewerDownloadBtn');
       dl.href = dataUrl;
-      dl.download = data.name || `${title}.pdf`;
+      dl.download = data.name || `${title}.${type === 'application/pdf' ? 'pdf' : 'png'}`;
       document.getElementById('viewerModal').classList.remove('hidden');
     }
 
     function previewDirectDoc(docId) {
+      if (!decryptedStore[docId]) return;
       previewDocument(docId, docId === 'doc_signature' ? "Digital Signature" : "Passport Photo");
     }
 
@@ -1538,21 +2037,70 @@
 
     function restoreSignatureAndPhoto() {
       const s = decryptedStore['doc_signature'];
+      const signBox = document.getElementById('signatureBox');
+      const signDl = document.getElementById('downloadSignBtn');
+      const signPrev = document.getElementById('previewSignBtn');
+      const signDel = document.getElementById('deleteSignBtn');
+
       if (s) {
         const signUrl = typeof s === 'string' ? s : s.dataUrl;
-        document.getElementById('signatureBox').innerHTML = `<img src="${signUrl}">`;
-        document.getElementById('downloadSignBtn').href = signUrl;
+        signBox.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = signUrl;
+        img.alt = 'Digital Signature';
+        signBox.appendChild(img);
+
+        signDl.href = signUrl;
+        signDl.classList.remove('disabled-btn');
+        signPrev.disabled = false;
+        signPrev.classList.remove('disabled-btn');
+        signDel.disabled = false;
+        signDel.classList.remove('disabled-btn');
+      } else {
+        signBox.innerHTML = '<span style="font-size:0.9rem; color:#64748b;">No signature uploaded</span>';
+        signDl.href = '#';
+        signDl.classList.add('disabled-btn');
+        signPrev.disabled = true;
+        signPrev.classList.add('disabled-btn');
+        signDel.disabled = true;
+        signDel.classList.add('disabled-btn');
       }
+
       const p = decryptedStore['doc_photo'];
+      const photoBox = document.getElementById('photoBox');
+      const photoDl = document.getElementById('downloadPhotoBtn');
+      const photoPrev = document.getElementById('previewPhotoBtn');
+      const photoDel = document.getElementById('deletePhotoBtn');
+
       if (p) {
         const photoUrl = typeof p === 'string' ? p : p.dataUrl;
-        document.getElementById('photoBox').innerHTML = `<img src="${photoUrl}" style="width:100%; height:100%; object-fit:cover;">`;
-        document.getElementById('downloadPhotoBtn').href = photoUrl;
+        photoBox.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = photoUrl;
+        img.alt = 'Passport Photo';
+        img.style.cssText = 'width:100%; height:100%; object-fit:cover;';
+        photoBox.appendChild(img);
+
+        photoDl.href = photoUrl;
+        photoDl.classList.remove('disabled-btn');
+        photoPrev.disabled = false;
+        photoPrev.classList.remove('disabled-btn');
+        photoDel.disabled = false;
+        photoDel.classList.remove('disabled-btn');
+      } else {
+        photoBox.innerHTML = 'Photo';
+        photoDl.href = '#';
+        photoDl.classList.add('disabled-btn');
+        photoPrev.disabled = true;
+        photoPrev.classList.add('disabled-btn');
+        photoDel.disabled = true;
+        photoDel.classList.add('disabled-btn');
       }
     }
 
     // ================= FLASHCARD 2-SIDED SYSTEM =================
     let activeCardTarget = 'my_aadhaar';
+    let activeCardTitle = 'Identity Card';
     let currentSideTarget = 'front';
 
     function openAadhaarFamilyModal() {
@@ -1575,6 +2123,7 @@
 
     function openFlashcardManager(key, label) {
       activeCardTarget = key;
+      activeCardTitle = label;
       closeAadhaarFamilyModal();
       closeSecondaryIdModal();
       document.getElementById('flashcardModalTitle').innerText = label;
@@ -1590,26 +2139,98 @@
       const rec = decryptedStore[activeCardTarget] || {};
       const fImg = document.getElementById('frontSideImg');
       const fPl = document.getElementById('frontSidePlaceholder');
+      const fDel = document.getElementById('deleteFrontSideBtn');
+
       if (rec.front) {
         fImg.src = rec.front;
         fImg.classList.remove('hidden');
+        fDel.classList.remove('hidden');
         fPl.classList.add('hidden');
       } else {
         fImg.src = '';
         fImg.classList.add('hidden');
+        fDel.classList.add('hidden');
         fPl.classList.remove('hidden');
       }
 
       const bImg = document.getElementById('backSideImg');
       const bPl = document.getElementById('backSidePlaceholder');
+      const bDel = document.getElementById('deleteBackSideBtn');
+
       if (rec.back) {
         bImg.src = rec.back;
         bImg.classList.remove('hidden');
+        bDel.classList.remove('hidden');
         bPl.classList.add('hidden');
       } else {
         bImg.src = '';
         bImg.classList.add('hidden');
+        bDel.classList.add('hidden');
         bPl.classList.remove('hidden');
+      }
+
+      const hasAnySide = Boolean(rec.front || rec.back);
+      const delCardBtn = document.getElementById('deleteEntireCardBtn');
+      delCardBtn.disabled = !hasAnySide;
+      if (hasAnySide) {
+        delCardBtn.classList.remove('disabled-btn');
+      } else {
+        delCardBtn.classList.add('disabled-btn');
+      }
+    }
+
+    async function deleteFlashcardSide(side) {
+      if (!currentSessionUser || !derivedKeyBundle) return;
+      const cur = decryptedStore[activeCardTarget];
+      if (!cur || !cur[side]) return;
+
+      const sideLabel = side === 'front' ? 'FRONT' : 'BACK';
+      const confirmed = confirm(`Delete ${sideLabel} photo of "${activeCardTitle}"?`);
+      if (!confirmed) return;
+
+      try {
+        delete cur[side];
+        cur.updatedAt = new Date().toLocaleDateString();
+
+        if (!cur.front && !cur.back) {
+          // Both sides empty: remove .enc file completely from OPFS
+          await deleteEncryptedFileFromPhone(`${activeCardTarget}.enc`);
+          delete decryptedStore[activeCardTarget];
+          activeKeysList = activeKeysList.filter(k => k !== activeCardTarget);
+        } else {
+          // Re-encrypt remaining side
+          const cipherText = encryptPayload(cur);
+          await writeEncryptedFileToPhone(`${activeCardTarget}.enc`, cipherText);
+          decryptedStore[activeCardTarget] = cur;
+        }
+
+        renderFlashcardView();
+        updateAllCustomCardStatusIndicators();
+        renderDocuments(currentCategoryFilter);
+      } catch (err) {
+        alert("Delete side failed: " + err.message);
+      }
+    }
+
+    async function deleteEntireFlashcard() {
+      if (!currentSessionUser || !derivedKeyBundle) return;
+      if (!decryptedStore[activeCardTarget] && !activeKeysList.includes(activeCardTarget)) return;
+
+      const confirmed = confirm(
+        `Permanently delete "${activeCardTitle}" (both Front & Back sides)?\n\nEncrypted file (${activeCardTarget}.enc) phone storage se hamesha ke liye delete ho jayegi.`
+      );
+      if (!confirmed) return;
+
+      try {
+        await deleteEncryptedFileFromPhone(`${activeCardTarget}.enc`);
+        delete decryptedStore[activeCardTarget];
+        activeKeysList = activeKeysList.filter(k => k !== activeCardTarget);
+
+        renderFlashcardView();
+        updateAllCustomCardStatusIndicators();
+        renderDocuments(currentCategoryFilter);
+      } catch (err) {
+        alert("Delete card failed: " + err.message);
       }
     }
 
@@ -1624,23 +2245,28 @@
       isFilePickerOpen = false;
       resetInactivityTimer();
       const file = event.target.files[0];
+      event.target.value = '';
       if (!file || !currentSessionUser) return;
 
       const reader = new FileReader();
       reader.onload = async (e) => {
-        const cur = decryptedStore[activeCardTarget] || {};
-        cur[currentSideTarget] = e.target.result;
-        cur.updatedAt = new Date().toLocaleDateString();
+        try {
+          const cur = decryptedStore[activeCardTarget] || {};
+          cur[currentSideTarget] = e.target.result;
+          cur.updatedAt = new Date().toLocaleDateString();
 
-        const cipherText = encryptPayload(cur);
-        await writeEncryptedFileToPhone(`${activeCardTarget}.enc`, cipherText);
+          const cipherText = encryptPayload(cur);
+          await writeEncryptedFileToPhone(`${activeCardTarget}.enc`, cipherText);
 
-        decryptedStore[activeCardTarget] = cur;
-        if (!activeKeysList.includes(activeCardTarget)) activeKeysList.push(activeCardTarget);
+          decryptedStore[activeCardTarget] = cur;
+          if (!activeKeysList.includes(activeCardTarget)) activeKeysList.push(activeCardTarget);
 
-        renderFlashcardView();
-        updateAllCustomCardStatusIndicators();
-        event.target.value = '';
+          renderFlashcardView();
+          updateAllCustomCardStatusIndicators();
+          renderDocuments(currentCategoryFilter);
+        } catch (err) {
+          alert("Side upload failed: " + err.message);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -1653,6 +2279,13 @@
         img.onerror = () => resolve(null);
         img.src = src;
       });
+    }
+
+    function detectJsPdfImageFormat(dataUrl) {
+      if (!dataUrl || typeof dataUrl !== 'string') return 'PNG';
+      if (dataUrl.startsWith('data:image/jpeg') || dataUrl.startsWith('data:image/jpg')) return 'JPEG';
+      if (dataUrl.startsWith('data:image/webp')) return 'WEBP';
+      return 'PNG';
     }
 
     async function downloadFlashcardPDF() {
@@ -1701,11 +2334,11 @@
       const imgX = (pageWidth - targetWidth) / 2;
 
       if (frontImg) {
-        pdf.addImage(frontImg, 'PNG', imgX, currentY, targetWidth, fH);
+        pdf.addImage(frontImg, detectJsPdfImageFormat(rec.front), imgX, currentY, targetWidth, fH);
         currentY += fH + gap;
       }
       if (backImg) {
-        pdf.addImage(backImg, 'PNG', imgX, currentY, targetWidth, bH);
+        pdf.addImage(backImg, detectJsPdfImageFormat(rec.back), imgX, currentY, targetWidth, bH);
       }
 
       pdf.save(`${activeCardTarget}_VaultCard.pdf`);
@@ -1717,7 +2350,7 @@
       const qrBox = document.getElementById('qrcodeBox');
       qrBox.innerHTML = '';
       document.getElementById('qrCardUsernameDisplay').innerText = (currentSessionUser.fullName || currentSessionUser.username).toUpperCase();
-      const vaultUrl = `${window.location.origin}${window.location.pathname}?vault=${currentSessionUser.username}`;
+      const vaultUrl = `${window.location.origin}${window.location.pathname}?vault=${encodeURIComponent(currentSessionUser.username)}`;
       new QRCode(qrBox, {
         text: vaultUrl,
         width: 155,
@@ -1734,6 +2367,15 @@
       const card = document.getElementById('printableQrFlashcard');
       if (!card || !currentSessionUser) return;
       try {
+        const qrImg = card.querySelector('#qrcodeBox img');
+        if (qrImg && !qrImg.complete) {
+          await new Promise(resolve => {
+            qrImg.onload = resolve;
+            qrImg.onerror = resolve;
+          });
+        }
+        await new Promise(r => requestAnimationFrame(r));
+
         const canvas = await html2canvas(card, { scale: 3, backgroundColor: '#090a0f' });
         const link = document.createElement('a');
         link.download = `${currentSessionUser.username}_DocVault_Card.png`;
@@ -1747,6 +2389,10 @@
     function closeViewerModal() {
       document.getElementById('viewerModal').classList.add('hidden');
       document.getElementById('viewerContent').innerHTML = '';
+      if (activeViewerBlobUrl) {
+        URL.revokeObjectURL(activeViewerBlobUrl);
+        activeViewerBlobUrl = null;
+      }
     }
 
     // Register Service Worker for PWA
