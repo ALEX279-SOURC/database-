@@ -43,7 +43,6 @@
       padding: 16px 16px 60px 16px;
     }
 
-    /* Lock scrolling & center card strictly on Auth Screen */
     body.auth-locked {
       position: fixed;
       inset: 0;
@@ -65,7 +64,6 @@
 
     .hidden { display: none !important; }
 
-    /* Fixed Footer (Empty / Clean) */
     .fixed-footer-bar {
       position: fixed;
       bottom: 0;
@@ -190,7 +188,6 @@
       color: #f8fafc;
     }
 
-    /* Preserves vertical spacing where security banner used to be */
     .banner-spacer {
       height: 36px;
       width: 100%;
@@ -667,6 +664,9 @@
           <input type="password" id="loginPin" class="input-field" placeholder="Enter Master Passphrase" autocomplete="current-password">
         </div>
         <button id="btnLoginAction" class="btn-primary" style="margin-top:8px;" onclick="handleLogin()">Unlock & Decrypt</button>
+        <button type="button" onclick="resetLocalVaultStorage()" style="background:none; border:none; color:#f87171; font-size:0.76rem; cursor:pointer; text-decoration:underline; margin-top:4px; align-self:center;">
+          Reset Device Vault Storage
+        </button>
       </div>
 
       <!-- Register Form -->
@@ -726,7 +726,6 @@
         </div>
       </div>
 
-      <!-- Preserves vertical gap where green zero-knowledge banner was -->
       <div class="banner-spacer"></div>
 
       <div class="profile-card">
@@ -1012,8 +1011,8 @@
 
   <script>
     // ================= ZERO-PERMISSION OPFS STORAGE ENGINE =================
-    let derivedKeyBundle = null; // { encKey, macKey } cached for active session only
-    let currentSessionUser = null; // Never stores rawPin in memory
+    let derivedKeyBundle = null;
+    let currentSessionUser = null;
     let activeKeysList = [];
     let decryptedStore = {};
     let pendingUploadTarget = null;
@@ -1059,6 +1058,28 @@
       } catch (e) {
         if (e && e.name === 'NotFoundError') return true;
         throw e;
+      }
+    }
+
+    async function resetLocalVaultStorage() {
+      const confirmed = confirm(
+        "Purane / Corrupted Vault storage ko reset karein?\n\nIsse is device par maujood purani .enc files delete ho jayengi aur aap naya vault bana sakenge."
+      );
+      if (!confirmed) return;
+
+      try {
+        const root = await getOPFSRoot();
+        const names = [];
+        for await (const [name, handle] of root.entries()) {
+          if (handle.kind === 'file') names.push(name);
+        }
+        for (const name of names) {
+          await root.removeEntry(name);
+        }
+        alert("Vault storage clear ho gaya hai! Ab aap 'New Vault' create kar sakte hain.");
+        switchAuthMode('register');
+      } catch (err) {
+        alert("Reset failed: " + err.message);
       }
     }
 
@@ -1125,7 +1146,6 @@
       btn.disabled = !(res.len && res.num && res.special);
     }
 
-    // Derives 512 bits once: 256 bits for AES-CBC encryption + 256 bits for HMAC-SHA256
     function deriveKeyBundle(pin, saltHex) {
       const salt = CryptoJS.enc.Hex.parse(saltHex);
       const fullKey = CryptoJS.PBKDF2(pin, salt, {
@@ -1140,7 +1160,6 @@
       };
     }
 
-    // Encrypt-then-MAC format: saltHex:ivHex:cipherBase64:hmacHex
     function encryptWithKeyBundle(rawObject, saltHex, keyBundle) {
       const jsonStr = typeof rawObject === 'string' ? rawObject : JSON.stringify(rawObject);
       const ivHex = getRandomHex(16);
@@ -1167,12 +1186,10 @@
         const bundle = cachedBundle || (pin ? deriveKeyBundle(pin, saltHex) : null);
         if (!bundle) return null;
 
-        // 1. Verify HMAC integrity BEFORE decrypting
         const payloadWithoutMac = `${saltHex}:${ivHex}:${cipherBase64}`;
         const expectedMac = CryptoJS.HmacSHA256(payloadWithoutMac, bundle.macKey).toString(CryptoJS.enc.Hex);
         if (expectedMac !== storedMac) return null;
 
-        // 2. Decrypt AES-CBC payload
         const cipherParams = CryptoJS.lib.CipherParams.create({
           ciphertext: CryptoJS.enc.Base64.parse(cipherBase64)
         });
@@ -1187,6 +1204,34 @@
 
         try { return JSON.parse(resultStr); } catch { return resultStr; }
       } catch (err) {
+        return null;
+      }
+    }
+
+    // Legacy 3-part (salt:iv:cipher) decryption for seamless upgrade on login
+    function decryptLegacyThreePart(storedString, pin) {
+      try {
+        const parts = storedString.split(':');
+        if (parts.length !== 3) return null;
+        const [saltHex, ivHex, cipherBase64] = parts;
+        const salt = CryptoJS.enc.Hex.parse(saltHex);
+        const key = CryptoJS.PBKDF2(pin, salt, {
+          keySize: 256 / 32,
+          iterations: 100000,
+          hasher: CryptoJS.algo.SHA256
+        });
+        const cipherParams = CryptoJS.lib.CipherParams.create({
+          ciphertext: CryptoJS.enc.Base64.parse(cipherBase64)
+        });
+        const decrypted = CryptoJS.AES.decrypt(cipherParams, key, {
+          iv: CryptoJS.enc.Hex.parse(ivHex),
+          mode: CryptoJS.mode.CBC,
+          padding: CryptoJS.pad.Pkcs7
+        });
+        const resultStr = decrypted.toString(CryptoJS.enc.Utf8);
+        if (!resultStr) return null;
+        try { return JSON.parse(resultStr); } catch { return resultStr; }
+      } catch {
         return null;
       }
     }
@@ -1240,7 +1285,7 @@
     }
 
     function closeChangePinModal() {
-      if (isPinRotating) return; // Prevent closing mid-migration
+      if (isPinRotating) return;
       document.getElementById('oldPinInput').value = '';
       document.getElementById('newPinInput').value = '';
       document.getElementById('newPinConfirmInput').value = '';
@@ -1458,7 +1503,7 @@
         const profileEntry = zip.file("profile.enc");
 
         if (!profileEntry) {
-          alert("Wrong Account / Invalid Backup!\n\nIs ZIP file me account verification data nahi mila. Kripya sahi account se login karein ya documents dobara upload karein.");
+          alert("Wrong Account / Invalid Backup!\n\nIs ZIP file me account verification data nahi mila.");
           return;
         }
 
@@ -1466,7 +1511,7 @@
         const backupProfile = decryptWithKeyBundle(backupProfileCipher, null, derivedKeyBundle);
 
         if (!backupProfile || backupProfile.username !== currentSessionUser.username) {
-          alert("Wrong Account / PIN Mismatch!\n\nYe backup file kisi aur account ya purane PIN se banayi gayi hai. Sahi account/PIN se login karein.");
+          alert("Wrong Account / PIN Mismatch!\n\nYe backup file kisi aur account ya purane PIN se banayi gayi hai.");
           return;
         }
 
@@ -1501,7 +1546,7 @@
         restoreSignatureAndPhoto();
         updateAllCustomCardStatusIndicators();
 
-        alert(`Backup Restored Successfully! (${restoredCount} documents decrypted & restored to their exact slots)`);
+        alert(`Backup Restored Successfully! (${restoredCount} documents decrypted & restored)`);
       } catch (err) {
         alert("Backup Restore Failed: Valid ZIP file select karein.");
       } finally {
@@ -1539,8 +1584,19 @@
       try {
         const existingProfile = await readEncryptedFileFromPhone("profile.enc");
         if (existingProfile) {
-          alert("Is phone par already ek encrypted vault maujood hai! 'Unlock Vault' use karein.");
-          return;
+          const overwrite = confirm(
+            "Is device par already ek purana vault maujood hai!\n\nKya aap purana data overwrite karke naya vault banana chahte hain? (Purana data delete ho jayega)"
+          );
+          if (!overwrite) return;
+
+          const root = await getOPFSRoot();
+          const oldFiles = [];
+          for await (const [name, handle] of root.entries()) {
+            if (handle.kind === 'file') oldFiles.push(name);
+          }
+          for (const name of oldFiles) {
+            await root.removeEntry(name);
+          }
         }
 
         const saltHex = getRandomHex(16);
@@ -1594,13 +1650,26 @@
         }
 
         const parts = profileCipher.split(':');
-        if (parts.length !== 4) {
-          alert("Vault file format invalid ya corrupted hai.");
+        let profile = null;
+        let candidateBundle = null;
+        let legacyPinForMigration = null;
+
+        if (parts.length === 4) {
+          candidateBundle = deriveKeyBundle(pin, parts[0]);
+          profile = decryptWithKeyBundle(profileCipher, null, candidateBundle);
+        } else if (parts.length === 3) {
+          // Auto-migrate legacy 3-part vault to 4-part HMAC-protected format
+          profile = decryptLegacyThreePart(profileCipher, pin);
+          if (profile) {
+            candidateBundle = deriveKeyBundle(pin, parts[0]);
+            legacyPinForMigration = pin;
+            const upgradedProfileCipher = encryptWithKeyBundle(profile, parts[0], candidateBundle);
+            await writeEncryptedFileToPhone("profile.enc", upgradedProfileCipher);
+          }
+        } else {
+          alert("Vault file format invalid ya corrupted hai. Niche 'Reset Device Vault Storage' par click karke naya vault banayein.");
           return;
         }
-
-        const candidateBundle = deriveKeyBundle(pin, parts[0]);
-        const profile = decryptWithKeyBundle(profileCipher, null, candidateBundle);
 
         if (!profile) {
           alert("Galat Master PIN! Decryption impossible.");
@@ -1616,7 +1685,7 @@
         currentSessionUser = profile;
         derivedKeyBundle = candidateBundle;
 
-        await loadAllLocalDocuments();
+        await loadAllLocalDocuments(legacyPinForMigration);
         launchDashboard(profile);
       } catch (err) {
         alert("Login Error: " + err.message);
@@ -1626,48 +1695,51 @@
       }
     }
 
-    async function loadAllLocalDocuments() {
+    async function loadAllLocalDocuments(legacyPin = null) {
       activeKeysList = [];
       decryptedStore = {};
 
-      const sigCipher = await readEncryptedFileFromPhone("doc_signature.enc");
-      if (sigCipher) {
-        const dec = decryptPayload(sigCipher);
-        if (dec) {
-          decryptedStore['doc_signature'] = dec;
-          activeKeysList.push('doc_signature');
+      async function readAndAutoUpgrade(fileName) {
+        const cipher = await readEncryptedFileFromPhone(fileName);
+        if (!cipher) return null;
+
+        let dec = decryptPayload(cipher);
+        if (!dec && legacyPin && cipher.split(':').length === 3) {
+          dec = decryptLegacyThreePart(cipher, legacyPin);
+          if (dec) {
+            const upgradedCipher = encryptPayload(dec);
+            await writeEncryptedFileToPhone(fileName, upgradedCipher);
+          }
         }
+        return dec;
       }
 
-      const photoCipher = await readEncryptedFileFromPhone("doc_photo.enc");
-      if (photoCipher) {
-        const dec = decryptPayload(photoCipher);
-        if (dec) {
-          decryptedStore['doc_photo'] = dec;
-          activeKeysList.push('doc_photo');
-        }
+      const sigDec = await readAndAutoUpgrade("doc_signature.enc");
+      if (sigDec) {
+        decryptedStore['doc_signature'] = sigDec;
+        activeKeysList.push('doc_signature');
+      }
+
+      const photoDec = await readAndAutoUpgrade("doc_photo.enc");
+      if (photoDec) {
+        decryptedStore['doc_photo'] = photoDec;
+        activeKeysList.push('doc_photo');
       }
 
       for (const doc of masterCollegeDocuments) {
-        const cipher = await readEncryptedFileFromPhone(`${doc.id}.enc`);
-        if (cipher) {
-          const dec = decryptPayload(cipher);
-          if (dec) {
-            decryptedStore[doc.id] = dec;
-            activeKeysList.push(doc.id);
-          }
+        const dec = await readAndAutoUpgrade(`${doc.id}.enc`);
+        if (dec) {
+          decryptedStore[doc.id] = dec;
+          activeKeysList.push(doc.id);
         }
       }
 
       const multiKeys = ['my_aadhaar', 'father_aadhaar', 'mother_aadhaar', 'doc_voter_card', 'doc_pan_card', 'doc_dl_card'];
       for (const k of multiKeys) {
-        const cipher = await readEncryptedFileFromPhone(`${k}.enc`);
-        if (cipher) {
-          const dec = decryptPayload(cipher);
-          if (dec && (dec.front || dec.back)) {
-            decryptedStore[k] = dec;
-            activeKeysList.push(k);
-          }
+        const dec = await readAndAutoUpgrade(`${k}.enc`);
+        if (dec && (dec.front || dec.back)) {
+          decryptedStore[k] = dec;
+          activeKeysList.push(k);
         }
       }
     }
@@ -2193,12 +2265,10 @@
         cur.updatedAt = new Date().toLocaleDateString();
 
         if (!cur.front && !cur.back) {
-          // Both sides empty: remove .enc file completely from OPFS
           await deleteEncryptedFileFromPhone(`${activeCardTarget}.enc`);
           delete decryptedStore[activeCardTarget];
           activeKeysList = activeKeysList.filter(k => k !== activeCardTarget);
         } else {
-          // Re-encrypt remaining side
           const cipherText = encryptPayload(cur);
           await writeEncryptedFileToPhone(`${activeCardTarget}.enc`, cipherText);
           decryptedStore[activeCardTarget] = cur;
