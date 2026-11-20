@@ -77,7 +77,6 @@
       z-index: 100;
     }
 
-    /* Auth Screens */
     .auth-card {
       background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
       border: 1px solid #334155;
@@ -152,7 +151,6 @@
       margin: 0 auto;
     }
 
-    /* Top Nav */
     .header {
       display: flex;
       align-items: center;
@@ -1208,7 +1206,7 @@
       }
     }
 
-    // Legacy 3-part (salt:iv:cipher) decryption for seamless upgrade on login
+    // Legacy 3-part (salt:iv:cipher) decryption for seamless upgrade
     function decryptLegacyThreePart(storedString, pin) {
       try {
         const parts = storedString.split(':');
@@ -1423,7 +1421,7 @@
       }
     }
 
-    // ================= ENCRYPTED ZIP BACKUP & RESTORE =================
+    // ================= ENCRYPTED ZIP BACKUP & CROSS-SALT RESTORE =================
     async function createEncryptedZipBackup() {
       if (!currentSessionUser) return;
       if (typeof JSZip === 'undefined') {
@@ -1503,15 +1501,43 @@
         const profileEntry = zip.file("profile.enc");
 
         if (!profileEntry) {
-          alert("Wrong Account / Invalid Backup!\n\nIs ZIP file me account verification data nahi mila.");
+          alert("Wrong Account / Invalid Backup!\n\nIs ZIP file me profile.enc nahi mila.");
           return;
         }
 
         const backupProfileCipher = await profileEntry.async("text");
-        const backupProfile = decryptWithKeyBundle(backupProfileCipher, null, derivedKeyBundle);
+        const profileParts = backupProfileCipher.split(':');
+        let backupProfile = null;
+        let zipKeyBundle = null;
+        let backupPinForLegacy = null;
+
+        // 1. Pehle active session key se try karein (same salt)
+        if (profileParts.length === 4) {
+          backupProfile = decryptWithKeyBundle(backupProfileCipher, null, derivedKeyBundle);
+          if (backupProfile) {
+            zipKeyBundle = derivedKeyBundle;
+          }
+        }
+
+        // 2. Agar ZIP alag salt (re-created account) ya purane 3-part format ki hai, toh PIN pooch kar ZIP ke salt se decrypt karein
+        if (!backupProfile && (profileParts.length === 4 || profileParts.length === 3)) {
+          const enteredPin = prompt(
+            "Is backup file ko decrypt karne ke liye is ZIP ka Master PIN enter karein:"
+          );
+          if (!enteredPin) return;
+
+          if (profileParts.length === 4) {
+            const candidateBundle = deriveKeyBundle(enteredPin.trim(), profileParts[0]);
+            backupProfile = decryptWithKeyBundle(backupProfileCipher, null, candidateBundle);
+            if (backupProfile) zipKeyBundle = candidateBundle;
+          } else if (profileParts.length === 3) {
+            backupProfile = decryptLegacyThreePart(backupProfileCipher, enteredPin.trim());
+            if (backupProfile) backupPinForLegacy = enteredPin.trim();
+          }
+        }
 
         if (!backupProfile || backupProfile.username !== currentSessionUser.username) {
-          alert("Wrong Account / PIN Mismatch!\n\nYe backup file kisi aur account ya purane PIN se banayi gayi hai.");
+          alert("Restore Failed: Username ya Master PIN match nahi hua.");
           return;
         }
 
@@ -1534,9 +1560,19 @@
         let restoredCount = 0;
         for (const fileName of validEncFiles) {
           const cipherText = await zip.files[fileName].async("text");
-          const verifiedData = decryptWithKeyBundle(cipherText, null, derivedKeyBundle);
+          const fileParts = cipherText.split(':');
+          let verifiedData = null;
+
+          if (fileParts.length === 4 && zipKeyBundle) {
+            verifiedData = decryptWithKeyBundle(cipherText, null, zipKeyBundle);
+          } else if (fileParts.length === 3 && backupPinForLegacy) {
+            verifiedData = decryptLegacyThreePart(cipherText, backupPinForLegacy);
+          }
+
           if (verifiedData) {
-            await writeEncryptedFileToPhone(fileName, cipherText);
+            // Current vault ke salt + 4-part HMAC format mein re-encrypt karke save karein
+            const upgradedCipher = encryptPayload(verifiedData);
+            await writeEncryptedFileToPhone(fileName, upgradedCipher);
             restoredCount++;
           }
         }
@@ -1546,9 +1582,9 @@
         restoreSignatureAndPhoto();
         updateAllCustomCardStatusIndicators();
 
-        alert(`Backup Restored Successfully! (${restoredCount} documents decrypted & restored)`);
+        alert(`Backup Restored Successfully! (${restoredCount} documents restored & synced to current vault)`);
       } catch (err) {
-        alert("Backup Restore Failed: Valid ZIP file select karein.");
+        alert("Backup Restore Failed: " + err.message);
       } finally {
         btn.innerText = originalText;
         btn.disabled = false;
@@ -1585,7 +1621,7 @@
         const existingProfile = await readEncryptedFileFromPhone("profile.enc");
         if (existingProfile) {
           const overwrite = confirm(
-            "Is device par already ek purana vault maujood hai!\n\nKya aap purana data overwrite karke naya vault banana chahte hain? (Purana data delete ho jayega)"
+            "Is device par already ek purana vault maujood hai!\n\nKya aap purana data overwrite karke naya vault banana chahte hain?"
           );
           if (!overwrite) return;
 
@@ -1658,7 +1694,6 @@
           candidateBundle = deriveKeyBundle(pin, parts[0]);
           profile = decryptWithKeyBundle(profileCipher, null, candidateBundle);
         } else if (parts.length === 3) {
-          // Auto-migrate legacy 3-part vault to 4-part HMAC-protected format
           profile = decryptLegacyThreePart(profileCipher, pin);
           if (profile) {
             candidateBundle = deriveKeyBundle(pin, parts[0]);
@@ -2465,11 +2500,11 @@
       }
     }
 
-    // Register Service Worker for PWA
+    // Register & update Service Worker cleanly
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then((reg) => console.log('Service Worker Registered:', reg.scope))
+        navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+          .then((reg) => reg.update())
           .catch((err) => console.warn('Service Worker failed:', err));
       });
     }
